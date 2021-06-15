@@ -1,4 +1,4 @@
-<?php   
+<?php
 
 namespace App\Http\Controllers;
 
@@ -45,9 +45,14 @@ class UserController extends Controller
     public function register(Request $request){
 
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'firstName' => 'required|string|max:80',
+            'lastName' => 'required|string|max:80',
             'email' => 'required|string|email|max:255|unique:users',
+            'phone' => 'string|max:15',
+            'dob' => 'required|string',
             'password' => 'required|string|min:6|confirmed',
+            'type' => 'required|string',
+            'company' => 'string'
         ]);
 
         if($validator->fails()){
@@ -55,14 +60,59 @@ class UserController extends Controller
         }
 
         $user = User::create([
-            'name' => $request->get('name'),
+            'firstName' => $request->get('firstName'),
+            'lastName' => $request->get('lastName'),
             'email' => $request->get('email'),
+            'phone' => $request->get('phone'),
+            'dob' => $request->get('dob'),
             'password' => Hash::make($request->get('password')),
+            'type' => $request->get('type'),
+            'company' => $request->get('company'),
         ]);
 
-        $token = JWTAuth::fromUser($user);
+        $token = JWTAuth::fromUser($user); // ??
 
         return response()->json(compact('user','token'),201);
+    }
+
+    public function update(Request $request, $id){
+        $user = User::find("id", $id)->first();
+
+        if(!$user){
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
+
+        $user->firstName = $request->firstName;
+        $user->lastName = $request->lastName;
+        $user->email = $request->email;
+        $user->phone = $request->phone;
+        $user->dob = $request->dob;
+        $user->password = Hash::make($request->password);
+        $user->type = $request->type;
+        $user->company = $request->company;
+
+        return response()->json($user);
+    }
+
+    public function find($id){
+        return User::find("id", $id)->first();
+    }
+
+    public function list(){
+        return User::where('deleted', '!=', true)->orderBy("firstName")->orderBy("lastName")->get();
+    }
+
+    public function delete($id){
+        $user = User::find("id", $id)->first();
+
+        if(!$user){
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
+
+        $user->deleted = true;
+        $user->save();
+
+        return response()->json(['success' => 'Usuario Eliminado'], 400);
     }
 }
 
