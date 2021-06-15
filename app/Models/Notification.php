@@ -9,6 +9,8 @@ class Notification extends Model
 {
     use HasFactory;
 
+    protected $table = "notifications";
+
     protected $primaryKey = 'idNotification';
 
     public $timestamps = false;

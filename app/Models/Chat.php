@@ -9,6 +9,8 @@ class Chat extends Model
 {
     use HasFactory;
 
+    protected $table = "chats";
+
     protected $primaryKey = 'idChat';
 
     public $timestamps = false;

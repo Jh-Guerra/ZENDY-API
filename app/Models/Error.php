@@ -9,6 +9,8 @@ class Error extends Model
 {
     use HasFactory;
 
+    protected $table = "errors";
+
     protected $primaryKey = 'idError';
 
     public $timestamps = false;

@@ -9,6 +9,8 @@ class NotificationView extends Model
 {
     use HasFactory;
 
+    protected $table = "notification_views";
+
     protected $primaryKey = 'idNotificationView';
 
     public $timestamps = false;
