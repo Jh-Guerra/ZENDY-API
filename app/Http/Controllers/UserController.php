@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
     use App\Models\User;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Hash;
+    use Illuminate\Support\Facades\Log;
     use Illuminate\Support\Facades\Validator;
     use JWTAuth;
     use Tymon\JWTAuth\Exceptions\JWTException;
@@ -50,25 +51,19 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'string|max:15',
             'dob' => 'required|string',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => 'required|string|min:4',
             'type' => 'required|string',
-            'company' => 'string'
+            'company' => 'nullable|string'
         ]);
 
         if($validator->fails()){
             return response()->json($validator->errors()->toJson(), 400);
         }
 
-        $user = User::create([
-            'firstName' => $request->get('firstName'),
-            'lastName' => $request->get('lastName'),
-            'email' => $request->get('email'),
-            'phone' => $request->get('phone'),
-            'dob' => $request->get('dob'),
-            'password' => Hash::make($request->get('password')),
-            'type' => $request->get('type'),
-            'company' => $request->get('company'),
-        ]);
+        $user = new User();
+
+        $this->updateUserValues($user, $request);
+        $user->save();
 
         $token = JWTAuth::fromUser($user); // ??
 
@@ -82,16 +77,21 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
 
+        $this->updateUserValues($user, $request);
+        $user->save();
+
+        return response()->json($user);
+    }
+
+    private function updateUserValues($user, $request){
         $user->firstName = $request->firstName;
         $user->lastName = $request->lastName;
         $user->email = $request->email;
         $user->phone = $request->phone;
-        $user->dob = $request->dob;
+        $user->dob = date('Y-m-d',strtotime($request->dob));
         $user->password = Hash::make($request->password);
         $user->type = $request->type;
         $user->company = $request->company;
-
-        return response()->json($user);
     }
 
     public function find($id){
