@@ -81,7 +81,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'firstName' => 'required|string|max:80',
             'lastName' => 'required|string|max:80',
-            'email' => 'required|string|email|max:255'.($request->id ? '' : '|unique:users'),
+            'email' => 'required|string|email|max:255',
             'phone' => 'string|max:15',
             'dob' => 'required|string',
             'password' => 'required|string|min:4',
@@ -89,7 +89,20 @@ class UserController extends Controller
             'company' => 'nullable|string'
         ]);
 
-        return $validator->fails() ? $validator->errors()->toJson() : null;
+        $errorMessage = null;
+        if(!$validator->fails()){
+            $user = User::where('email', $request->email)->where('deleted', false)->first();
+            if($user && $user->id != $request->id){
+                $errorMessage = new \stdClass();
+                $errorMessage->email = [
+                    "El correo electrónico ya está registrado."
+                ];
+            }
+        }else{
+            $errorMessage = $validator->errors()->toJson();
+        }
+
+        return $errorMessage;
     }
 
 
