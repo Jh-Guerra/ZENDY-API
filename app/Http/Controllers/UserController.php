@@ -9,6 +9,7 @@ namespace App\Http\Controllers;
     use Illuminate\Support\Facades\Validator;
     use JWTAuth;
     use Tymon\JWTAuth\Exceptions\JWTException;
+    use Illuminate\Support\Facades\Crypt;
 
 class UserController extends Controller
 {
@@ -44,24 +45,12 @@ class UserController extends Controller
 
 
     public function register(Request $request){
-
-        $validator = Validator::make($request->all(), [
-            'firstName' => 'required|string|max:80',
-            'lastName' => 'required|string|max:80',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone' => 'string|max:15',
-            'dob' => 'required|string',
-            'password' => 'required|string|min:4',
-            'type' => 'required|string',
-            'company' => 'nullable|string'
-        ]);
-
-        if($validator->fails()){
-            return response()->json($validator->errors()->toJson(), 400);
+        $error = $this->validateFields($request);
+        if($error){
+            return response()->json($error, 400);
         }
 
         $user = new User();
-
         $this->updateUserValues($user, $request);
         $user->save();
 
@@ -71,7 +60,12 @@ class UserController extends Controller
     }
 
     public function update(Request $request, $id){
-        $user = User::find("id", $id)->first();
+        $user = User::find($id);
+
+        $error = $this->validateFields($request);
+        if($error){
+            return response()->json($error, 400);
+        }
 
         if(!$user){
             return response()->json(['error' => 'Usuario no encontrado'], 400);
@@ -83,19 +77,43 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    private function validateFields($request){
+        $validator = Validator::make($request->all(), [
+            'firstName' => 'required|string|max:80',
+            'lastName' => 'required|string|max:80',
+            'email' => 'required|string|email|max:255'.($request->id ? '' : '|unique:users'),
+            'phone' => 'string|max:15',
+            'dob' => 'required|string',
+            'password' => 'required|string|min:4',
+            'type' => 'required|string',
+            'company' => 'nullable|string'
+        ]);
+
+        return $validator->fails() ? $validator->errors()->toJson() : null;
+    }
+
+
     private function updateUserValues($user, $request){
         $user->firstName = $request->firstName;
         $user->lastName = $request->lastName;
         $user->email = $request->email;
         $user->phone = $request->phone;
         $user->dob = date('Y-m-d',strtotime($request->dob));
-        $user->password = Hash::make($request->password);
+        $user->password = Crypt::encryptString($request->password);
         $user->type = $request->type;
         $user->company = $request->company;
     }
 
     public function find($id){
-        return User::find("id", $id)->first();
+        $user = User::find($id);
+
+        if(!$user){
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
+
+        $user->password = Crypt::decryptString($user->password);
+
+        return $user;
     }
 
     public function list(){
@@ -103,7 +121,7 @@ class UserController extends Controller
     }
 
     public function delete($id){
-        $user = User::find("id", $id)->first();
+        $user = User::find($id);
 
         if(!$user){
             return response()->json(['error' => 'Usuario no encontrado'], 400);
@@ -112,7 +130,7 @@ class UserController extends Controller
         $user->deleted = true;
         $user->save();
 
-        return response()->json(['success' => 'Usuario Eliminado'], 400);
+        return response()->json(['success' => 'Usuario Eliminado'], 201);
     }
 }
 

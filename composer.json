@@ -10,7 +10,7 @@
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.12",
-        "nesbot/carbon": "^2.49",
+        "nesbot/carbon": "^2.47",
         "tymon/jwt-auth": "dev-develop"
     },
     "require-dev": {
