@@ -26,9 +26,23 @@ class ParticipantController extends Controller
         return response()->json(compact('participant'),201);
     }
 
-    public function update()
+    public function update(Request $request, $id)
     {
+        $participant = Participant::find($id);
 
+        $error = $this->validateFields($request);
+        if($error){
+            return response()->json($error, 400);
+        }
+
+        if(!$participant){
+            return response()->json(['error' => 'Participante no encontrado'], 400);
+        }
+
+        $this->updateParticipantValues($participant, $request);
+        $participant->save();
+
+        return response()->json($participant);
     }
 
     public function find($id)
