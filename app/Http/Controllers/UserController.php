@@ -9,7 +9,6 @@ namespace App\Http\Controllers;
     use Illuminate\Support\Facades\Validator;
     use JWTAuth;
     use Tymon\JWTAuth\Exceptions\JWTException;
-    use Illuminate\Support\Facades\Crypt;
 
 class UserController extends Controller
 {
@@ -52,6 +51,7 @@ class UserController extends Controller
 
         $user = new User();
         $this->updateUserValues($user, $request);
+        $user->password = Hash::make($request->password);
         $user->save();
 
         $token = JWTAuth::fromUser($user); // ??
@@ -84,7 +84,6 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:15',
             'dob' => 'required|string',
-            'password' => 'required|string|min:4',
             'type' => 'required|string',
             'company' => 'nullable|string'
         ]);
@@ -112,7 +111,6 @@ class UserController extends Controller
         $user->email = $request->email;
         $user->phone = $request->phone;
         $user->dob = date('Y-m-d',strtotime($request->dob));
-        $user->password = Crypt::encryptString($request->password);
         $user->type = $request->type;
         $user->company = $request->company;
     }
@@ -123,8 +121,6 @@ class UserController extends Controller
         if(!$user){
             return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
-
-        $user->password = Crypt::decryptString($user->password);
 
         return $user;
     }
