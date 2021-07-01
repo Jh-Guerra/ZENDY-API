@@ -32,3 +32,11 @@ Route::prefix('users')->group(function () {
     Route::get('/list', 'App\Http\Controllers\UserController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');
 });
+
+Route::prefix('messages')->group(function () {
+    Route::post('/register', 'App\Http\Controllers\MessageController@register');
+    Route::post('/update/{id}', 'App\Http\Controllers\MessageController@update');
+    Route::get('/find/{id}', 'App\Http\Controllers\MessageController@find');
+    Route::get('/list', 'App\Http\Controllers\MessageController@list');
+    Route::delete('/delete/{id}', 'App\Http\Controllers\MessageController@delete');
+});
