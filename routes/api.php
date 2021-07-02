@@ -46,3 +46,11 @@ Route::prefix('messages')->group(function () {
     Route::get('/list', 'App\Http\Controllers\MessageController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\MessageController@delete');
 });
+
+Route::prefix('recommendations')->group(function () {
+    Route::post('register', 'App\Http\Controllers\RecommendationController@register');
+    Route::post('/update/{id}', 'App\Http\Controllers\RecommendationController@update');
+    Route::get('/find/{id}', 'App\Http\Controllers\RecommendationController@find');
+    Route::get('/list', 'App\Http\Controllers\RecommendationController@list');
+    Route::delete('/delete/{id}', 'App\Http\Controllers\RecommendationController@delete');
+});
