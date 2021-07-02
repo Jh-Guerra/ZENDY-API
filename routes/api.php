@@ -24,6 +24,14 @@ Route::group(['middleware' => ['jwt.verify']], function() {
 
 });
 
+Route::prefix('companies')->group(function () {
+    Route::post('register', 'App\Http\Controllers\CompanyController@register');
+    Route::post('/update/{id}', 'App\Http\Controllers\CompanyController@update');
+    Route::get('/find/{id}', 'App\Http\Controllers\CompanyController@find');
+    Route::get('/list', 'App\Http\Controllers\CompanyController@list');
+    Route::delete('/delete/{id}', 'App\Http\Controllers\CompanyController@delete');
+});
+
 Route::prefix('participants')->group(function () {
     Route::post('/register', 'App\Http\Controllers\ParticipantController@register');
     Route::get('/find/{id}', 'App\Http\Controllers\ParticipantController@find');
