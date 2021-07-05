@@ -112,7 +112,7 @@ class UserController extends Controller
         $user->phone = $request->phone;
         $user->dob = date('Y-m-d',strtotime($request->dob));
         $user->type = $request->type;
-        $user->company = $request->company;
+        $user->idCompany = $request->company;
     }
 
     public function find($id){
@@ -125,8 +125,21 @@ class UserController extends Controller
         return $user;
     }
 
-    public function list(){
-        return User::where('deleted', '!=', true)->orderBy("firstName")->orderBy("lastName")->get();
+    public function list(Request $request){
+        $start = 0;
+        $limit = 50;
+        $term = $request->has("term") ? $request->get("term") : "";
+        $users = User::where('deleted', '!=', true);
+
+        if($request->has("term") && $request->get("term")){
+            $users->where(function ($query) use ($term) {
+                $query->where('firstName', 'LIKE', '%'.$term.'%')
+                    ->orWhere('lastName', 'LIKE', '%'.$term.'%');
+            });
+        }
+        $users->offset($start*$limit)->take($limit);
+
+        return $users->orderBy("firstName")->orderBy("lastName")->get();
     }
 
     public function delete($id){

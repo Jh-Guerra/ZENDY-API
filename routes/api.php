@@ -22,6 +22,9 @@ Route::group(['middleware' => ['jwt.verify']], function() {
 
     Route::post('user','App\Http\Controllers\UserController@getAuthenticatedUser');
 
+    Route::prefix('chats-client')->group(function () {
+        Route::post('/register', 'App\Http\Controllers\ChatClientController@register');
+    });
 });
 
 Route::prefix('companies')->group(function () {
@@ -65,8 +68,11 @@ Route::prefix('recommendations')->group(function () {
 
 Route::prefix('chats')->group(function () {
     Route::post('/register', 'App\Http\Controllers\ChatController@register');
+    Route::post('/registerClientChat', 'App\Http\Controllers\ChatController@register');
     Route::post('/update/{id}', 'App\Http\Controllers\ChatController@update');
     Route::get('/find/{id}', 'App\Http\Controllers\ChatController@find');
     Route::get('/list', 'App\Http\Controllers\ChatController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\ChatController@delete');
 });
+
+
