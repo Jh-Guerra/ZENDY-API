@@ -62,3 +62,11 @@ Route::prefix('recommendations')->group(function () {
     Route::get('/list', 'App\Http\Controllers\RecommendationController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\RecommendationController@delete');
 });
+
+Route::prefix('chats')->group(function () {
+    Route::post('/register', 'App\Http\Controllers\ChatController@register');
+    Route::post('/update/{id}', 'App\Http\Controllers\ChatController@update');
+    Route::get('/find/{id}', 'App\Http\Controllers\ChatController@find');
+    Route::get('/list', 'App\Http\Controllers\ChatController@list');
+    Route::delete('/delete/{id}', 'App\Http\Controllers\ChatController@delete');
+});
