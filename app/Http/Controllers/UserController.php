@@ -128,13 +128,22 @@ class UserController extends Controller
     public function list(Request $request){
         $start = 0;
         $limit = 50;
+
         $term = $request->has("term") ? $request->get("term") : "";
+        $company = $request->has("company") ? $request->get("company") : "";
+
         $users = User::where('deleted', '!=', true);
 
         if($request->has("term") && $request->get("term")){
             $users->where(function ($query) use ($term) {
                 $query->where('firstName', 'LIKE', '%'.$term.'%')
                     ->orWhere('lastName', 'LIKE', '%'.$term.'%');
+            });
+        }
+
+        if($request->has("company") && $request->get("company")){
+            $users->where(function ($query) use ($company) {
+                $query->where('company', '=', $company);
             });
         }
         $users->offset($start*$limit)->take($limit);
