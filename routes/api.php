@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -73,6 +74,14 @@ Route::prefix('chats')->group(function () {
     Route::get('/find/{id}', 'App\Http\Controllers\ChatController@find');
     Route::get('/list', 'App\Http\Controllers\ChatController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\ChatController@delete');
+});
+
+Route::prefix('Error')->group(function () {
+    Route::post('register', 'App\Http\Controllers\ErrorController@register');
+    Route::post('/update/{id}', 'App\Http\Controllers\ErrorController@update');
+    Route::get('/find/{id}', 'App\Http\Controllers\ErrorController@find');
+    Route::get('/list', 'App\Http\Controllers\ErrorController@list');
+    Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
 });
 
 
