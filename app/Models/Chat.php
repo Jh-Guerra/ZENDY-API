@@ -11,7 +11,5 @@ class Chat extends Model
 
     protected $table = "chats";
 
-    protected $primaryKey = 'idChat';
-
     public $timestamps = false;
 }

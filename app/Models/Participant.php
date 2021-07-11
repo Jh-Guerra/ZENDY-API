@@ -11,7 +11,5 @@ class Participant extends Model
 
     protected $table = "participants";
 
-    protected $primaryKey = 'idCompetitor';
-
-    public $timestamps = false;
+    public $timestamps = true;
 }

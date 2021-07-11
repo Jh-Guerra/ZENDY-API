@@ -18,7 +18,6 @@ class ParticipantController extends Controller
         }
 
         $participant = new Participant();
-
         $this->updateParticipantValues($participant, $request);
 
         $participant->save();
@@ -76,33 +75,31 @@ class ParticipantController extends Controller
         return response()->json(['success' => 'Participante Eliminado'], 201);
     }
 
-    private function updateParticipantValues($participant, $request){
-        $participant->codeCompetitor = $request->codeCompetitor;
+    public function updateParticipantValues($participant, $request){
         $participant->idUser = $request->idUser;
         $participant->idChat = $request->idChat;
-        $participant->role = $request->role;
-        $participant->ERP = $request->ERP;
-        $participant->dateAdmission = $request->dateAdmission;
-        $participant->departureDate = $request->departureDate;
+        $participant->type = $request->type;
+        $participant->erp = $request->erp;
+        $participant->entryDate = $request->entryDate;
+        $participant->outputDate = $request->outputDate;
         $participant->state = $request->state;
         $participant->active = $request->active;
-        $participant->numberMessageSend = $request->numberMessageSend;
-        $participant->numberMessageRrceived = $request->numberMessageRrceived;
+        $participant->sendMessages = $request->sendMessages!=null ? $request->sendMessages : 0;
+        $participant->receivedMessages = $request->receivedMessages!=null ? $request->receivedMessages : 0;
     }
 
-    private function validateFields($request){
+    public function validateFields($request){
         $validator = Validator::make($request->all(), [
-            'codeCompetitor' => 'nullable|integer',
-            'idUser' => 'nullable|string|max:255',
-            'idChat' => 'nullable|string|max:255',
-            'role' => 'nullable|string|max:255',
-            'ERP' => 'nullable|integer',
-            'dateAdmission' => 'nullable|date',
-            'departureDate' => 'nullable|date',
-            'state' => 'nullable|integer',
-            'active' => 'nullable|integer',
-            'numberMessageSend' => 'nullable|integer',
-            'numberMessageRrceived' => 'nullable|integer'
+            'idUser' => 'integer',
+            'idChat' => 'integer',
+            'type' => 'string|max:255',
+            'erp' => 'boolean',
+            'entryDate' => 'nullable|string',
+            'outputDate' => 'nullable|string',
+            'state' => 'nullable|string',
+            'active' => 'nullable|boolean',
+            'sendMessages' => 'nullable|integer',
+            'receivedMessages' => 'nullable|integer'
         ]);
 
         $errorMessage = null;
