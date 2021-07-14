@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+    use App\Models\Company;
     use App\Models\User;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Hash;
@@ -130,25 +131,45 @@ class UserController extends Controller
         $limit = 50;
 
         $term = $request->has("term") ? $request->get("term") : "";
-        $company = $request->has("company") ? $request->get("company") : "";
 
         $users = User::where('deleted', '!=', true);
 
-        if($request->has("term") && $request->get("term")){
-            $users->where(function ($query) use ($term) {
-                $query->where('firstName', 'LIKE', '%'.$term.'%')
-                    ->orWhere('lastName', 'LIKE', '%'.$term.'%');
-            });
-        }
+        $this->searchUser($request, $term, $users);
 
-        if($request->has("company") && $request->get("company")){
-            $users->where(function ($query) use ($company) {
-                $query->where('company', '=', $company);
-            });
-        }
         $users->offset($start*$limit)->take($limit);
 
         return $users->orderBy("firstName")->orderBy("lastName")->get();
+    }
+
+    public function listByCompany(Request $request){
+        $start = 0;
+        $limit = 50;
+
+        $companyName = $request->has('company') ? $request->get('company') : '';
+        $term = $request->has('term') ? $request->get('term') : '';
+
+        $users = User::where('deleted', '!=', true);
+
+        $this->searchUser($request, $term, $users);
+
+        if ($request->has('company') && $request->get('company')){
+            $users->where(function ($query) use ($companyName) {
+                $query->where('company', '=', $companyName);
+            });
+        }
+
+        $users->offset($start*$limit)->take($limit);
+
+        return $users->orderBy("firstName")->orderBy("lastName")->get();
+    }
+
+    public function searchUser(Request $request, $userName, $users){
+        if($request->has("term") && $request->get("term")){
+            $users->where(function ($query) use ($userName) {
+                $query->where('firstName', 'LIKE', '%'.$userName.'%')
+                    ->orWhere('lastName', 'LIKE', '%'.$userName.'%');
+            });
+        }
     }
 
     public function delete($id){
