@@ -49,6 +49,7 @@ Route::prefix('users')->group(function () {
     Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
     Route::get('/list', 'App\Http\Controllers\UserController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');
+    Route::post('/upload', 'App\Http\Controllers\UserController@upload');
 });
 
 Route::prefix('messages')->group(function () {

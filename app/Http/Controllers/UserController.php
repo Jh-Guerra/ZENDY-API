@@ -9,6 +9,7 @@ namespace App\Http\Controllers;
     use Illuminate\Support\Facades\Validator;
     use JWTAuth;
     use Tymon\JWTAuth\Exceptions\JWTException;
+    use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -62,7 +63,7 @@ class UserController extends Controller
     public function update(Request $request, $id){
         $user = User::find($id);
 
-        $error = $this->validateFields($request);
+        $error = $this->validateFieldsUpdate($request);
         if($error){
             return response()->json($error, 400);
         }
@@ -85,7 +86,7 @@ class UserController extends Controller
             'phone' => 'string|max:15',
             'dob' => 'required|string',
             'type' => 'required|string',
-            'company' => 'nullable|string'
+            'idCompany' => 'nullable|int'
         ]);
 
         $errorMessage = null;
@@ -104,6 +105,21 @@ class UserController extends Controller
         return $errorMessage;
     }
 
+    private function validateFieldsUpdate($request){
+        $validator = Validator::make($request->all(), [
+            'firstName' => 'required|string|max:80',
+            'lastName' => 'required|string|max:80',
+            'email' => 'required|string|email|max:255',
+            'phone' => 'string|max:15',
+            'dob' => 'required|string',
+            'type' => 'required|string',
+            'idCompany' => 'nullable|int',
+
+        ]);
+        $errorMessage = null;
+
+        return $errorMessage;
+    }
 
     private function updateUserValues($user, $request){
         $user->firstName = $request->firstName;
@@ -112,7 +128,7 @@ class UserController extends Controller
         $user->phone = $request->phone;
         $user->dob = date('Y-m-d',strtotime($request->dob));
         $user->type = $request->type;
-        $user->idCompany = $request->company;
+        $user->idCompany = $request->idCompany;
     }
 
     public function find($id){
@@ -129,7 +145,8 @@ class UserController extends Controller
         $start = 0;
         $limit = 50;
         $term = $request->has("term") ? $request->get("term") : "";
-        $users = User::where('deleted', '!=', true);
+        //$users = User::where('deleted', '!=', true);
+        $users = User::join('companies', 'users.idCompany', '=', 'companies.id');
 
         if($request->has("term") && $request->get("term")){
             $users->where(function ($query) use ($term) {
@@ -139,7 +156,7 @@ class UserController extends Controller
         }
         $users->offset($start*$limit)->take($limit);
 
-        return $users->orderBy("firstName")->orderBy("lastName")->get();
+        return $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'companies.name AS companyName']);
     }
 
     public function delete($id){
@@ -154,5 +171,34 @@ class UserController extends Controller
 
         return response()->json(['success' => 'Usuario Eliminado'], 201);
     }
+
+    public function upload(Request $request){
+        $validation = Validator::make($request->all(),
+          [
+              'image'=>'mimes:jpeg,jpg,png,gif|max:10000'
+          ]);
+  
+          if ($validation->fails()){
+              $response=array('status'=>'error','errors'=>$validation->errors()->toArray());  
+              return response()->json($response);
+          }
+  
+       if($request->hasFile('image')){
+  
+          $uniqueid=uniqid();
+          $original_name=$request->file('image')->getClientOriginalName(); 
+          $size=$request->file('image')->getSize();
+          $extension=$request->file('image')->getClientOriginalExtension();
+  
+          $name=$uniqueid.'.'.$extension;
+          $path=$request->file('image')->storeAs('public/users/avatar',$name);
+          if($path){
+              return response()->json(array('status'=>'success','message'=>'Image successfully uploaded','image'=>'/storage/users/avatar/'.$name));
+          }else{
+              return response()->json(array('status'=>'error','message'=>'failed to upload image'));
+          }
+      }
+  
+  }
 }
 
