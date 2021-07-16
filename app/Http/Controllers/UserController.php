@@ -145,8 +145,7 @@ class UserController extends Controller
         $start = 0;
         $limit = 50;
         $term = $request->has("term") ? $request->get("term") : "";
-        //$users = User::where('deleted', '!=', true);
-        $users = User::join('companies', 'users.idCompany', '=', 'companies.id');
+        $users = User::join('companies', 'users.idCompany', '=', 'companies.id')->where('users.deleted', '!=', true);
 
         if($request->has("term") && $request->get("term")){
             $users->where(function ($query) use ($term) {
