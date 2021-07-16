@@ -134,7 +134,7 @@ class UserController extends Controller
 
         $users = User::where('deleted', '!=', true);
 
-        $this->searchUser($request, $term, $users);
+        $this->searchUser($request, $users, $term);
 
         $users->offset($start*$limit)->take($limit);
 
@@ -145,31 +145,36 @@ class UserController extends Controller
         $start = 0;
         $limit = 50;
 
-        $companyName = $request->has('company') ? $request->get('company') : '';
         $term = $request->has('term') ? $request->get('term') : '';
+        $company = $request->has('company') ? $request->get('company') : '';
+
+        if(!$company){
+            return response()->json(['error' => 'Empresa no encontrada'], 400);
+        }
 
         $users = User::where('deleted', '!=', true);
 
-        $this->searchUser($request, $term, $users);
-
-        if ($request->has('company') && $request->get('company')){
-            $users->where(function ($query) use ($companyName) {
-                $query->where('company', '=', $companyName);
-            });
-        }
+        $this->searchUserByCompany($request, $users, $company);
+        $this->searchUser($request, $users, $term);
 
         $users->offset($start*$limit)->take($limit);
 
         return $users->orderBy("firstName")->orderBy("lastName")->get();
     }
 
-    public function searchUser(Request $request, $userName, $users){
+    public function searchUser(Request $request, $users, $term){
         if($request->has("term") && $request->get("term")){
-            $users->where(function ($query) use ($userName) {
-                $query->where('firstName', 'LIKE', '%'.$userName.'%')
-                    ->orWhere('lastName', 'LIKE', '%'.$userName.'%');
+            $users->where(function ($query) use ($term) {
+                $query->where('firstName', 'LIKE', '%'.$term.'%')
+                    ->orWhere('lastName', 'LIKE', '%'.$term.'%');
             });
         }
+    }
+
+    public function searchUserByCompany(Request $request, $users, $company){
+        $users->where(function ($query) use ($company) {
+            $query->where('idCompany', '=', $company);
+        });
     }
 
     public function delete($id){
