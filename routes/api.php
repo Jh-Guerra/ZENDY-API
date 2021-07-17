@@ -84,4 +84,13 @@ Route::prefix('Error')->group(function () {
     Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
 });
 
+Route::prefix('Notification')->group(function(){
+    Route::post('register', 'App\Http\Controllers\NotificationController@register');
+    Route::post('/update/{id}', 'App\Http\Controllers\NotificationController@update');
+    Route::get('/find/{id}', 'App\Http\Controllers\NotificationController@find');
+    Route::get('/list', 'App\Http\Controllers\NotificationController@list');
+    Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
+
+});
+
 

@@ -2,62 +2,94 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class NotificationController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
+    public function register(Request $request){
+
+        $error = $this->validateFields($request);
+        if($error){
+            return response()->json($error, 400);
+        }
+
+        $notification = new Notification();
+        $this->updateNotifactionValues($notification, $request);
+        $notification->save();
+
+        return response()->json($notification,201);
+    }
+    public function update(Request $request, $id){
+        $notification = Notification::find($id);
+        $error = $this->validateFields($request);
+        if($error){
+            return response()->json($error, 400);
+        }
+        if(!$notification){
+            return response()->json(['error' => 'Notificacion no encontrada'], 400);
+        }
+        $this->updateNotifactionValues($notification, $request);
+        $notification->save();
+        return response()->json($notification);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
+
+    public function list(){
+        return Notification::all();
+    }
+    
+
+    /* ************************************************************************* */
+
+    private function validateFields($request){
+        $validator = Validator::make($request->all(), [
+            'codeNotification' => 'required|string|max:255',
+            'idUserERP' => 'required|int|max:20',
+            'tittle'  => 'required|string|max:255',
+            'description' => 'required|string|max:255',
+            'image1' => 'string|max:255',
+            'image2' => 'string|max:255',
+            'numberViewed' => 'int|nullable',
+            'userNotified' => 'multiLineString|nullable',
+            'creationDate' => 'timestamps|nullable'
+
+        ]);
+
+        $errorMessage = null;
+        if($validator->fails()){
+                $errorMessage = $validator->errors()->toJson();
+        }
+        return $errorMessage;
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
+    private function updateNotifactionValues($notification, $request){
+        $notification->codeNotification = $request->codeNotification;
+        $notification->idUserERP = $request->idUserERP;
+        $notification->tittle = $request->tittle;
+        $notification->description = $request->description;
+        $notification->image1 = $request->image1;
+        $notification->image2 = $request->image2;
+        $notification->numberViewed = $request->numberViewed;
+        $notification->userNotified = $request->userNotified;
+        $notification->creationDate = $request->creationDate    ;
+    }
+    public function find($id){
+        $notification = Notification::find($id);
+        if(!$notification){
+            return response()->json(['error' => 'Notificacion  no encontrada'], 400);
+        }
+        return $notification;
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
+    public function delete($id){
+        $notification = Notification::find($id);
+        if(!$notification){
+            return response()->json(['error' => 'Notificacion  no encontrada'], 400);
+        }
+        $notification->delete();
+        return response()->json(['success' => 'Notificacion Eliminada'], 201);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
-    }
 }
