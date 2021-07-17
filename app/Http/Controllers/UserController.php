@@ -142,6 +142,10 @@ class UserController extends Controller
         return $user;
     }
 
+    public function findUserByIdCompany($idCompany){
+        return User::where('idCompany', $idCompany)->get();
+    }
+
     public function list(Request $request){
         $start = 0;
         $limit = 50;
@@ -210,19 +214,19 @@ class UserController extends Controller
           [
               'image'=>'mimes:jpeg,jpg,png,gif|max:10000'
           ]);
-  
+
           if ($validation->fails()){
-              $response=array('status'=>'error','errors'=>$validation->errors()->toArray());  
+              $response=array('status'=>'error','errors'=>$validation->errors()->toArray());
               return response()->json($response);
           }
-  
+
        if($request->hasFile('image')){
-  
+
           $uniqueid=uniqid();
-          $original_name=$request->file('image')->getClientOriginalName(); 
+          $original_name=$request->file('image')->getClientOriginalName();
           $size=$request->file('image')->getSize();
           $extension=$request->file('image')->getClientOriginalExtension();
-  
+
           $name=$uniqueid.'.'.$extension;
           $path=$request->file('image')->storeAs('public/users/avatar',$name);
           if($path){
@@ -231,7 +235,7 @@ class UserController extends Controller
               return response()->json(array('status'=>'error','message'=>'failed to upload image'));
           }
       }
-  
+
   }
 }
 
