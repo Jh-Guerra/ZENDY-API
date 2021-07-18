@@ -93,4 +93,13 @@ Route::prefix('Notification')->group(function(){
 
 });
 
+Route::prefix('NotificationView')->group(function(){
+    Route::post('register', 'App\Http\Controllers\NotificationViewController@register');
+    Route::post('/update/{id}', 'App\Http\Controllers\NotificationViewController@update');
+    Route::get('/find/{id}', 'App\Http\Controllers\NotificationViewController@find');
+    Route::get('/list', 'App\Http\Controllers\NotificationViewController@list');
+    Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationViewController@delete');
+
+});
+
 
