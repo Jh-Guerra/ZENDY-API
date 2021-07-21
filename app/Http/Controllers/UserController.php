@@ -142,10 +142,6 @@ class UserController extends Controller
         return $user;
     }
 
-    public function findUserByIdCompany($idCompany){
-        return User::where('idCompany', $idCompany)->get();
-    }
-
     public function list(Request $request){
         $start = 0;
         $limit = 50;

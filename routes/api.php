@@ -33,6 +33,7 @@ Route::prefix('companies')->group(function () {
     Route::post('/update/{id}', 'App\Http\Controllers\CompanyController@update');
     Route::get('/find/{id}', 'App\Http\Controllers\CompanyController@find');
     Route::get('/list', 'App\Http\Controllers\CompanyController@list');
+    Route::get('/list/count/users', 'App\Http\Controllers\CompanyController@listWithUsersCount');
     Route::delete('/delete/{id}', 'App\Http\Controllers\CompanyController@delete');
 });
 
@@ -47,7 +48,6 @@ Route::prefix('participants')->group(function () {
 Route::prefix('users')->group(function () {
     Route::post('/update/{id}', 'App\Http\Controllers\UserController@update');
     Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
-    Route::get('/findUserByIdCompany/{idCompany}', 'App\Http\Controllers\UserController@findUserByIdCompany');
     Route::get('/list', 'App\Http\Controllers\UserController@list');
     Route::get('/list-by-company', 'App\Http\Controllers\UserController@listByCompany');
     Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');

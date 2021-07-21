@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use DB;
 
 class CompanyController extends Controller
 {
@@ -91,6 +92,16 @@ class CompanyController extends Controller
 
     public function list(){
         return Company::where('deleted', '!=', true)->orderBy("name")->get();
+    }
+
+    public function listWithUsersCount(){
+        $companies = Company::join('users', 'users.idCompany', 'companies.id')
+                                ->select([
+                                    'companies.*', DB::raw('(SELECT COUNT(*) FROM users WHERE users.idCompany = companies.id) as usersCount')
+                                ])->where('companies.deleted', '!=', true)->groupBy('companies.id')->get();
+
+
+        return $companies;
     }
 
     public function delete($id){
