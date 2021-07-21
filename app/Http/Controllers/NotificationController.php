@@ -46,14 +46,16 @@ class NotificationController extends Controller
     private function validateFields($request){
         $validator = Validator::make($request->all(), [
             'codeNotification' => 'required|string|max:255',
-            'idUserERP' => 'required|int|max:20',
+            'idUserERP' => 'required|int',
             'tittle'  => 'required|string|max:255',
             'description' => 'required|string|max:255',
             'image1' => 'string|max:255',
             'image2' => 'string|max:255',
             'numberViewed' => 'int|nullable',
             'userNotified' => 'multiLineString|nullable',
-            'creationDate' => 'timestamps|nullable'
+            'creationDate' => 'timestamps|nullable',
+            'idError' => 'int|nullable',
+            'errorSolved'=> 'int|nullable'
 
         ]);
 
