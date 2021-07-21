@@ -3,61 +3,80 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use App\Models\NotificationView;
 
 class NotificationViewController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
+    public function register(Request $request){
+
+        $error = $this->validateFields($request);
+        if($error){
+            return response()->json($error, 400);
+        }
+        $notificationView = new NotificationView();
+        $this->updateNotifactionViewValues($notificationView, $request);
+        $notificationView->save();
+        return response()->json($notificationView,201);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
+    public function update(Request $request, $id){
+        $notificationView = NotificationView::find($id);
+        $error = $this->validateFields($request);
+        if($error){
+            return response()->json($error, 400);
+        }
+        if(!$notificationView){
+            return response()->json(['error' => 'NotificacionView no encontrada'], 400);
+        }
+        $this->updateNotifactionViewValues($notificationView, $request);
+        $notificationView->save();
+        return response()->json($notificationView);
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
+    public function list(){
+        return NotificationView::all();
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
+    /* ************************************************************************* */
+
+    private function validateFields($request){
+        $validator = Validator::make($request->all(), [
+            'codeNotificationView'  => 'required|string|max:255',
+            'idNotification' => 'required|int',
+            'idUserCompany' => 'required|int',
+            'receptionDate' => 'timestamp',
+            'Viewed' => 'required|int'
+        ]);
+        $errorMessage = null;
+        if($validator->fails()){
+                $errorMessage = $validator->errors()->toJson();
+        }
+        return $errorMessage;
+    }
+    private function updateNotifactionViewValues($notificationView, $request){
+        $notificationView->codeNotificationView = $request->codeNotificationView;
+        $notificationView->idNotification = $request->idNotification;
+        $notificationView->idUserCompany = $request->idUserCompany;
+        $notificationView->receptionDate = $request->receptionDate;
+        $notificationView->Viewed = $request->Viewed;
+        
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
+    public function find($id){
+        $notificationView = NotificationView::find($id);
+        if(!$notificationView){
+            return response()->json(['error' => 'NotificacionView  no encontrada'], 400);
+        }
+        return $notificationView;
+    }
+
+    public function delete($id){
+        $notificationView = NotificationView::find($id);
+        if(!$notificationView){
+            return response()->json(['error' => 'NotificacionView  no encontrada'], 400);
+        }
+        $notificationView->delete();
+        return response()->json(['success' => 'NotificacionView Eliminada'], 201);
     }
 }
