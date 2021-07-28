@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+    use App\Models\Chat;
     use App\Models\Company;
     use App\Models\User;
     use Illuminate\Http\Request;
+    use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Log;
     use Illuminate\Support\Facades\Validator;
@@ -19,7 +21,7 @@ class UserController extends Controller
 
         try {
             if (! $token = JWTAuth::attempt($credentials)) {
-                return response()->json(['error' => 'invalid_credentials'], 400);
+                return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
         } catch (JWTException $e) {
             return response()->json(['error' => 'could_not_create_token'], 500);
@@ -149,7 +151,23 @@ class UserController extends Controller
         $term = $request->has("term") ? $request->get("term") : "";
         $users = User::join('companies', 'users.idCompany', '=', 'companies.id')->where('users.deleted', '!=', true);
 
-        $this->searchUser($request, $users, $term);
+        $this->searchUser($users, $term);
+
+        $users->offset($start*$limit)->take($limit);
+
+        return $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'companies.name AS companyName']);
+    }
+
+    public function listAvailable(Request $request){
+        $start = 0;
+        $limit = 50;
+
+        $type = $request->has("type") ? $request->get("type") : "UserEmpresa";
+        $term = $request->has("term") ? $request->get("term") : "";
+        $users = User::join('companies', 'users.idCompany', '=', 'companies.id')->where('users.deleted', '!=', true)
+                    ->where('users.type', $type);
+
+        $this->searchUser($users, $term);
 
         $users->offset($start*$limit)->take($limit);
 
@@ -169,16 +187,16 @@ class UserController extends Controller
 
         $users = User::where('deleted', '!=', true);
 
-        $this->searchUserByCompany($request, $users, $company);
-        $this->searchUser($request, $users, $term);
+        $this->searchUserByCompany($users, $company);
+        $this->searchUser($users, $term);
 
         $users->offset($start*$limit)->take($limit);
 
         return $users->orderBy("firstName")->orderBy("lastName")->get();
     }
 
-    public function searchUser(Request $request, $users, $term){
-        if($request->has("term") && $request->get("term")){
+    public function searchUser($users, $term){
+        if($term){
             $users->where(function ($query) use ($term) {
                 $query->where('firstName', 'LIKE', '%'.$term.'%')
                     ->orWhere('lastName', 'LIKE', '%'.$term.'%');
@@ -186,10 +204,12 @@ class UserController extends Controller
         }
     }
 
-    public function searchUserByCompany(Request $request, $users, $company){
-        $users->where(function ($query) use ($company) {
-            $query->where('idCompany', '=', $company);
-        });
+    public function searchUserByCompany($users, $company){
+        if($company){
+            $users->where(function ($query) use ($company) {
+                $query->where('idCompany', '=', $company);
+            });
+        }
     }
 
     public function delete($id){
