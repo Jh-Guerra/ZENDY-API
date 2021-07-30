@@ -64,6 +64,7 @@ class UserController extends Controller
     }
 
     public function update(Request $request, $id){
+
         $user = User::find($id);
 
         $error = $this->validateFieldsUpdate($request);
@@ -117,7 +118,6 @@ class UserController extends Controller
             'dob' => 'required|string',
             'type' => 'required|string',
             'idCompany' => 'nullable|int',
-
         ]);
         $errorMessage = null;
 
@@ -132,6 +132,7 @@ class UserController extends Controller
         $user->dob = date('Y-m-d',strtotime($request->dob));
         $user->type = $request->type;
         $user->idCompany = $request->idCompany;
+        $user->avatar = $request->avatar;
     }
 
     public function find($id){
