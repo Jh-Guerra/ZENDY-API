@@ -88,7 +88,7 @@ class ChatClientController extends Controller
         $chat->recommendations = 0;
     }
 
-    public function list(){
+    public function list(Request $request){
         $user = Auth::user();
 
         $activeChats = Chat::where("idUser", $user->id)
@@ -111,7 +111,19 @@ class ChatClientController extends Controller
             $chat->receiver = $users[$chat->idReceiver];
         }
 
-        return $activeChats;
+        $term = $request->has("term") ? $request->get("term") : "";
+
+        return $this->searchChatClient($activeChats, $term);
+    }
+
+    public function searchChatClient($activeChats, $term){
+        if($term){
+            $activeChats = $activeChats->filter(function ($chat) use ($term) {
+                return str_contains(strtolower($chat->receiver->firstName." ".$chat->receiver->lastName), strtolower($term)) !== false;
+            });
+        }
+
+        return $activeChats->values()->all();
     }
 
 }
