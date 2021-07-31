@@ -13,7 +13,6 @@ namespace App\Http\Controllers;
     use JWTAuth;
     use Tymon\JWTAuth\Exceptions\JWTException;
     use Illuminate\Support\Facades\Storage;
-    use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
