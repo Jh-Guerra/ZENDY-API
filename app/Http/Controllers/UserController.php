@@ -13,6 +13,7 @@ namespace App\Http\Controllers;
     use JWTAuth;
     use Tymon\JWTAuth\Exceptions\JWTException;
     use Illuminate\Support\Facades\Storage;
+    use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -27,7 +28,9 @@ class UserController extends Controller
             return response()->json(['error' => 'could_not_create_token'], 500);
         }
 
-        return response()->json(compact('token'));
+        $user = Auth::user();
+
+        return response()->json(compact('token','user'));
     }
 
     public function getAuthenticatedUser(){
