@@ -78,6 +78,7 @@ class CompanyController extends Controller
         $company->logo = $request->logo;
         $company->currentBytes = $request->currentBytes;
         $company->maxBytes = $request->maxBytes;
+        $company->avatar = $request->avatar;
     }
 
     public function find($id){
