@@ -25,6 +25,10 @@ class ParticipantController extends Controller
         return response()->json(compact('participant'),201);
     }
 
+    public function registerMany($participants){
+        Participant::insert($participants);
+    }
+
     public function update(Request $request, $id)
     {
         $participant = Participant::find($id);
