@@ -49,7 +49,8 @@ class CompanyController extends Controller
             'phone' => 'string|max:20',
             'logo' => 'string|nullable',
             'currentBytes' => 'required|int',
-            'maxBytes' => 'required|int'
+            'maxBytes' => 'required|int',
+            'description' => 'string|max:2550'
         ]);
 
         $errorMessage = null;
@@ -79,6 +80,7 @@ class CompanyController extends Controller
         $company->currentBytes = $request->currentBytes;
         $company->maxBytes = $request->maxBytes;
         $company->avatar = $request->avatar;
+        $company->description = $request->description;
     }
 
     public function find($id){
