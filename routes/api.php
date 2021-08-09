@@ -22,6 +22,21 @@ Route::post('login', 'App\Http\Controllers\UserController@authenticate');
 Route::group(['middleware' => ['jwt.verify']], function() {
 
     Route::post('user','App\Http\Controllers\UserController@getAuthenticatedUser');
+    Route::prefix('users')->group(function () {
+        Route::post('/update/{id}', 'App\Http\Controllers\UserController@update');
+        Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
+        Route::get('/list', 'App\Http\Controllers\UserController@list');
+        Route::get('/list-available', 'App\Http\Controllers\UserController@listAvailable');
+        Route::get('/list-by-company', 'App\Http\Controllers\UserController@listByCompany');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');
+        Route::post('/upload', 'App\Http\Controllers\UserController@upload');
+    });
+
+    Route::prefix('chats')->group(function () {
+        Route::get('/find/{id}', 'App\Http\Controllers\ChatController@find');
+        Route::get('/list', 'App\Http\Controllers\ChatController@list');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\ChatController@delete');
+    });
 
     Route::prefix('chats-client')->group(function () {
         Route::post('/register', 'App\Http\Controllers\ChatClientController@register');
@@ -31,6 +46,11 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     Route::prefix('chats-company')->group(function () {
         Route::post('/register', 'App\Http\Controllers\ChatCompanyController@register');
 //        Route::get('/list', 'App\Http\Controllers\ChatClientController@list');
+    });
+
+    Route::prefix('chats-internal')->group(function () {
+        Route::post('/register', 'App\Http\Controllers\ChatInternalController@register');
+        Route::get('/list', 'App\Http\Controllers\ChatInternalController@list');
     });
 });
 
@@ -51,16 +71,6 @@ Route::prefix('participants')->group(function () {
     Route::delete('/delete/{id}', 'App\Http\Controllers\ParticipantController@delete');
 });
 
-Route::prefix('users')->group(function () {
-    Route::post('/update/{id}', 'App\Http\Controllers\UserController@update');
-    Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
-    Route::get('/list', 'App\Http\Controllers\UserController@list');
-    Route::get('/list-available', 'App\Http\Controllers\UserController@listAvailable');
-    Route::get('/list-by-company', 'App\Http\Controllers\UserController@listByCompany');
-    Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');
-    Route::post('/upload', 'App\Http\Controllers\UserController@upload');
-});
-
 Route::prefix('messages')->group(function () {
     Route::post('/register', 'App\Http\Controllers\MessageController@register');
     Route::post('/update/{id}', 'App\Http\Controllers\MessageController@update');
@@ -75,15 +85,6 @@ Route::prefix('recommendations')->group(function () {
     Route::get('/find/{id}', 'App\Http\Controllers\RecommendationController@find');
     Route::get('/list', 'App\Http\Controllers\RecommendationController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\RecommendationController@delete');
-});
-
-Route::prefix('chats')->group(function () {
-    Route::post('/register', 'App\Http\Controllers\ChatController@register');
-    Route::post('/registerClientChat', 'App\Http\Controllers\ChatController@register');
-    Route::post('/update/{id}', 'App\Http\Controllers\ChatController@update');
-    Route::get('/find/{id}', 'App\Http\Controllers\ChatController@find');
-    Route::get('/list', 'App\Http\Controllers\ChatController@list');
-    Route::delete('/delete/{id}', 'App\Http\Controllers\ChatController@delete');
 });
 
 Route::prefix('Error')->group(function () {

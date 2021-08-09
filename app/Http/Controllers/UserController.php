@@ -164,11 +164,17 @@ class UserController extends Controller
     public function listAvailable(Request $request){
         $start = 0;
         $limit = 50;
+        $user = Auth::user();
+
+        if(!$user){
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
 
         $type = $request->has("type") ? $request->get("type") : "UserEmpresa";
         $term = $request->has("term") ? $request->get("term") : "";
         $users = User::join('companies', 'users.idCompany', '=', 'companies.id')->where('users.deleted', '!=', true)
-                    ->where('users.type', $type);
+                    ->where('users.id', '!=', $user->id)
+                    ->whereIn('users.type', $type);
 
         $this->searchUser($users, $term);
 

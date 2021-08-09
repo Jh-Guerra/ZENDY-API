@@ -60,11 +60,7 @@ class ChatClientController extends Controller
         array_push($participants, $userRequest);
         array_push($participants, $clientRequest);
 
-        foreach ($participants as $i => $participant) {
-            $request = new Request();
-            $request->replace($participant);
-            $this->participantController->register($request);
-        }
+        $this->participantController->registerMany($participants);
 
         return response()->json(compact('chat'),201);
     }
@@ -97,18 +93,18 @@ class ChatClientController extends Controller
 
         $userIds = [];
         foreach ($activeChats as $chat){
-            if(!in_array($chat->idUser, $userIds))
+            if($chat->idUser && !in_array($chat->idUser, $userIds))
                 $userIds[] = $chat->idUser;
 
-            if(!in_array($chat->idReceiver, $userIds))
+            if($chat->idReceiver && !in_array($chat->idReceiver, $userIds))
                 $userIds[] = $chat->idReceiver;
         }
 
         $users = User::whereIn("id", $userIds)->get()->keyBy('id');
 
         foreach ($activeChats as $chat){
-            $chat->user = $users[$chat->idUser];
-            $chat->receiver = $users[$chat->idReceiver];
+            $chat->user = $chat->idUser ? $users[$chat->idUser] : null;
+            $chat->receiver = $chat->idReceiver ? $users[$chat->idReceiver] : null;
         }
 
         $term = $request->has("term") ? $request->get("term") : "";
