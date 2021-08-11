@@ -52,7 +52,11 @@ class ChatController extends Controller
     public function searchChat($activeChats, $term){
         if($term){
             $activeChats = $activeChats->filter(function ($chat) use ($term) {
-                return str_contains(strtolower($chat->receiver->firstName." ".$chat->receiver->lastName), strtolower($term)) !== false;
+                $filter = "";
+                if($chat->receiver){
+                    $filter = strtolower($chat->receiver->firstName." ".$chat->receiver->lastName);
+                }
+                return str_contains(strtolower($filter), strtolower($term)) !== false;
             });
         }
 
