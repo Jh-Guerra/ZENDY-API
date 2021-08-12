@@ -29,7 +29,16 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list-available', 'App\Http\Controllers\UserController@listAvailable');
         Route::get('/list-by-company', 'App\Http\Controllers\UserController@listByCompany');
         Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');
-        Route::post('/upload', 'App\Http\Controllers\UserController@upload');
+//        Route::post('/upload', 'App\Http\Controllers\UserController@upload');
+    });
+
+    Route::prefix('companies')->group(function () {
+        Route::post('register', 'App\Http\Controllers\CompanyController@register');
+        Route::post('/update/{id}', 'App\Http\Controllers\CompanyController@update');
+        Route::get('/find/{id}', 'App\Http\Controllers\CompanyController@find');
+        Route::get('/list', 'App\Http\Controllers\CompanyController@list');
+        Route::get('/list/count/users', 'App\Http\Controllers\CompanyController@listWithUsersCount');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\CompanyController@delete');
     });
 
     Route::prefix('chats')->group(function () {
@@ -54,13 +63,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     });
 });
 
-Route::prefix('companies')->group(function () {
-    Route::post('register', 'App\Http\Controllers\CompanyController@register');
-    Route::post('/update/{id}', 'App\Http\Controllers\CompanyController@update');
-    Route::get('/find/{id}', 'App\Http\Controllers\CompanyController@find');
-    Route::get('/list', 'App\Http\Controllers\CompanyController@list');
-    Route::get('/list/count/users', 'App\Http\Controllers\CompanyController@listWithUsersCount');
-    Route::delete('/delete/{id}', 'App\Http\Controllers\CompanyController@delete');
+Route::prefix('users')->group(function () {
+        Route::post('/upload', 'App\Http\Controllers\UserController@upload');
 });
 
 Route::prefix('participants')->group(function () {

@@ -48,7 +48,7 @@ class ChatInternalController extends Controller
         $userRequest = [
             'idUser' => $user->id,
             'idChat' => $chat->id,
-            'type' => "Admin",
+            'type' => $user->type,
             'erp' => true,
             'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
             'status' => "active",
@@ -58,7 +58,7 @@ class ChatInternalController extends Controller
         $clientRequest = [
             'idUser' => $client["id"],
             'idChat' => $chat->id,
-            'type' => "Cliente",
+            'type' => $client["type"],
             'erp' => false,
             'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
             'status' => "active",

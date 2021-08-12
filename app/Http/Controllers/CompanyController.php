@@ -97,12 +97,19 @@ class CompanyController extends Controller
         return Company::where('deleted', '!=', true)->orderBy("name")->get();
     }
 
-    public function listWithUsersCount(){
+    public function listWithUsersCount(Request $request){
+        $term = $request->has("term") ? $request->get("term") : "";
+
         $companies = Company::join('users', 'users.idCompany', 'companies.id')
                                 ->select([
                                     'companies.*', DB::raw('(SELECT COUNT(*) FROM users WHERE users.idCompany = companies.id) as usersCount')
                                 ])->where('companies.deleted', '!=', true)->groupBy('companies.id')->get();
 
+        if($term){
+            $companies = $companies->filter(function ($company) use ($term) {
+                return str_contains(strtolower($company->name), strtolower($term)) !== false;
+            })->values()->all();
+        }
 
         return $companies;
     }
