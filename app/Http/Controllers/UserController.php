@@ -172,9 +172,17 @@ class UserController extends Controller
 
         $type = $request->has("type") ? $request->get("type") : "UserEmpresa";
         $term = $request->has("term") ? $request->get("term") : "";
+        $isInternalChat = $request->has("isInternalChat") ? boolval($request->get("isInternalChat")) : false;
         $users = User::join('companies', 'users.idCompany', '=', 'companies.id')->where('users.deleted', '!=', true)
                     ->where('users.id', '!=', $user->id)
                     ->whereIn('users.type', $type);
+
+        if ($isInternalChat) {
+            $users = User::leftJoin('companies', 'users.idCompany', '=', 'companies.id')
+                    ->where('users.deleted', '!=', true)
+                    ->where('users.id', '!=', $user->id)
+                    ->whereIn('users.type', $type);
+        }
 
         $this->searchUser($users, $term);
 
