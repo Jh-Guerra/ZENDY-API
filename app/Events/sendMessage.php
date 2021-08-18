@@ -32,7 +32,7 @@ class sendMessage implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        $channel = Channel::where('status', '!=', false)->get('channelName');
+        $channel = Channel::where('status', '!=', false)->get('name');
         return new PrivateChannel($channel);
     }
 }

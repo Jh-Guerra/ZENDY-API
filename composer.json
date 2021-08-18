@@ -12,6 +12,7 @@
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.12",
         "nesbot/carbon": "^2.47",
+        "pusher/pusher-php-server": "~4.0",
         "tymon/jwt-auth": "dev-develop"
     },
     "require-dev": {

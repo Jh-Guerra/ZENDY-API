@@ -61,6 +61,14 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/register', 'App\Http\Controllers\ChatInternalController@register');
         Route::get('/list', 'App\Http\Controllers\ChatInternalController@list');
     });
+
+    Route::prefix('entry-queries')->group(function () {
+        Route::post('/register', 'App\Http\Controllers\EntryQueryController@register');
+        Route::get('/find/{id}', 'App\Http\Controllers\EntryQueryController@find');
+        Route::get('/list', 'App\Http\Controllers\EntryQueryController@list');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\EntryQueryController@delete');
+    });
+
 });
 
 Route::prefix('users')->group(function () {
