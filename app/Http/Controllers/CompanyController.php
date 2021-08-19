@@ -49,8 +49,7 @@ class CompanyController extends Controller
             'phone' => 'string|max:20',
             'logo' => 'string|nullable',
             'currentBytes' => 'required|int',
-            'maxBytes' => 'required|int',
-            'description' => 'string|max:2550'
+            'maxBytes' => 'required|int'
         ]);
 
         $errorMessage = null;
