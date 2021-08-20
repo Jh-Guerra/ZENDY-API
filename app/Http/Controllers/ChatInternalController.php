@@ -39,7 +39,7 @@ class ChatInternalController extends Controller
             ->where("deleted", false)->first();
 
         if($activeChat){
-            return response()->json(['error' => 'Ya tiene una conversación iniciada con este usuario.'], 400);
+            return response()->json(compact('activeChat'),201);
         }
 
         $chat->save();
