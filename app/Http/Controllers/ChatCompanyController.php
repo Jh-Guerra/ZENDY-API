@@ -46,7 +46,7 @@ class ChatCompanyController extends Controller
                 ->where("deleted", false)->first();
 
             if($activeChat){
-                return response()->json(['error' => 'Ya tiene una conversación iniciada con toda la compañía seleccionada'], 400);
+                return response()->json(compact('activeChat'),201);
             }
         }
 
@@ -68,7 +68,7 @@ class ChatCompanyController extends Controller
         ];
         array_push($participants, $userRequest);
 
-        foreach ($userId as $userIds) {
+        foreach ($userIds as $userId) {
             $clientRequest = [
                 'idUser' => $userId,
                 'idChat' => $chat->id,
