@@ -39,7 +39,8 @@ class ChatInternalController extends Controller
             ->where("deleted", false)->first();
 
         if($activeChat){
-            return response()->json(compact('activeChat'),201);
+            $chat = $activeChat;
+            return response()->json(compact('chat'),201);
         }
 
         $chat->save();
