@@ -46,14 +46,42 @@ class EntryQueryController extends Controller
         return response()->json(compact('entryQuery'),201);
     }
 
-    public function list(){
+    public function list(Request $request){
         $user = Auth::user();
         if(!$user)
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $entryQueries = EntryQuery::where("createdBy", $user->id)->where("deleted", false)->get();
+        $entryQueries = EntryQuery::where("createdBy", $user->id)->where("deleted", false);
+
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $this->search($entryQueries, $term);
+        }
+
+        $entryQueries->get();
 
         return response()->json(compact('entryQueries'),201);
+    }
+
+    public function listPendings(Request $request){
+        $entryQueries = EntryQuery::where("status", "Pendiente")->where("deleted", false);
+
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $this->search($entryQueries, $term);
+        }
+
+        $entryQueries = $entryQueries->orderByDesc("startDate")->get();
+
+        return $entryQueries->values()->all();;
+    }
+
+    public function search($entryQueries, $term){
+        if($term){
+            $entryQueries->where(function ($query) use ($term) {
+                $query->where('reason', 'LIKE', '%'.$term.'%');
+            });
+        }
     }
 
     public function delete($id){

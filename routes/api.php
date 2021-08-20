@@ -66,6 +66,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/register', 'App\Http\Controllers\EntryQueryController@register');
         Route::get('/find/{id}', 'App\Http\Controllers\EntryQueryController@find');
         Route::get('/list', 'App\Http\Controllers\EntryQueryController@list');
+        Route::get('/list-pendings', 'App\Http\Controllers\EntryQueryController@listPendings');
         Route::delete('/delete/{id}', 'App\Http\Controllers\EntryQueryController@delete');
     });
 
