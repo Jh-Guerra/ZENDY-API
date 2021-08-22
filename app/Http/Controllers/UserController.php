@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
     use App\Models\Chat;
     use App\Models\Company;
+    use App\Models\Role;
     use App\Models\User;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ class UserController extends Controller
         $credentials = $request->only('email', 'password');
 
         try {
-            if (! $token = JWTAuth::attempt($credentials)) {
+            if (! $token = JWTAuth::attempt(['email' => $credentials["email"], 'password' => $credentials["password"], 'deleted'=> false])) {
                 return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
         } catch (JWTException $e) {
@@ -29,7 +30,10 @@ class UserController extends Controller
 
         $user = Auth::user();
 
-        return response()->json(compact('token','user'));
+        $role = Role::find($user->idRole);
+        $role->permissions = json_decode($role->permissions, true);
+
+        return response()->json(compact('token','user', 'role'));
     }
 
     public function getAuthenticatedUser(){
@@ -91,7 +95,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:15',
             'dob' => 'required|string',
-            'type' => 'required|string',
+            'idRole' => 'required|string',
             'idCompany' => 'nullable|int'
         ]);
 
@@ -118,7 +122,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:15',
             'dob' => 'required|string',
-            'type' => 'required|string',
+            'idRole' => 'required|string',
             'idCompany' => 'nullable|int',
         ]);
         $errorMessage = null;
@@ -132,7 +136,7 @@ class UserController extends Controller
         $user->email = $request->email;
         $user->phone = $request->phone;
         $user->dob = date('Y-m-d',strtotime($request->dob));
-        $user->type = $request->type;
+        $user->idRole = $request->idRole;
         $user->idCompany = $request->idCompany;
         $user->avatar = $request->avatar;
     }
@@ -152,13 +156,27 @@ class UserController extends Controller
         $limit = 50;
 
         $term = $request->has("term") ? $request->get("term") : "";
-        $users = User::join('companies', 'users.idCompany', '=', 'companies.id')->where('users.deleted', '!=', true);
 
+        $users = User::join('roles', 'users.idRole', '=', 'roles.id')
+            ->where('users.deleted', '!=', true);
         $this->searchUser($users, $term);
 
         $users->offset($start*$limit)->take($limit);
 
-        return $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'companies.name AS companyName']);
+        $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
+
+        $companyIds = [];
+        foreach ($users as $user) {
+            $companyIds[] = $user->idCompany;
+        }
+
+        $companies = Company::whereIn('id', $companyIds)->get(["companies.id", "companies.name"])->keyBy('id');
+
+        foreach ($users as $user) {
+            $user->company = $user->idCompany ? $companies[$user->idCompany] : null;
+        }
+
+        return $users;
     }
 
     public function listAvailable(Request $request){
@@ -170,11 +188,11 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
 
-        $type = $request->has("type") ? $request->get("type") : "UserEmpresa";
+        $rolesIds = $request->has("roles") ? $request->get("roles") : "UserEmpresa";
         $term = $request->has("term") ? $request->get("term") : "";
         $users = User::join('companies', 'users.idCompany', '=', 'companies.id')->where('users.deleted', '!=', true)
                     ->where('users.id', '!=', $user->id)
-                    ->whereIn('users.type', $type);
+                    ->whereIn('users.idRole', $rolesIds);
 
         $this->searchUser($users, $term);
 

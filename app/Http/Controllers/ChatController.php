@@ -25,7 +25,11 @@ class ChatController extends Controller
 
         $status = $request->has("status") ? $request->get("status") : "Vigente";
 
-        $activeChats = Chat::where("idUser", $user->id)->where("status", $status)
+        $activeChats = Chat::where("status", $status)
+            ->where(function($query) use ($user) {
+                $query->where('idUser', $user->id)
+                    ->orWhere('idReceiver', $user->id);
+            })
             ->where("deleted", false)->get();
 
         $userIds = [];
