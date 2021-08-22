@@ -130,6 +130,7 @@ class UserController extends Controller
         $user->firstName = $request->firstName;
         $user->lastName = $request->lastName;
         $user->email = $request->email;
+        $user->sex = $request->sex;
         $user->phone = $request->phone;
         $user->dob = date('Y-m-d',strtotime($request->dob));
         $user->type = $request->type;
