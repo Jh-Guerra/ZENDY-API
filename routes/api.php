@@ -26,7 +26,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update/{id}', 'App\Http\Controllers\UserController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
         Route::get('/list', 'App\Http\Controllers\UserController@list');
-        Route::get('/list-available', 'App\Http\Controllers\UserController@listAvailable');
+        Route::post('/list-available', 'App\Http\Controllers\UserController@listAvailable');
         Route::get('/list-by-company', 'App\Http\Controllers\UserController@listByCompany');
         Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');
 //        Route::post('/upload', 'App\Http\Controllers\UserController@upload');
@@ -70,6 +70,14 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\EntryQueryController@delete');
     });
 
+    Route::prefix('errors')->group(function () {
+        Route::post('/register', 'App\Http\Controllers\ErrorController@register');
+        Route::get('/find/{id}', 'App\Http\Controllers\ErrorController@find');
+        Route::get('/list', 'App\Http\Controllers\ErrorController@list');
+        Route::get('/list-by-user', 'App\Http\Controllers\ErrorController@listByUser');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
+    });
+
 });
 
 Route::prefix('users')->group(function () {
@@ -98,14 +106,6 @@ Route::prefix('recommendations')->group(function () {
     Route::get('/find/{id}', 'App\Http\Controllers\RecommendationController@find');
     Route::get('/list', 'App\Http\Controllers\RecommendationController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\RecommendationController@delete');
-});
-
-Route::prefix('Error')->group(function () {
-    Route::post('register', 'App\Http\Controllers\ErrorController@register');
-    Route::post('/update/{id}', 'App\Http\Controllers\ErrorController@update');
-    Route::get('/find/{id}', 'App\Http\Controllers\ErrorController@find');
-    Route::get('/list', 'App\Http\Controllers\ErrorController@list');
-    Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
 });
 
 Route::prefix('Notification')->group(function(){

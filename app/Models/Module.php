@@ -5,9 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Error extends Model
+class Module extends Model
 {
     use HasFactory;
 
-    protected $table = "errors";
+    protected $table = "modules";
 }

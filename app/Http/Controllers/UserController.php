@@ -165,19 +165,27 @@ class UserController extends Controller
         $users->offset($start*$limit)->take($limit);
 
         $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
-
-        $companyIds = [];
-        foreach ($users as $user) {
-            $companyIds[] = $user->idCompany;
-        }
-
-        $companies = Company::whereIn('id', $companyIds)->get(["companies.id", "companies.name"])->keyBy('id');
-
-        foreach ($users as $user) {
-            $user->company = $user->idCompany ? $companies[$user->idCompany] : null;
-        }
+        $this->addObjectValues($users);
 
         return $users;
+    }
+
+    public function addObjectValues($users){
+        $companyIds = [];
+        foreach ($users as $user) {
+            if($user->idCompany && !in_array($user->idCompany, $companyIds))
+                $companyIds[] = $user->idCompany;
+
+        }
+        if(count($companyIds)>0){
+            $companies = Company::whereIn('id', $companyIds)->get(["companies.id", "companies.name"])->keyBy('id');
+
+            foreach ($users as $user) {
+                if($user->idCompany)
+                    $user->company = $companies[$user->idCompany];
+
+            }
+        }
     }
 
     public function listAvailable(Request $request){
@@ -189,17 +197,20 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
 
-        $rolesIds = $request->has("roles") ? $request->get("roles") : "UserEmpresa";
+        $roles = $request->has("roles") ? $request->get("roles") : ["UserEmpresa"];
         $term = $request->has("term") ? $request->get("term") : "";
-        $users = User::join('companies', 'users.idCompany', '=', 'companies.id')->where('users.deleted', '!=', true)
+        $users = User::join('roles', 'users.idRole', '=', 'roles.id')->where('users.deleted', false)
                     ->where('users.id', '!=', $user->id)
-                    ->whereIn('users.idRole', $rolesIds);
+                    ->whereIn('roles.name', $roles);
 
         $this->searchUser($users, $term);
 
         $users->offset($start*$limit)->take($limit);
 
-        return $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'companies.name AS companyName']);
+        $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
+        $this->addObjectValues($users);
+
+        return $users;
     }
 
     public function listByCompany(Request $request){
