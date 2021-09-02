@@ -30,6 +30,10 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list-by-company', 'App\Http\Controllers\UserController@listByCompany');
         Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');
 //        Route::post('/upload', 'App\Http\Controllers\UserController@upload');
+        Route::get('/listUserOnline', 'App\Http\Controllers\UserController@listUserOnline');
+        Route::post('/updateStatus/{id}', 'App\Http\Controllers\UserController@updateUserOffLine');
+        Route::post('/updateStatusOn/{id}', 'App\Http\Controllers\UserController@updateUserOnLine');
+        
     });
 
     Route::prefix('companies')->group(function () {

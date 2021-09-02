@@ -29,6 +29,8 @@ class UserController extends Controller
         }
 
         $user = Auth::user();
+        $user->isOnline = '1';
+        $user->save();
 
         $role = Role::find($user->idRole);
         $role->permissions = json_decode($role->permissions, true);
@@ -292,5 +294,40 @@ class UserController extends Controller
       }
 
   }
+
+  public function listUserOnline(){
+    return User::where('isOnline', '!=', 0)->orderBy("LastName")->get();
+}
+
+
+
+public function updateUserOffLine(Request $request, $id){
+
+    $user = User::find($id);
+
+    if(!$user){
+        return response()->json(['error' => 'Usuario no encontrado'], 400);
+    }
+
+    $user->isOnline = $request->isOnline= 0;
+    $user->save();
+
+    return response()->json($user);
+}
+
+public function updateUserOnLine(Request $request, $id){
+
+    $user = User::find($id);
+
+    if(!$user){
+        return response()->json(['error' => 'Usuario no encontrado'], 400);
+    }
+
+    $user->isOnline = $request->isOnline= 1;
+    $user->save();
+
+    return response()->json($user);
+}
+
 }
 
