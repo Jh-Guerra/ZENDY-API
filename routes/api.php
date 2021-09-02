@@ -29,11 +29,10 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/list-available', 'App\Http\Controllers\UserController@listAvailable');
         Route::get('/list-by-company', 'App\Http\Controllers\UserController@listByCompany');
         Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');
-//        Route::post('/upload', 'App\Http\Controllers\UserController@upload');
         Route::get('/listUserOnline', 'App\Http\Controllers\UserController@listUserOnline');
         Route::post('/updateStatus/{id}', 'App\Http\Controllers\UserController@updateUserOffLine');
         Route::post('/updateStatusOn/{id}', 'App\Http\Controllers\UserController@updateUserOnLine');
-        
+
     });
 
     Route::prefix('companies')->group(function () {
@@ -82,10 +81,6 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
     });
 
-});
-
-Route::prefix('users')->group(function () {
-        Route::post('/upload', 'App\Http\Controllers\UserController@upload');
 });
 
 Route::prefix('participants')->group(function () {
