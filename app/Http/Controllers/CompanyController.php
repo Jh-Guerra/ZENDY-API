@@ -6,6 +6,7 @@ use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use DB;
+use App\Http\Controllers\uploadImageController;
 
 class CompanyController extends Controller
 {
@@ -17,6 +18,9 @@ class CompanyController extends Controller
 
         $company = new Company();
         $this->updateCompanyValues($company, $request);
+        $tasks_controller = new uploadImageController;
+        $path =  $tasks_controller->updateProfilePicture($request); 
+        $company->avatar = $path;
         $company->save();
 
         return response()->json($company,201);
@@ -35,6 +39,9 @@ class CompanyController extends Controller
         }
 
         $this->updateCompanyValues($company, $request);
+        $tasks_controller = new uploadImageController;
+        $path =  $tasks_controller->updateProfilePicture($request); 
+        $company->avatar = $path;
         $company->save();
 
         return response()->json($company);

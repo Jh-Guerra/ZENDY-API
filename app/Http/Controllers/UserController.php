@@ -14,9 +14,11 @@ namespace App\Http\Controllers;
     use JWTAuth;
     use Tymon\JWTAuth\Exceptions\JWTException;
     use Illuminate\Support\Facades\Storage;
+    use App\Http\Controllers\uploadImageController;    
 
 class UserController extends Controller
 {
+    
     public function authenticate(Request $request){
         $credentials = $request->only('email', 'password');
 
@@ -54,20 +56,26 @@ class UserController extends Controller
 
 
     public function register(Request $request){
+        
+        
         $error = $this->validateFields($request);
         if($error){
             return response()->json($error, 400);
         }
-
+          
         $user = new User();
         $this->updateUserValues($user, $request);
         $user->password = Hash::make($request->password);
+
+        $tasks_controller = new uploadImageController;
+        $path =  $tasks_controller->updateProfilePicture($request); 
+        $user->avatar = $path;
         $user->save();
-
+        
         $token = JWTAuth::fromUser($user); // ??
-
+        
         return response()->json(compact('user','token'),201);
-    }
+    }//
 
     public function update(Request $request, $id){
 
@@ -83,6 +91,9 @@ class UserController extends Controller
         }
 
         $this->updateUserValues($user, $request);
+        $tasks_controller = new uploadImageController;
+        $path =  $tasks_controller->updateProfilePicture($request); 
+        $user->avatar = $path;
         $user->save();
 
         return response()->json($user);
@@ -264,33 +275,5 @@ class UserController extends Controller
         return response()->json(['success' => 'Usuario Eliminado'], 201);
     }
 
-    public function upload(Request $request){
-        $validation = Validator::make($request->all(),
-          [
-              'image'=>'mimes:jpeg,jpg,png,gif|max:10000'
-          ]);
-
-          if ($validation->fails()){
-              $response=array('status'=>'error','errors'=>$validation->errors()->toArray());
-              return response()->json($response);
-          }
-
-       if($request->hasFile('image')){
-
-          $uniqueid=uniqid();
-          $original_name=$request->file('image')->getClientOriginalName();
-          $size=$request->file('image')->getSize();
-          $extension=$request->file('image')->getClientOriginalExtension();
-
-          $name=$uniqueid.'.'.$extension;
-          $path=$request->file('image')->storeAs('public/users/avatar',$name);
-          if($path){
-              return response()->json(array('status'=>'success','message'=>'Image successfully uploaded','image'=>'/storage/users/avatar/'.$name));
-          }else{
-              return response()->json(array('status'=>'error','message'=>'failed to upload image'));
-          }
-      }
-
-  }
 }
 
