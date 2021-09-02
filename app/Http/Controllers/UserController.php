@@ -29,7 +29,7 @@ class UserController extends Controller
         }
 
         $user = Auth::user();
-        $user->isOnline = '1';
+        $user->isOnline = true;
         $user->save();
 
         $role = Role::find($user->idRole);
@@ -281,7 +281,7 @@ class UserController extends Controller
     }
 
     public function listUserOnline(){
-        return User::where('isOnline', '!=', 0)->orderBy("LastName")->get();
+        return User::where('isOnline', '!=', false)->orderBy("LastName")->get();
     }
 
 
@@ -293,7 +293,7 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
 
-        $user->isOnline = $request->isOnline = 0;
+        $user->isOnline = false;
         $user->save();
 
         return response()->json($user);
@@ -307,7 +307,7 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
 
-        $user->isOnline = $request->isOnline = 1;
+        $user->isOnline = true;
         $user->save();
 
         return response()->json($user);
