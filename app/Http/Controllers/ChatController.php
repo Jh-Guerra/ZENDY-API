@@ -18,13 +18,11 @@ class ChatController extends Controller
             return response()->json(['error' => 'Chat no encontrado'], 400);
         }
 
-        $users = User::whereIn("id", $chat->get("idUser"))->get()->keyBy('id');
-        $receiver = User::whereIn("id", $chat->get("idReceiver"))->get()->keyBy('id');
-        $companies = Company::whereIn("id", $chat->get("allUsers"))->get()->keyBy('id');
-
-        $chat->user = $chat->idUser ? $users[$chat->idUser] : null;
-        $chat->receiver = $chat->idReceiver ? $receiver[$chat->idReceiver] : null;
-        $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
+        $chat->user = User::find($chat->idUser);
+        if($chat->idCompany)
+            $chat->company = Company::find($chat->idCompany);
+        if($chat->idReceiver)
+            $chat->receiver = User::find($chat->idReceiver);
 
         return response()->json(compact('chat'),201);
     }
