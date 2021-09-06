@@ -8,24 +8,70 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class EntryQueryController extends Controller
 {
     public function register(Request $request){
+        $error = $this->validateFields($request);
+        if ($error) {
+            return response()->json($error, 400);
+        }
         $user = Auth::user();
         if(!$user)
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $request = json_decode($request->getContent(), true);
+        //$request = json_decode($request->getContent(), true);
 
         $entryQuery = new EntryQuery();
         $this->updateValues($entryQuery, $user, $request);
-        $entryQuery->save();
+        
+        //Image 1
+        if($request->hasFile('image')){
+            $tasks_controller = new uploadImageController;
+            $path = $tasks_controller->updateProfilePicture($request);
+            $entryQuery->image1 = $path;
+        }
+        //Image 2
+        if($request->hasFile('image1')){
+            $tasks_controller = new uploadImageController;
+            $path = $tasks_controller->updateProfilePicture1($request);
+            $entryQuery->image2 = $path;
+        }
+        //File 1
+        if($request->hasFile('archivo')){
+            $tasks_controller1 = new uploadImageController;
+            $path = $tasks_controller1->updateFile($request);
+            $entryQuery->file1 = $path;
+        }
+        //File 2
+        if($request->hasFile('archivo1')){
+            $tasks_controller1 = new uploadImageController;
+            $path = $tasks_controller1->updateFile1($request);
+            $entryQuery->file2 = $path;
+        }
 
+        $entryQuery->save();
+        
         return response()->json(compact('entryQuery'),201);
     }
 
-    public function updateValues($entryQuery, $user, $request){
+    private function validateFields($request){
+        $validator = Validator::make($request->all(), [
+            'reason' => 'required',
+            'description' => 'required',
+        ]);
+
+
+        $errorMessage = null;
+        if ($validator->fails()) {
+            $errorMessage = $validator->errors()->toJson();
+        }
+
+        return $errorMessage;
+    }
+
+    private function updateValues($entryQuery, $user, $request){
         $entryQuery->startDate = date('Y-m-d', Carbon::now()->timestamp);
         $entryQuery->status = "Pendiente";
         $entryQuery->idCompany = $user->idCompany;
@@ -33,6 +79,7 @@ class EntryQueryController extends Controller
         $entryQuery->reason = $request["reason"];
         $entryQuery->description = $request["description"];
         $entryQuery->image1 = $request["image1"];
+        //$entryQuery->image1 = $request ->image1;
         $entryQuery->image2 = $request["image2"];
         $entryQuery->file1 = $request["file1"];
         $entryQuery->file2 = $request["file2"];
