@@ -6,6 +6,7 @@ use App\Models\Chat;
 use App\Models\Company;
 use App\Models\Role;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -64,14 +65,13 @@ class UserController extends Controller
         $user = new User();
         $this->updateUserValues($user, $request);
         $user->password = Hash::make($request->password);
+        $user->save();
 
         if($request->hasFile('image')){
             $tasks_controller = new uploadImageController;
-            $path = $tasks_controller->updateProfilePicture($request);
-            $user->avatar = $path;
+            $user->avatar = $tasks_controller->updateFile($request->file('image'), "users/avatar", $user->id."_".Carbon::now()->timestamp);
+            $user->save();
         }
-
-        $user->save();
 
         $token = JWTAuth::fromUser($user); // ??
 
@@ -92,14 +92,13 @@ class UserController extends Controller
         }
 
         $this->updateUserValues($user, $request);
+        $user->save();
 
         if($request->hasFile('image')){
             $tasks_controller = new uploadImageController;
-            $path = $tasks_controller->updateProfilePicture($request);
-            $user->avatar = $path;
+            $user->avatar = $tasks_controller->updateFile($request->file('image'), "users/avatar", $user->id."_".Carbon::now()->timestamp);
+            $user->save();
         }
-
-        $user->save();
 
         return response()->json($user);
     }

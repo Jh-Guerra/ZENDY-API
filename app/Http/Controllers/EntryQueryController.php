@@ -25,34 +25,38 @@ class EntryQueryController extends Controller
 
         $entryQuery = new EntryQuery();
         $this->updateValues($entryQuery, $user, $request);
-        
-        //Image 1
-        if($request->hasFile('image')){
-            $tasks_controller = new uploadImageController;
-            $path = $tasks_controller->updateProfilePicture($request);
-            $entryQuery->image1 = $path;
-        }
-        //Image 2
+        $entryQuery->save();
+
+        $tasks_controller = new uploadImageController;
+        $fileSaved = false;
         if($request->hasFile('image1')){
-            $tasks_controller = new uploadImageController;
-            $path = $tasks_controller->updateProfilePicture1($request);
-            $entryQuery->image2 = $path;
-        }
-        //File 1
-        if($request->hasFile('archivo')){
-            $tasks_controller1 = new uploadImageController;
-            $path = $tasks_controller1->updateFile($request);
-            $entryQuery->file1 = $path;
-        }
-        //File 2
-        if($request->hasFile('archivo1')){
-            $tasks_controller1 = new uploadImageController;
-            $path = $tasks_controller1->updateFile1($request);
-            $entryQuery->file2 = $path;
+            $path = $tasks_controller->updateFile($request->file('image1'), "entry_queries/".$entryQuery->id, "image1_".Carbon::now()->timestamp);
+            $entryQuery->image1 = $path;
+            $fileSaved = true;
         }
 
-        $entryQuery->save();
-        
+        if($request->hasFile('image2')){
+            $path = $tasks_controller->updateFile($request->file('image2'), "entry_queries/".$entryQuery->id, "image2_".Carbon::now()->timestamp);
+            $entryQuery->image2 = $path;
+            $fileSaved = true;
+        }
+
+        if($request->hasFile('file1')){
+            $path = $tasks_controller->updateFile($request->file('file1'), "entry_queries/".$entryQuery->id, "file1_".Carbon::now()->timestamp);
+            $entryQuery->file1 = $path;
+            $fileSaved = true;
+        }
+
+        if($request->hasFile('file2')){
+            $path = $tasks_controller->updateFile($request->file('file2'), "entry_queries/".$entryQuery->id, "file2_".Carbon::now()->timestamp);
+            $entryQuery->file2 = $path;
+            $fileSaved = true;
+        }
+
+        if($fileSaved){
+            $entryQuery->save();
+        }
+
         return response()->json(compact('entryQuery'),201);
     }
 

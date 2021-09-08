@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\uploadImageController;
 use App\Models\Company;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use DB;
-use App\Http\Controllers\uploadImageController;
 
 class CompanyController extends Controller
 {
@@ -18,10 +19,13 @@ class CompanyController extends Controller
 
         $company = new Company();
         $this->updateCompanyValues($company, $request);
-        $tasks_controller = new uploadImageController;
-        $path =  $tasks_controller->updateProfilePicture($request); 
-        $company->avatar = $path;
         $company->save();
+
+        if($request->hasFile('image')){
+            $tasks_controller = new uploadImageController();
+            $company->avatar = $tasks_controller->updateFile($request->file('image'), "companies/avatar", $company->id."_".Carbon::now()->timestamp);
+            $company->save();
+        }
 
         return response()->json($company,201);
     }
@@ -39,10 +43,13 @@ class CompanyController extends Controller
         }
 
         $this->updateCompanyValues($company, $request);
-        $tasks_controller = new uploadImageController;
-        $path =  $tasks_controller->updateProfilePicture($request); 
-        $company->avatar = $path;
         $company->save();
+
+        if($request->hasFile('image')){
+            $tasks_controller = new uploadImageController();
+            $company->avatar = $tasks_controller->updateFile($request->file('image'), "companies/avatar", $company->id."_".Carbon::now()->timestamp);
+            $company->save();
+        }
 
         return response()->json($company);
     }
