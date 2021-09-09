@@ -26,7 +26,7 @@ class uploadImageController extends Controller
         $extension = $file->getClientOriginalExtension();
 
         $nameExt = $name.'.'.$extension;
-        $path = $file->storeAs('public/'.$path, $nameExt);
+        $file->storeAs('public/'.$path, $nameExt);
 
         return 'storage/'.$path."/".$nameExt;
     }
