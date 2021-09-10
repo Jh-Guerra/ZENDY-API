@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Chat;
+use App\Models\Company;
 use App\Models\EntryQuery;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -91,8 +93,11 @@ class EntryQueryController extends Controller
 
     public function find($id){
         $entryQuery = EntryQuery::find($id);
-        if(!$entryQuery)
-            return response()->json(['error' => 'Consulta no encontrada.'], 400);
+        if(!$entryQuery) return response()->json(['error' => 'Consulta no encontrada.'], 400);
+
+        $entryQuery->user = User::find($entryQuery->createdBy);
+        if($entryQuery->idCompany)
+            $entryQuery->company = Company::find($entryQuery->idCompany);
 
         return response()->json(compact('entryQuery'),201);
     }
@@ -118,9 +123,8 @@ class EntryQueryController extends Controller
         $entryQueries = EntryQuery::where("status", "Pendiente")->where("deleted", false);
 
         $term = $request->has("term") ? $request->get("term") : "";
-        if($term){
+        if($term)
             $this->search($entryQueries, $term);
-        }
 
         $entryQueries = $entryQueries->orderByDesc("startDate")->get();
 

@@ -13,10 +13,7 @@ class ChatController extends Controller
 
     public function find($id){
         $chat = Chat::find($id);
-
-        if(!$chat){
-            return response()->json(['error' => 'Chat no encontrado'], 400);
-        }
+        if(!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
 
         $chat->user = User::find($chat->idUser);
         if($chat->idCompany)
