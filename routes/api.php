@@ -32,6 +32,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/listUserOnline', 'App\Http\Controllers\UserController@listUserOnline');
         Route::post('/updateStatus/{id}', 'App\Http\Controllers\UserController@updateUserOffLine');
         Route::post('/updateStatusOn/{id}', 'App\Http\Controllers\UserController@updateUserOnLine');
+        Route::post('/list-available-sameCompany', 'App\Http\Controllers\UserController@listAvailableSameCompany');
 
     });
 

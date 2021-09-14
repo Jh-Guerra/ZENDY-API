@@ -312,5 +312,33 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    // List getUserCompany
+    public function listAvailableSameCompany(Request $request){
+        $start = 0;
+        $limit = 50;
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
+
+        $roles = $request->has("roles") ? $request->get("roles") : ["UserEmpresa"];
+        $term = $request->has("term") ? $request->get("term") : "";
+        //$company = $request->has("idCompany") ? $request->get("idCompany") : "";
+        $users = User::join('roles', 'users.idRole', '=', 'roles.id')->where('users.deleted', false)
+            ->where('users.idCompany','=',$user->idCompany)
+            ->where('users.id', '!=', $user->id)
+            ->whereIn('roles.name', $roles);
+
+        $this->searchUser($users, $term);
+
+        $users->offset($start * $limit)->take($limit);
+
+        $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
+        $this->addObjectValues($users);
+
+        return $users;
+    }
+
 }
 
