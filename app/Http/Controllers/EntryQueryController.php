@@ -150,4 +150,20 @@ class EntryQueryController extends Controller
         return response()->json(compact('entryQuery'),201);
     }
 
+    public function listQuery(Request $request){
+        $user = Auth::user();
+        if(!$user)
+        return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        
+        $entryQueries = EntryQuery::where("deleted", false)->where("createdBy", '=',$user->id);
+
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term)
+            $this->search($entryQueries, $term);
+
+        $entryQueries = $entryQueries->orderByDesc("startDate")->get();
+
+        return $entryQueries->values()->all();;
+    }
+
 }
