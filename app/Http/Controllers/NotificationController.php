@@ -3,95 +3,98 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class NotificationController extends Controller
 {
     public function register(Request $request){
-
         $error = $this->validateFields($request);
-        if($error){
-            return response()->json($error, 400);
-        }
+        if ($error) return response()->json($error, 400);
+
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $notification = new Notification();
-        $this->updateNotifactionValues($notification, $request);
+
+        $notification->createdBy = $user->id;
+        $notification->reason = $request->reason;
+        $notification->description = $request->description;
+        $notification->viewed = 0;
+        $notification->allUsersCompany = $request->allUsersCompany;
+        $notification->companiesNotified = json_encode($request->companiesNotified, true);
+        $notification->usersNotified = json_encode($request->usersNotified, true);
+        $notification->idError = $request->idError;
+        $notification->solved = $request->solved;
+
         $notification->save();
 
-        return response()->json($notification,201);
-    }
-    public function update(Request $request, $id){
-        $notification = Notification::find($id);
-        $error = $this->validateFields($request);
-        if($error){
-            return response()->json($error, 400);
+        $uploadImageController = new uploadImageController;
+        $fileSaved = false;
+        if($request->hasFile('image')){
+            $path = $uploadImageController->updateFile($request->file('image'), "notifications/".$notification->id, "image_".Carbon::now()->timestamp);
+            $notification->image = $path;
+            $fileSaved = true;
         }
-        if(!$notification){
-            return response()->json(['error' => 'Notificacion no encontrada'], 400);
+
+        if($request->hasFile('file')){
+            $path = $uploadImageController->updateFile($request->file('file'), "notifications/".$notification->id, "file_".Carbon::now()->timestamp);
+            $notification->file = $path;
+            $fileSaved = true;
         }
-        $this->updateNotifactionValues($notification, $request);
-        $notification->save();
-        return response()->json($notification);
+
+        if($fileSaved) $entryQuery->save();
+
+        return response()->json(compact('notification'),201);
     }
-
-
-    public function list(){
-        return Notification::all();
-    }
-    
-
-    /* ************************************************************************* */
 
     private function validateFields($request){
         $validator = Validator::make($request->all(), [
-            'codeNotification' => 'required|string|max:255',
-            'idUserERP' => 'required|int',
-            'tittle'  => 'required|string|max:255',
-            'description' => 'required|string|max:255',
-            'image1' => 'string|max:255',
-            'image2' => 'string|max:255',
-            'numberViewed' => 'int|nullable',
-            'userNotified' => 'multiLineString|nullable',
-            'creationDate' => 'timestamps|nullable',
-            'idError' => 'int|nullable',
-            'errorSolved'=> 'int|nullable'
-
+            'reason' => 'required|string|max:255',
+            'description' => 'required|string',
+            'allUsersCompany' => 'required|boolean'
         ]);
 
         $errorMessage = null;
         if($validator->fails()){
-                $errorMessage = $validator->errors()->toJson();
+            $errorMessage = $validator->errors()->toJson();
         }
         return $errorMessage;
     }
 
-    private function updateNotifactionValues($notification, $request){
-        $notification->codeNotification = $request->codeNotification;
-        $notification->idUserERP = $request->idUserERP;
-        $notification->tittle = $request->tittle;
-        $notification->description = $request->description;
-        $notification->image1 = $request->image1;
-        $notification->image2 = $request->image2;
-        $notification->numberViewed = $request->numberViewed;
-        $notification->userNotified = $request->userNotified;
-        $notification->creationDate = $request->creationDate    ;
+    public function adminList(){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        return Notification::where('createdBy', $user->id)->where('deleted', false)->get();
     }
+
+    public function list(){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $userIdWithQuotes= "\"".$user->id."\"";
+        return Notification::where("usersNotified", 'LIKE', '%'.$userIdWithQuotes.'%')->where('deleted', false)->get();
+    }
+
     public function find($id){
         $notification = Notification::find($id);
-        if(!$notification){
-            return response()->json(['error' => 'Notificacion  no encontrada'], 400);
-        }
+        if (!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
+
         return $notification;
     }
 
     public function delete($id){
         $notification = Notification::find($id);
-        if(!$notification){
-            return response()->json(['error' => 'Notificacion  no encontrada'], 400);
-        }
-        $notification->delete();
-        return response()->json(['success' => 'Notificacion Eliminada'], 201);
+        if (!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
+
+        $notification->deleted = true;
+        $notification->save();
+
+        return response()->json(['success' => 'Notificación Eliminada'], 201);
     }
 
 }

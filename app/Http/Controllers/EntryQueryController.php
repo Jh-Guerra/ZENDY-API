@@ -29,28 +29,28 @@ class EntryQueryController extends Controller
         $this->updateValues($entryQuery, $user, $request);
         $entryQuery->save();
 
-        $tasks_controller = new uploadImageController;
+        $uploadImageController = new uploadImageController;
         $fileSaved = false;
         if($request->hasFile('image1')){
-            $path = $tasks_controller->updateFile($request->file('image1'), "entry_queries/".$entryQuery->id, "image1_".Carbon::now()->timestamp);
+            $path = $uploadImageController->updateFile($request->file('image1'), "entry_queries/".$entryQuery->id, "image1_".Carbon::now()->timestamp);
             $entryQuery->image1 = $path;
             $fileSaved = true;
         }
 
         if($request->hasFile('image2')){
-            $path = $tasks_controller->updateFile($request->file('image2'), "entry_queries/".$entryQuery->id, "image2_".Carbon::now()->timestamp);
+            $path = $uploadImageController->updateFile($request->file('image2'), "entry_queries/".$entryQuery->id, "image2_".Carbon::now()->timestamp);
             $entryQuery->image2 = $path;
             $fileSaved = true;
         }
 
         if($request->hasFile('file1')){
-            $path = $tasks_controller->updateFile($request->file('file1'), "entry_queries/".$entryQuery->id, "file1_".Carbon::now()->timestamp);
+            $path = $uploadImageController->updateFile($request->file('file1'), "entry_queries/".$entryQuery->id, "file1_".Carbon::now()->timestamp);
             $entryQuery->file1 = $path;
             $fileSaved = true;
         }
 
         if($request->hasFile('file2')){
-            $path = $tasks_controller->updateFile($request->file('file2'), "entry_queries/".$entryQuery->id, "file2_".Carbon::now()->timestamp);
+            $path = $uploadImageController->updateFile($request->file('file2'), "entry_queries/".$entryQuery->id, "file2_".Carbon::now()->timestamp);
             $entryQuery->file2 = $path;
             $fileSaved = true;
         }
@@ -154,7 +154,7 @@ class EntryQueryController extends Controller
         $user = Auth::user();
         if(!$user)
         return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-        
+
         $entryQueries = EntryQuery::where("deleted", false)->where("createdBy", '=',$user->id);
 
         $term = $request->has("term") ? $request->get("term") : "";

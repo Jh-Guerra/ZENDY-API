@@ -11,7 +11,5 @@ class Notification extends Model
 
     protected $table = "notifications";
 
-    protected $primaryKey = 'idNotification';
-
-    public $timestamps = false;
+    public $timestamps = true;
 }

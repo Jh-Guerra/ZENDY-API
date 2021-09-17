@@ -83,6 +83,14 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
     });
 
+    Route::prefix('notifications')->group(function(){
+        Route::post('/register', 'App\Http\Controllers\NotificationController@register');
+        Route::get('/find/{id}', 'App\Http\Controllers\NotificationController@find');
+        Route::get('/admin/list', 'App\Http\Controllers\NotificationController@adminList');
+        Route::get('/list', 'App\Http\Controllers\NotificationController@list');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
+    });
+
 });
 
 Route::prefix('participants')->group(function () {
@@ -107,15 +115,6 @@ Route::prefix('recommendations')->group(function () {
     Route::get('/find/{id}', 'App\Http\Controllers\RecommendationController@find');
     Route::get('/list', 'App\Http\Controllers\RecommendationController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\RecommendationController@delete');
-});
-
-Route::prefix('Notification')->group(function(){
-    Route::post('register', 'App\Http\Controllers\NotificationController@register');
-    Route::post('/update/{id}', 'App\Http\Controllers\NotificationController@update');
-    Route::get('/find/{id}', 'App\Http\Controllers\NotificationController@find');
-    Route::get('/list', 'App\Http\Controllers\NotificationController@list');
-    Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
-
 });
 
 Route::prefix('NotificationView')->group(function(){
