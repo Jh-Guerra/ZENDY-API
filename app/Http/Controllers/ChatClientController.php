@@ -26,7 +26,7 @@ class ChatClientController extends Controller
 
         $this->updateChatValues($chat, $user, $client);
 
-        $activeChat = Chat::where("idUser", $user->id)->where("idReceiver", $client["id"])
+        $activeChat = Chat::where("idUser", $user->id)
             ->where("type", "Cliente")->where("status", "Vigente")
             ->where("deleted", false)->first();
 
@@ -80,7 +80,6 @@ class ChatClientController extends Controller
         $chat->status = "Vigente";
         $chat->idCompany = $user->idCompany;
         $chat->idUser = $user->id;
-        $chat->idReceiver = $client["id"];
         $chat->messages = 0;
         $chat->recommendations = 0;
     }

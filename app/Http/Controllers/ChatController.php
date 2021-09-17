@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Chat;
 use App\Models\Company;
+use App\Models\Participant;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,14 +13,38 @@ class ChatController extends Controller
 {
 
     public function find($id){
+        $user = Auth::user();
         $chat = Chat::find($id);
-        if(!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
+        $Participants =  Participant::where("idChat", $chat->id)->get();
+
+        if(!$chat){
+            return response()->json(['error' => 'Chat no encontrado'], 400);
+        }
 
         $chat->user = User::find($chat->idUser);
         if($chat->idCompany)
             $chat->company = Company::find($chat->idCompany);
-        if($chat->idReceiver)
-            $chat->receiver = User::find($chat->idReceiver);
+
+        $ParticipantsData = array();
+        foreach($Participants as $Participant){
+            $userData = User::find($Participant->idUser);
+            $userData['typeParticipant'] = $Participant->type;
+            array_push($ParticipantsData,$userData);
+        }
+
+        $chatName = "";
+        foreach($ParticipantsData as $Participant){
+            if($Participant->id != $user->id){
+                $chatName = $chatName. '' .$Participant->firstName. ' ' .$Participant->lastName.', ';
+            }
+        }
+
+        if(!$chat->name){
+            $chat->name = substr($chatName, 0, -2);
+        }else{
+            $chat->name = $chat->name;
+        }
+        $chat->participants = $ParticipantsData;
 
         return response()->json(compact('chat'),201);
     }
@@ -29,23 +54,14 @@ class ChatController extends Controller
 
         $status = $request->has("status") ? $request->get("status") : "Vigente";
 
-        $activeChats = Chat::where("status", $status)
-            ->where(function($query) use ($user) {
-                $query->where('idUser', $user->id)
-                    ->orWhere('idReceiver', $user->id);
-            })
-            ->where("deleted", false)->get();
+        $listOfParticipations =  Participant::where("idUser", $user->id)->where("deleted", false)->pluck("idChat");
+        $activeChats = Chat::find($listOfParticipations)->where("status", $status);
+        $listParticipants = Participant::wherein("idChat", $listOfParticipations)->get();
+        $userIds =  Participant::wherein("idChat", $listOfParticipations)->pluck("idUser")->unique();
 
-        $userIds = [];
         $companyIds = [];
         foreach ($activeChats as $chat){
-            if($chat->idUser && !in_array($chat->idUser, $userIds))
-                $userIds[] = $chat->idUser;
-
-            if($chat->idReceiver && !in_array($chat->idReceiver, $userIds))
-                $userIds[] = $chat->idReceiver;
-
-            if($chat->idCompany && !in_array($chat->idCompany, $userIds))
+            if($chat->idCompany && !in_array($chat->idCompany, $companyIds))
                 $companyIds[] = $chat->idCompany;
         }
 
@@ -54,7 +70,23 @@ class ChatController extends Controller
 
         foreach ($activeChats as $chat){
             $chat->user = $chat->idUser ? $users[$chat->idUser] : null;
-            $chat->receiver = $chat->idReceiver ? $users[$chat->idReceiver] : null;
+
+            $chatParticipants = [];
+            $chatName = "";
+            foreach ($listParticipants as $Participant){
+                if($Participant->idChat == $chat->id){
+                    $chatParticipants[] = $users[$Participant->idUser];
+                    if($Participant->idUser != $user->id){
+                        $chatName = $chatName. '' .($users[$Participant->idUser])->firstName. ' ' .($users[$Participant->idUser])->lastName.', ';
+                    }
+                }
+            }
+            $chat->participants = $chatParticipants;
+            if(!$chat->name){
+                $chat->name = substr($chatName, 0, -2);
+            }else{
+                $chat->name = $chat->name;
+            }
             $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
         }
 
