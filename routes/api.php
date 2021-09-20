@@ -69,6 +69,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     Route::prefix('entry-queries')->group(function () {
         Route::post('/register', 'App\Http\Controllers\EntryQueryController@register');
         Route::get('/find/{id}', 'App\Http\Controllers\EntryQueryController@find');
+        Route::post('/update/{id}', 'App\Http\Controllers\EntryQueryController@update');
         Route::get('/list', 'App\Http\Controllers\EntryQueryController@list');
         Route::get('/list-pendings', 'App\Http\Controllers\EntryQueryController@listPendings');
         Route::get('/list-query', 'App\Http\Controllers\EntryQueryController@listQuery');
