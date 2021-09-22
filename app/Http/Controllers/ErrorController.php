@@ -24,7 +24,13 @@ class ErrorController extends Controller
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $errorZendy = new Error();
-        $this->updateValues($errorZendy, $user, $request);
+        $errorZendy->idCompany = $user->idCompany;
+        $errorZendy->createdBy = $user->id;
+        $errorZendy->module = $request["module"];
+        $errorZendy->reason = $request["reason"];
+        $errorZendy->description = $request["description"];
+        $errorZendy->image = $request["image"];
+        $errorZendy->file = $request["file"];
         $errorZendy->save();
 
         return response()->json(compact('error'),201);
@@ -45,17 +51,6 @@ class ErrorController extends Controller
         return $errorMessage;
     }
 
-    private function updateValues($error, $user, $request){
-        $error->idCompany = $user->idCompany;
-        $error->createdBy = $user->id;
-        $error->createdDate = date('Y-m-d', Carbon::now()->timestamp);
-        $error->module = $request["module"];
-        $error->reason = $request["reason"];
-        $error->description = $request["description"];
-        $error->image1 = $request["image1"];
-        $error->image2 = $request["image2"];
-    }
-
     public function list(Request $request) {
         $user = Auth::user();
         if(!$user)
@@ -70,7 +65,7 @@ class ErrorController extends Controller
 
         $errors->get();
 
-        return $errors->orderByDesc("createdDate")->get();
+        return $errors->orderByDesc("created_at")->get();
     }
 
     public function listByUser(Request $request) {
@@ -88,7 +83,7 @@ class ErrorController extends Controller
             $this->searchErrors($errors, $term);
         }
 
-        $errors = $errors->orderByDesc("createdDate")->get();
+        $errors = $errors->orderByDesc("created_at")->get();
 
         return $errors->values()->all();;
     }
