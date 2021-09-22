@@ -19,12 +19,22 @@ class ChatClientController extends Controller
     }
 
     public function register(Request $request){
-        $chat = new Chat();
         $users = json_decode($request->getContent(), true);
         $client = ($users && $users[0]) ? $users[0] : null;
         $user = Auth::user();
 
-        $this->updateChatValues($chat, $user, $client);
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if(!$client) return response()->json(['error' => 'Necesita seleccionar al menos un cliente'], 400);
+
+        $chat = new Chat();
+        $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
+        $chat->type = "Cliente";
+        $chat->status = "Vigente";
+        $chat->idCompany = $user->idCompany;
+        $chat->idUser = $user->id;
+        $chat->messages = 0;
+        $chat->recommendations = 0;
+        $chat->scope = "Personal";
 
         $activeChat = Chat::where("idUser", $user->id)
             ->where("type", "Cliente")->where("status", "Vigente")
@@ -64,24 +74,6 @@ class ChatClientController extends Controller
         $this->participantController->registerMany($participants);
 
         return response()->json(compact('chat'),201);
-    }
-
-    private function updateChatValues($chat, $user, $client){
-        if(!$user){
-            return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-        }
-
-        if(!$client){
-            return response()->json(['error' => 'Necesita seleccionar al menos un cliente'], 400);
-        }
-
-        $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
-        $chat->type = "Cliente";
-        $chat->status = "Vigente";
-        $chat->idCompany = $user->idCompany;
-        $chat->idUser = $user->id;
-        $chat->messages = 0;
-        $chat->recommendations = 0;
     }
 
     public function list(Request $request){

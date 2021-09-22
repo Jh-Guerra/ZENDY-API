@@ -20,24 +20,16 @@ class ChatCompanyController extends Controller
     }
 
     public function register(Request $request){
-        $chat = new Chat();
         $data = json_decode($request->getContent(), true);
         $userIds = $data["userIds"];
         $companyId = $data["companyId"];
         $allChecked = $data["allChecked"] || false;
 
-        if(!$userIds){
-            return response()->json(['error' => 'Ningún usuario seleccionado'], 400);
-        }
-
-        if(!$companyId){
-            return response()->json(['error' => 'Ninguna empresa seleccionada'], 400);
-        }
+        if(!$userIds) return response()->json(['error' => 'Ningún usuario seleccionado'], 400);
+        if(!$companyId) return response()->json(['error' => 'Ninguna empresa seleccionada'], 400);
 
         $user = Auth::user();
-        if(!$user){
-            return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-        }
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         if($allChecked){
             $activeChat = Chat::where("idUser", $user->id)->where("idCompany", $companyId)
@@ -51,7 +43,16 @@ class ChatCompanyController extends Controller
             }
         }
 
-        $this->updateChatValues($chat, $user, $allChecked);
+        $chat = new Chat();
+        $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
+        $chat->type = "Empresa";
+        $chat->status = "Vigente";
+        $chat->idCompany = $user->idCompany;
+        $chat->idUser = $user->id;
+        $chat->allUsers = $allChecked;
+        $chat->messages = 0;
+        $chat->recommendations = 0;
+        $chat->scope = "Grupal";
         $chat->save();
 
         $participants = [];
@@ -87,17 +88,6 @@ class ChatCompanyController extends Controller
         $this->participantController->registerMany($participants);
 
         return response()->json(compact('chat'),201);
-    }
-
-    private function updateChatValues($chat, $user, $allChecked){
-        $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
-        $chat->type = "Empresa";
-        $chat->status = "Vigente";
-        $chat->idCompany = $user->idCompany;
-        $chat->idUser = $user->id;
-        $chat->allUsers = $allChecked;
-        $chat->messages = 0;
-        $chat->recommendations = 0;
     }
 
     public function list(Request $request){
