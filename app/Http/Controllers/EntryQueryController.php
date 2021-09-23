@@ -26,7 +26,17 @@ class EntryQueryController extends Controller
         //$request = json_decode($request->getContent(), true);
 
         $entryQuery = new EntryQuery();
-        $this->updateValues($entryQuery, $user, $request);
+        $entryQuery->startDate = date('Y-m-d', Carbon::now()->timestamp);
+        $entryQuery->status = "Pendiente";
+        $entryQuery->idCompany = $user->idCompany;
+        $entryQuery->createdBy = $user->id;
+        $entryQuery->reason = $request["reason"];
+        $entryQuery->description = $request["description"];
+        $entryQuery->image1 = $request["image1"];
+        $entryQuery->image2 = $request["image2"];
+        $entryQuery->file1 = $request["file1"];
+        $entryQuery->file2 = $request["file2"];
+        $entryQuery->module = $request["module"];
         $entryQuery->save();
 
         $uploadImageController = new uploadImageController;
@@ -75,32 +85,6 @@ class EntryQueryController extends Controller
         }
 
         return $errorMessage;
-    }
-
-    private function updateValues($entryQuery, $user, $request){
-        $entryQuery->startDate = date('Y-m-d', Carbon::now()->timestamp);
-        $entryQuery->status = "Pendiente";
-        $entryQuery->idCompany = $user->idCompany;
-        $entryQuery->createdBy = $user->id;
-        $entryQuery->reason = $request["reason"];
-        $entryQuery->description = $request["description"];
-        $entryQuery->image1 = $request["image1"];
-        //$entryQuery->image1 = $request ->image1;
-        $entryQuery->image2 = $request["image2"];
-        $entryQuery->file1 = $request["file1"];
-        $entryQuery->file2 = $request["file2"];
-        $entryQuery->module = $request["module"];
-    }
-
-    private function updateValuesQuery($entryQuery, $user, $request){
-        $entryQuery->reason = $request["reason"];
-        $entryQuery->description = $request["description"];
-        $entryQuery->image1 = $request["image1"];
-        //$entryQuery->image1 = $request ->image1;
-        $entryQuery->image2 = $request["image2"];
-        $entryQuery->file1 = $request["file1"];
-        $entryQuery->file2 = $request["file2"];
-        $entryQuery->module = $request["module"];
     }
 
     public function find($id){
@@ -193,8 +177,14 @@ class EntryQueryController extends Controller
         $user = Auth::user();
         if(!$user)
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-            
-        $this->updateValuesQuery($entryQuery, $user, $request);
+
+        $entryQuery->reason = $request["reason"];
+        $entryQuery->description = $request["description"];
+        $entryQuery->image1 = $request["image1"];
+        $entryQuery->image2 = $request["image2"];
+        $entryQuery->file1 = $request["file1"];
+        $entryQuery->file2 = $request["file2"];
+        $entryQuery->module = $request["module"];
         $entryQuery->save();
 
         $tasks_controller = new uploadImageController;
