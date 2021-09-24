@@ -32,22 +32,22 @@ class EntryQueryController extends Controller
         $entryQuery->createdBy = $user->id;
         $entryQuery->reason = $request["reason"];
         $entryQuery->description = $request["description"];
-        $entryQuery->image1 = $request["image1"];
-        $entryQuery->file1 = $request["file1"];
+        $entryQuery->image = $request["image"];
+        $entryQuery->file = $request["file"];
         $entryQuery->module = $request["module"];
         $entryQuery->save();
 
         $uploadImageController = new uploadImageController;
         $fileSaved = false;
-        if($request->hasFile('image1')){
-            $path = $uploadImageController->updateFile($request->file('image1'), "entry_queries/".$entryQuery->id, "image1_".Carbon::now()->timestamp);
-            $entryQuery->image1 = $path;
+        if($request->hasFile('image')){
+            $path = $uploadImageController->updateFile($request->file('image'), "entry_queries/".$entryQuery->id, "image_".Carbon::now()->timestamp);
+            $entryQuery->image = $path;
             $fileSaved = true;
         }
 
-        if($request->hasFile('file1')){
-            $path = $uploadImageController->updateFile($request->file('file1'), "entry_queries/".$entryQuery->id, "file1_".Carbon::now()->timestamp);
-            $entryQuery->file1 = $path;
+        if($request->hasFile('file')){
+            $path = $uploadImageController->updateFile($request->file('file'), "entry_queries/".$entryQuery->id, "file_".Carbon::now()->timestamp);
+            $entryQuery->file = $path;
             $fileSaved = true;
         }
 
@@ -166,22 +166,22 @@ class EntryQueryController extends Controller
 
         $entryQuery->reason = $request["reason"];
         $entryQuery->description = $request["description"];
-        $entryQuery->image1 = $request["image1"];
-        $entryQuery->file1 = $request["file1"];
+        $entryQuery->image = $request["image"];
+        $entryQuery->file = $request["file"];
         $entryQuery->module = $request["module"];
         $entryQuery->save();
 
         $tasks_controller = new uploadImageController;
         $fileSaved = false;
-        if($request->hasFile('image1')){
-            $path = $tasks_controller->updateFile($request->file('image1'), "entry_queries/".$entryQuery->id, "image1_".Carbon::now()->timestamp);
-            $entryQuery->image1 = $path;
+        if($request->hasFile('image')){
+            $path = $tasks_controller->updateFile($request->file('image'), "entry_queries/".$entryQuery->id, "image_".Carbon::now()->timestamp);
+            $entryQuery->image = $path;
             $fileSaved = true;
         }
 
-        if($request->hasFile('file1')){
-            $path = $tasks_controller->updateFile($request->file('file1'), "entry_queries/".$entryQuery->id, "file1_".Carbon::now()->timestamp);
-            $entryQuery->file1 = $path;
+        if($request->hasFile('file')){
+            $path = $tasks_controller->updateFile($request->file('file'), "entry_queries/".$entryQuery->id, "file_".Carbon::now()->timestamp);
+            $entryQuery->file = $path;
             $fileSaved = true;
         }
 
