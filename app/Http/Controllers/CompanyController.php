@@ -87,6 +87,7 @@ class CompanyController extends Controller
         $company->name = $request->name;
         $company->address = $request->address;
         $company->adminName = $request->adminName;
+        $company->ruc = $request->ruc;
         $company->email = $request->email;
         $company->phone = $request->phone;
         $company->logo = $request->logo;
