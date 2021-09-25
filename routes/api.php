@@ -48,7 +48,6 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     Route::prefix('chats')->group(function () {
         Route::get('/find/{id}', 'App\Http\Controllers\ChatController@find');
         Route::get('/active-list', 'App\Http\Controllers\ChatController@listActive');
-        Route::get('/not-active-list', 'App\Http\Controllers\ChatController@listNotActive');
         Route::delete('/delete/{id}', 'App\Http\Controllers\ChatController@delete');
     });
 
