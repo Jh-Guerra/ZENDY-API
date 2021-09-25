@@ -86,15 +86,16 @@ class ChatController extends Controller
             $currentParticipantsName = property_exists($participantsByChatNames, $idChat) ? $participantsByChatNames->$idChat : "";
             $participantsByChatNames->$idChat = $currentParticipantsName.$participant->user->firstName." ".$participant->user->lastName.", ";
         }
-
+        
         foreach ($chats as $chat){
             $chat->user = $chat->idUser ? ($chat->idUser == $user->id ? $user : $users[$chat->idUser]) : null;
             $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
+            $idChat = $chat->id;
 
             if(!$chat->name)
-                $chat->name = substr($participantsByChatNames->{$chat->id}, 0, -2);
+                $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName." ".$user->lastName);
 
-            $chat->participants = $participantsByChat->{$chat->id} ? $participantsByChat->{$chat->id} : [];
+            $chat->participants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
         }
 
         $term = $request->has("term") ? $request->get("term") : "";

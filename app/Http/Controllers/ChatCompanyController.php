@@ -74,7 +74,7 @@ class ChatCompanyController extends Controller
             $clientRequest = [
                 'idUser' => $userId,
                 'idChat' => $chat->id,
-                'type' => "Cliente",
+                'type' => "Participante",
                 'erp' => false,
                 'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
                 'status' => "active",

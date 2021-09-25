@@ -13,8 +13,7 @@ use DB;
 class ChatClientController extends Controller
 {
     protected $participantController;
-    public function __construct()
-    {
+    public function __construct(){
         $this->participantController = app('App\Http\Controllers\ParticipantController');
     }
 
@@ -55,17 +54,21 @@ class ChatClientController extends Controller
             'erp' => true,
             'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
             'status' => "active",
-            'active' => true
+            'active' => true,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now()
         ];
 
         $clientRequest = [
             'idUser' => $client["id"],
             'idChat' => $chat->id,
-            'type' => "Cliente",
+            'type' => "Participante",
             'erp' => false,
             'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
             'status' => "active",
-            'active' => true
+            'active' => true,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now()
         ];
 
         array_push($participants, $userRequest);

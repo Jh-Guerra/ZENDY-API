@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Chat;
 use App\Models\Company;
 use App\Models\EntryQuery;
+use App\Models\Participant;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -190,6 +191,82 @@ class EntryQueryController extends Controller
         }
 
         return response()->json(compact('entryQuery'),201);
+    }
+
+    public function accept($id, Request $request){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $entryQuery = EntryQuery::find($id);
+        if(!$entryQuery) return response()->json(['error' => 'Consulta no encontrada.'], 400);
+
+        $queryUser = User::find($entryQuery->createdBy);
+        if(!$user) return response()->json(['error' => 'No se encontró al usuario que realizó la consulta.'], 400);
+
+        $userParticipations = Participant::join('chats', 'chats.id', 'participants.idChat')->where("participants.idUser", $user->id)->where("participants.deleted", false)
+            ->get(['participants.*', 'chats.scope AS chatScope']);
+        $queryUserParticipations = Participant::where("idUser", $queryUser->id)->where("deleted", false)->pluck("idChat")->toArray();
+
+        $thereVigentChat = false;
+        foreach ($userParticipations as $userParticipation) {
+            if(in_array($userParticipation->chatId, $queryUserParticipations) && $userParticipation->chatScope == "Personal"){
+                $thereVigentChat = true;
+            }
+        }
+
+        if($thereVigentChat) return response()->json(['error' => 'Este usuario ya cuenta con una consulta activa.'], 400);
+
+        $entryQuery->acceptDate = Carbon::now()->timestamp;
+        $entryQuery->status = "Aceptado";
+        $entryQuery->acceptedBy = $user->id;
+        $entryQuery->save();
+
+        $chat = new Chat();
+        $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
+        $chat->type = "Consulta";
+        $chat->scope = "Personal";
+        $chat->status = "Vigente";
+        $chat->idCompany = $queryUser->idCompany;
+        $chat->idUser = $user->id;
+        $chat->allUsers = 0;
+        $chat->messages = 0;
+        $chat->recommendations = 0;
+        $chat->idEntryQuery = $entryQuery->id;
+        $chat->save();
+
+        $participantController = new ParticipantController();
+        $participants = [];
+
+        $userRequest = [
+            'idUser' => $user->id,
+            'idChat' => $chat->id,
+            'type' => "Admin",
+            'erp' => true,
+            'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
+            'status' => "active",
+            'active' => true,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now()
+        ];
+
+        $clientRequest = [
+            'idUser' => $queryUser->id,
+            'idChat' => $chat->id,
+            'type' => "Participante",
+            'erp' => false,
+            'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
+            'status' => "active",
+            'active' => true,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now()
+        ];
+
+        array_push($participants, $userRequest);
+        array_push($participants, $clientRequest);
+        $participantController->registerMany($participants);
+
+        $chat->name = $queryUser->firstName." ".$queryUser->lastName;
+        return response()->json(compact('chat'),201);
     }
 
 }
