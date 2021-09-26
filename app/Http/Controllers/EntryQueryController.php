@@ -35,6 +35,13 @@ class EntryQueryController extends Controller
         $entryQuery->image = $request["image"];
         $entryQuery->file = $request["file"];
         $entryQuery->module = $request["module"];
+        $entryQuery->idfrequentQuery = $request["idfrequentQuery"];
+        if($request->isFrequentQuery == null){
+            $entryQuery->isFrequentQuery = false;
+        } else {
+            $entryQuery->isFrequentQuery = $request["isFrequentQuery"];
+        }
+
         $entryQuery->save();
 
         $uploadImageController = new uploadImageController;
@@ -169,6 +176,8 @@ class EntryQueryController extends Controller
         $entryQuery->image = $request["image"];
         $entryQuery->file = $request["file"];
         $entryQuery->module = $request["module"];
+        $entryQuery->idfrequentQuery = $request["idfrequentQuery"];
+        $entryQuery->isFrequentQuery = $request["isFrequentQuery"];
         $entryQuery->save();
 
         $tasks_controller = new uploadImageController;

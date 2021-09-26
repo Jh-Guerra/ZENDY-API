@@ -127,4 +127,8 @@ Route::prefix('NotificationView')->group(function(){
 
 });
 
+Route::prefix('frequentQueries')->group(function () {
+    Route::get('/find/{id}', 'App\Http\Controllers\FrequentQueryController@find');
+    Route::get('/list', 'App\Http\Controllers\FrequentQueryController@list');
+});
 
