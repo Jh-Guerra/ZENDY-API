@@ -92,6 +92,14 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
     });
 
+    Route::prefix('messages')->group(function () {
+        Route::post('/register', 'App\Http\Controllers\MessageController@register');
+        Route::post('/update/{id}', 'App\Http\Controllers\MessageController@update');
+        Route::get('/find/{id}', 'App\Http\Controllers\MessageController@find');
+        Route::get('/list/{idChat}', 'App\Http\Controllers\MessageController@list');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\MessageController@delete');
+    });
+
 });
 
 Route::prefix('participants')->group(function () {
@@ -102,13 +110,7 @@ Route::prefix('participants')->group(function () {
     Route::delete('/delete/{id}', 'App\Http\Controllers\ParticipantController@delete');
 });
 
-Route::prefix('messages')->group(function () {
-    Route::post('/register', 'App\Http\Controllers\MessageController@register');
-    Route::post('/update/{id}', 'App\Http\Controllers\MessageController@update');
-    Route::get('/find/{id}', 'App\Http\Controllers\MessageController@find');
-    Route::get('/list', 'App\Http\Controllers\MessageController@list');
-    Route::delete('/delete/{id}', 'App\Http\Controllers\MessageController@delete');
-});
+
 
 Route::prefix('recommendations')->group(function () {
     Route::post('register', 'App\Http\Controllers\RecommendationController@register');
