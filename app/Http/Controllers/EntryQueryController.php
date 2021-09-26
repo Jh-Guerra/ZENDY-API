@@ -194,6 +194,8 @@ class EntryQueryController extends Controller
     }
 
     public function accept($id, Request $request){
+        $request = json_decode($request->getContent(), true);
+
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
@@ -219,6 +221,7 @@ class EntryQueryController extends Controller
         $entryQuery->acceptDate = Carbon::now()->timestamp;
         $entryQuery->status = "Aceptado";
         $entryQuery->acceptedBy = $user->id;
+        $entryQuery->byRecommend = $request["byRecommend"];
         $entryQuery->save();
 
         $chat = new Chat();
@@ -232,6 +235,7 @@ class EntryQueryController extends Controller
         $chat->messages = 0;
         $chat->recommendations = 0;
         $chat->idEntryQuery = $entryQuery->id;
+        $chat->byRecommend = $request["byRecommend"];
         $chat->save();
 
         $participantController = new ParticipantController();
@@ -269,4 +273,29 @@ class EntryQueryController extends Controller
         return response()->json(compact('chat'),201);
     }
 
+    public function recommendUser(Request $request, $id){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $userIds = json_decode($request->getContent(), true);
+        $recommendationController = new RecommendationController();
+
+        $newRecommendations = [];
+        foreach ($userIds as $userId) {
+            $new = [
+                'idEntryQuery' => $id,
+                'recommendUser' => $userId,
+                'recommendDate' => Carbon::now()->timestamp,
+                'recommendBy' => $user->id,
+                'status' => "Pendiente",
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ];
+            array_push($newRecommendations, $new);
+        }
+
+        $recommendationController->registerMany($newRecommendations);
+
+        return response()->json(['success' => 'Recomendaciones enviadas'], 201);
+    }
 }

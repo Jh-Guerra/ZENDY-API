@@ -10,8 +10,4 @@ class Recommendation extends Model
     use HasFactory;
 
     protected $table = "recommendations";
-
-    protected $primaryKey = 'idRecommendation';
-
-    public $timestamps = false;
 }

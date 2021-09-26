@@ -75,6 +75,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list-query', 'App\Http\Controllers\EntryQueryController@listQuery');
         Route::delete('/delete/{id}', 'App\Http\Controllers\EntryQueryController@delete');
         Route::post('/accept/{id}', 'App\Http\Controllers\EntryQueryController@accept');
+        Route::post('/{id}/recommend', 'App\Http\Controllers\EntryQueryController@recommendUser');
     });
 
     Route::prefix('errors')->group(function () {
@@ -93,6 +94,16 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
     });
 
+    Route::prefix('recommendations')->group(function () {
+        Route::post('register', 'App\Http\Controllers\RecommendationController@register');
+        Route::post('/update/{id}', 'App\Http\Controllers\RecommendationController@update');
+        Route::get('/find/{id}', 'App\Http\Controllers\RecommendationController@find');
+        Route::get('/list', 'App\Http\Controllers\RecommendationController@list');
+        Route::get('/list-my-recommendations', 'App\Http\Controllers\RecommendationController@listMyRecommendations');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\RecommendationController@delete');
+        Route::get('/list-by-entry-query/{idEntryQuery}', 'App\Http\Controllers\RecommendationController@listByEntryQuery');
+    });
+
 });
 
 Route::prefix('participants')->group(function () {
@@ -109,14 +120,6 @@ Route::prefix('messages')->group(function () {
     Route::get('/find/{id}', 'App\Http\Controllers\MessageController@find');
     Route::get('/list', 'App\Http\Controllers\MessageController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\MessageController@delete');
-});
-
-Route::prefix('recommendations')->group(function () {
-    Route::post('register', 'App\Http\Controllers\RecommendationController@register');
-    Route::post('/update/{id}', 'App\Http\Controllers\RecommendationController@update');
-    Route::get('/find/{id}', 'App\Http\Controllers\RecommendationController@find');
-    Route::get('/list', 'App\Http\Controllers\RecommendationController@list');
-    Route::delete('/delete/{id}', 'App\Http\Controllers\RecommendationController@delete');
 });
 
 Route::prefix('NotificationView')->group(function(){
