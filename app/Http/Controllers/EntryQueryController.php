@@ -194,6 +194,12 @@ class EntryQueryController extends Controller
         if($fileSaved){
             $entryQuery->save();
         }
+        $entryQuery->user = User::find($entryQuery->createdBy);
+        if($entryQuery->idCompany)
+            $entryQuery->company = Company::find($entryQuery->idCompany);
+
+
+
 
         return response()->json(compact('entryQuery'),201);
     }
