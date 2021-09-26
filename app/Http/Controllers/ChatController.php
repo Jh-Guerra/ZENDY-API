@@ -61,7 +61,7 @@ class ChatController extends Controller
 
         $chatIds = Participant::where("idUser", $user->id)->where("deleted", false)->pluck("idChat");
         $chats = Chat::whereIn("id", $chatIds)->get();
-        $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->get();
+        $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
 
         $companyIds = [];
