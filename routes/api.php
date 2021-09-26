@@ -109,6 +109,13 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/find/{id}', 'App\Http\Controllers\FrequentQueryController@find');
         Route::get('/list', 'App\Http\Controllers\FrequentQueryController@list');
     });
+
+    Route::prefix('messages')->group(function () {
+        Route::post('/register', 'App\Http\Controllers\MessageController@register');
+        Route::get('/find/{id}', 'App\Http\Controllers\MessageController@find');
+        Route::get('/list/{idChat}', 'App\Http\Controllers\MessageController@list');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\MessageController@delete');
+    });
 });
 
 Route::prefix('participants')->group(function () {
@@ -119,13 +126,7 @@ Route::prefix('participants')->group(function () {
     Route::post('/delete', 'App\Http\Controllers\ParticipantController@delete');
 });
 
-Route::prefix('messages')->group(function () {
-    Route::post('/register', 'App\Http\Controllers\MessageController@register');
-    Route::post('/update/{id}', 'App\Http\Controllers\MessageController@update');
-    Route::get('/find/{id}', 'App\Http\Controllers\MessageController@find');
-    Route::get('/list', 'App\Http\Controllers\MessageController@list');
-    Route::delete('/delete/{id}', 'App\Http\Controllers\MessageController@delete');
-});
+
 
 Route::prefix('NotificationView')->group(function(){
     Route::post('register', 'App\Http\Controllers\NotificationViewController@register');
