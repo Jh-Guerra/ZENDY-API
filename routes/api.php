@@ -104,6 +104,10 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list-by-entry-query/{idEntryQuery}', 'App\Http\Controllers\RecommendationController@listByEntryQuery');
     });
 
+    Route::prefix('frequentQueries')->group(function () {
+        Route::get('/find/{id}', 'App\Http\Controllers\FrequentQueryController@find');
+        Route::get('/list', 'App\Http\Controllers\FrequentQueryController@list');
+    });
 });
 
 Route::prefix('participants')->group(function () {
@@ -129,10 +133,5 @@ Route::prefix('NotificationView')->group(function(){
     Route::get('/list', 'App\Http\Controllers\NotificationViewController@list');
     Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationViewController@delete');
 
-});
-
-Route::prefix('frequentQueries')->group(function () {
-    Route::get('/find/{id}', 'App\Http\Controllers\FrequentQueryController@find');
-    Route::get('/list', 'App\Http\Controllers\FrequentQueryController@list');
 });
 

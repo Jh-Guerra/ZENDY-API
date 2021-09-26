@@ -8,5 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class FrequentQuery extends Model
 {
     use HasFactory;
+
     protected $table = "frequent_queries";
 }
