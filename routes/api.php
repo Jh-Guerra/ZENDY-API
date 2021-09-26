@@ -108,6 +108,11 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/find/{id}', 'App\Http\Controllers\FrequentQueryController@find');
         Route::get('/list', 'App\Http\Controllers\FrequentQueryController@list');
     });
+
+    Route::prefix('module')->group(function () {
+        Route::get('/find/{id}', 'App\Http\Controllers\ModuleController@find');
+        Route::get('/list', 'App\Http\Controllers\ModuleController@list');
+    });
 });
 
 Route::prefix('participants')->group(function () {
