@@ -116,6 +116,11 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list/{idChat}', 'App\Http\Controllers\MessageController@list');
         Route::delete('/delete/{id}', 'App\Http\Controllers\MessageController@delete');
     });
+
+    Route::prefix('module')->group(function () {
+        Route::get('/find/{id}', 'App\Http\Controllers\ModuleController@find');
+        Route::get('/list', 'App\Http\Controllers\ModuleController@list');
+    });
 });
 
 Route::prefix('participants')->group(function () {

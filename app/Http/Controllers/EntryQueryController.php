@@ -35,7 +35,7 @@ class EntryQueryController extends Controller
         $entryQuery->description = $request["description"];
         $entryQuery->image = $request["image"];
         $entryQuery->file = $request["file"];
-        $entryQuery->module = $request["module"];
+        $entryQuery->idModule = $request["idModule"];
         $entryQuery->idFrequentQuery = $request["idFrequentQuery"];
         $entryQuery->isFrequentQuery = $request->isFrequentQuery == true;
 
@@ -172,7 +172,7 @@ class EntryQueryController extends Controller
         $entryQuery->description = $request["description"];
         $entryQuery->image = $request["image"];
         $entryQuery->file = $request["file"];
-        $entryQuery->module = $request["module"];
+        $entryQuery->idModule = $request["idModule"];
         $entryQuery->idFrequentQuery = $request["idFrequentQuery"];
         $entryQuery->isFrequentQuery = $request["isFrequentQuery"];
         $entryQuery->save();
