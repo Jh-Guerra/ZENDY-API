@@ -35,6 +35,7 @@ class ChatController extends Controller
                 foreach($participants as $participant){
                     if($participant->idUser != $user->id && $participant->user){
                         $chatName = $chatName.$participant->user->firstName. ' ' .$participant->user->lastName;
+                        $chat->companyUser = Company::find($participant->user->idCompany);
                     }
                 }
             }
