@@ -6,6 +6,7 @@ use App\Models\Chat;
 use App\Models\Company;
 use App\Models\Participant;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -116,13 +117,30 @@ class ChatController extends Controller
     public function delete($id){
         $chat = Chat::find($id);
 
-        if(!$chat){
-            return response()->json(['error' => 'Chat no encontrado'], 400);
-        }
+        if(!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
 
         $chat->deleted = true;
         $chat->save();
 
         return response()->json(['success' => 'Chat Eliminado'], 201);
+    }
+
+    public function finalize($id, Request $request){
+        $request = json_decode($request->getContent(), true);
+
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $chat = Chat::find($id);
+        if(!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
+
+        $chat->status = "Finalizado";
+        $chat->finalizeDate = Carbon::now()->timestamp;
+        $chat->finalizeStatus = $request["finalizeStatus"];
+        $chat->finalizeDescription = $request["finalizeDescription"];
+        $chat->finalizeUser = $user->id;
+        $chat->save();
+
+        return response()->json(compact('chat'),201);
     }
 }
