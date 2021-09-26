@@ -45,7 +45,7 @@ class ChatController extends Controller
                         $chatName = $chatName.$participant->user->firstName. ' ' .$participant->user->lastName.", ";
                     }
                 }
-                $chatName = substr($chatName, 0, -2);
+                $chatName = $chatName."Tú";
             }
             $chat->name = $chatName;
         }
