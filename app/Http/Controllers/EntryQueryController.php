@@ -106,13 +106,12 @@ class EntryQueryController extends Controller
     }
 
     public function listPendings(Request $request){
-        $entryQueries = EntryQuery::where("status", "Pendiente")->where("deleted", false);
-
+        $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("status", "Pendiente")->where("entry_queries.deleted", false);
         $term = $request->has("term") ? $request->get("term") : "";
         if($term)
             $this->search($entryQueries, $term);
 
-        $entryQueries = $entryQueries->orderByDesc("startDate")->get();
+        $entryQueries = $entryQueries->orderByDesc("startDate")->get(['entry_queries.*', 'users.firstName AS firstName','users.lastName AS lastName' ,'users.avatar AS avatar','users.sex AS sex']);
 
         return $entryQueries->values()->all();;
     }
