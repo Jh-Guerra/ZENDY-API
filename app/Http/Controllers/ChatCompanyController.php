@@ -63,7 +63,7 @@ class ChatCompanyController extends Controller
             'type' => "Admin",
             'erp' => true,
             'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
-            'status' => "active",
+            'status' => "Activo",
             'active' => true,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now()
@@ -77,7 +77,7 @@ class ChatCompanyController extends Controller
                 'type' => "Participante",
                 'erp' => false,
                 'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
-                'status' => "active",
+                'status' => "Activo",
                 'active' => true,
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now()

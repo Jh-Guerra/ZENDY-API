@@ -94,7 +94,6 @@ class ParticipantController extends Controller
         $participant->erp = $request->erp;
         $participant->entryDate = $request->entryDate;
         $participant->outputDate = $request->outputDate;
-        $participant->status = $request->status;
         $participant->active = $request->active;
         $participant->sendMessages = $request->sendMessages!=null ? $request->sendMessages : 0;
         $participant->receivedMessages = $request->receivedMessages!=null ? $request->receivedMessages : 0;
