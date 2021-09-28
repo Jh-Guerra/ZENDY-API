@@ -73,7 +73,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update/{id}', 'App\Http\Controllers\EntryQueryController@update');
         Route::get('/list', 'App\Http\Controllers\EntryQueryController@list');
         Route::get('/list-pendings', 'App\Http\Controllers\EntryQueryController@listPendings');
-        Route::get('/list-query', 'App\Http\Controllers\EntryQueryController@listQuery');
+        Route::get('/list-query/{status}', 'App\Http\Controllers\EntryQueryController@listQuery');
         Route::delete('/delete/{id}', 'App\Http\Controllers\EntryQueryController@delete');
         Route::post('/accept/{id}', 'App\Http\Controllers\EntryQueryController@accept');
         Route::post('/{id}/recommend', 'App\Http\Controllers\EntryQueryController@recommendUser');
