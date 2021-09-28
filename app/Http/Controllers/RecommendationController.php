@@ -9,6 +9,7 @@ namespace App\Http\Controllers;
     use Illuminate\Support\Facades\Auth;
     use JWTAuth;
     use Illuminate\Support\Facades\Crypt;
+    use App\Models\User;
 
 class RecommendationController extends Controller
 {
@@ -76,6 +77,32 @@ class RecommendationController extends Controller
             ->where("recommendUser", $user->id)->where("recommendations.status", "Pendiente")->where("recommendations.deleted", false)
             ->get(['recommendations.*', 'users.firstName AS userFirstName', 'users.lastName AS userLastName', 'users.avatar as userAvatar', 'users.sex as userSex',
                 'entry_queries.reason as queryReason']);
+    }
+    
+    public function listExistingRecommendations($idEntryQuery){
+        $user = Auth::user();
+
+        $pendingRecommendations = Recommendation::where("idEntryQuery", $idEntryQuery)
+            ->where("status", "Pendiente")
+            ->where("deleted", false)->get();
+
+        $userIds = [];
+        foreach ($pendingRecommendations as $recommendation){
+            if($recommendation->recommendUser  && !in_array($recommendation->recommendUser, $userIds))
+                $userIds[] = $recommendation->recommendUser;
+
+            if($recommendation->recommendBy && !in_array($recommendation->recommendBy , $userIds))
+                $userIds[] = $recommendation->recommendBy;
+        }
+
+        $users = User::whereIn("id", $userIds)->get()->keyBy('id');
+
+        foreach ($pendingRecommendations as $recommendation){
+            $recommendation->user = $recommendation->recommendUser ? $users[$recommendation->recommendUser] : null;
+            $recommendation->by = $recommendation->recommendBy ? $users[$recommendation->recommendBy] : null;
+        }
+
+        return $pendingRecommendations;
     }
 
     public function listByEntryQuery($idEntryQuery){
