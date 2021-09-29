@@ -143,4 +143,18 @@ class ChatController extends Controller
 
         return response()->json(compact('chat'),201);
     }
+
+    public function nameChat($id, Request $request){
+
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $chat = Chat::find($id);
+        if(!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
+
+        $chat->name = $request->name;
+        $chat->save();
+
+        return response()->json(compact('chat'),201);
+    }
 }
