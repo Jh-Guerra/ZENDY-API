@@ -140,6 +140,10 @@ class EntryQueryController extends Controller
         if(!$user)
         return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
+        if(!$status){
+            $status = "Pendiente";
+        }
+
         $entryQueries = EntryQuery::where("deleted", false)->where("createdBy", '=',$user->id)->where("status",'=',$status);
 
         $term = $request->has("term") ? $request->get("term") : "";
