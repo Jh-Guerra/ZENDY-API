@@ -104,6 +104,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list-my-recommendations', 'App\Http\Controllers\RecommendationController@listMyRecommendations');
         Route::delete('/delete/{id}', 'App\Http\Controllers\RecommendationController@delete');
         Route::get('/list-by-entry-query/{idEntryQuery}', 'App\Http\Controllers\RecommendationController@listByEntryQuery');
+        Route::get('/list-existing-recommendations/{idEntryQuery}','App\Http\Controllers\RecommendationController@listExistingRecommendations');
     });
 
     Route::prefix('frequentQueries')->group(function () {
