@@ -88,7 +88,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     });
 
     Route::prefix('notifications')->group(function(){
-        Route::post('/register', 'App\Http\Controllers\NotificationController@register');
+        Route::post('/register-company', 'App\Http\Controllers\NotificationController@registerCompanyNotification');
+        Route::post('/register-companies', 'App\Http\Controllers\NotificationController@registerCompaniesNotification');
         Route::get('/find/{id}', 'App\Http\Controllers\NotificationController@find');
         Route::get('/admin/list', 'App\Http\Controllers\NotificationController@adminList');
         Route::get('/list', 'App\Http\Controllers\NotificationController@list');
