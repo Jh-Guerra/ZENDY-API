@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\EntryQuery;
 use App\Models\Participant;
 use App\Models\User;
+use App\Models\Message;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -284,6 +285,19 @@ class EntryQueryController extends Controller
         $participantController->registerMany($participants);
 
         $chat->name = $queryUser->firstName." ".$queryUser->lastName;
+
+        $message = new Message();
+
+        $message->createdBy = $user->id;
+        $message->idChat = $chat->id;
+        $message->message = "Hola, buen dia, su consulta ha sido atendida. En unos minutos nos comunicaremos contigo";
+        $message->viewed = 0;
+        $message->resend = false;
+        $message->originalUserId = $user->id;
+
+        $message->save();
+
+
         return response()->json(compact('chat'),201);
     }
 
