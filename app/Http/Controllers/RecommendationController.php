@@ -27,7 +27,7 @@ class RecommendationController extends Controller
         $recommendation->status = "Pendiente";
         $recommendation->save();
 
-        response()->json(compact('recommendation'),201);
+        return response()->json(compact('recommendation'),201);
     }
 
     public function registerMany($recommendations){
@@ -78,7 +78,7 @@ class RecommendationController extends Controller
             ->get(['recommendations.*', 'users.firstName AS userFirstName', 'users.lastName AS userLastName', 'users.avatar as userAvatar', 'users.sex as userSex',
                 'entry_queries.reason as queryReason']);
     }
-    
+
     public function listExistingRecommendations($idEntryQuery){
         $user = Auth::user();
 

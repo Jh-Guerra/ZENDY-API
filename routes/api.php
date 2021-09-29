@@ -90,6 +90,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     Route::prefix('notifications')->group(function(){
         Route::post('/register-company', 'App\Http\Controllers\NotificationController@registerCompanyNotification');
         Route::post('/register-companies', 'App\Http\Controllers\NotificationController@registerCompaniesNotification');
+        Route::post('/update/{id}', 'App\Http\Controllers\NotificationController@updateNotification');
         Route::get('/find/{id}', 'App\Http\Controllers\NotificationController@find');
         Route::get('/admin/list', 'App\Http\Controllers\NotificationController@adminList');
         Route::get('/list', 'App\Http\Controllers\NotificationController@list');
@@ -123,6 +124,15 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/find/{id}', 'App\Http\Controllers\ModuleController@find');
         Route::get('/list', 'App\Http\Controllers\ModuleController@list');
     });
+
+    Route::prefix('notifications-viewed')->group(function(){
+        Route::post('register', 'App\Http\Controllers\NotificationViewedController@register');
+        Route::post('/update/{id}', 'App\Http\Controllers\NotificationViewedController@update');
+        Route::get('/find/{userId}/{notificationId}', 'App\Http\Controllers\NotificationViewedController@find');
+        Route::get('/list/{notificationId}', 'App\Http\Controllers\NotificationViewedController@list');
+        Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationViewedController@delete');
+
+    });
 });
 
 Route::prefix('participants')->group(function () {
@@ -131,16 +141,5 @@ Route::prefix('participants')->group(function () {
     Route::put('/update/{id}', 'App\Http\Controllers\ParticipantController@update');
     Route::get('/list', 'App\Http\Controllers\ParticipantController@list');
     Route::post('/delete', 'App\Http\Controllers\ParticipantController@delete');
-});
-
-
-
-Route::prefix('NotificationView')->group(function(){
-    Route::post('register', 'App\Http\Controllers\NotificationViewController@register');
-    Route::post('/update/{id}', 'App\Http\Controllers\NotificationViewController@update');
-    Route::get('/find/{id}', 'App\Http\Controllers\NotificationViewController@find');
-    Route::get('/list', 'App\Http\Controllers\NotificationViewController@list');
-    Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationViewController@delete');
-
 });
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
+use App\Models\NotificationViewed;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -26,52 +27,13 @@ class NotificationController extends Controller
         $notification->description = $request["description"];
         $notification->viewed = 0;
         $notification->allUsersCompany = $request["allUsersCompany"];
-        $notification->companiesNotified = json_encode($request->companiesNotified, true);
-        $notification->usersNotified = json_encode($request->usersNotified, true);
         $notification->idError = $request["idError"];
         $notification->solved = $request["solved"];
 
-        $notification->save();
+        $companiesIds = array_map('intval', $request->companiesNotified);
+        $notification->companiesNotified = json_encode($companiesIds, true);
 
-        $uploadImageController = new uploadImageController;
-        $fileSaved = false;
-        if($request->hasFile('image')){
-            $path = $uploadImageController->updateFile($request->file('image'), "notifications/".$notification->id, "image_".Carbon::now()->timestamp);
-            $notification->image = $path;
-            $fileSaved = true;
-        }
-
-        if($request->hasFile('file')){
-            $path = $uploadImageController->updateFile($request->file('file'), "notifications/".$notification->id, "file_".Carbon::now()->timestamp);
-            $notification->file = $path;
-            $fileSaved = true;
-        }
-
-        if($fileSaved) $notification->save();
-
-        return response()->json(compact('notification'),201);
-    }
-
-    public function registerCompaniesNotification(Request $request){
-        $error = $this->validateFields($request);
-        if ($error) return response()->json($error, 400);
-
-        $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-
-        $notification = new Notification();
-
-        $notification->createdBy = $user->id;
-        $notification->reason = $request["reason"];
-        $notification->description = $request["description"];
-        $notification->viewed = 0;
-        $notification->allUsersCompany = true;
-        $notification->companiesNotified = json_encode($request->companiesNotified, true);
-        $notification->idError = $request["idError"];
-        $notification->solved = $request["solved"];
-
-        $userIds = User::whereIn("idCompany", $request->companiesNotified)->where("deleted", false)->pluck("id");
-        $userIds = array_map('strval', $userIds->toArray());
+        $userIds = array_map('intval', $request->usersNotified);
         $notification->usersNotified = json_encode($userIds, true);
 
         $notification->save();
@@ -92,6 +54,102 @@ class NotificationController extends Controller
 
         if($fileSaved) $notification->save();
 
+        $notification->companiesNotified = json_decode($notification->companiesNotified, true);
+        $notification->usersNotified = json_decode($notification->usersNotified, true);
+
+        return response()->json(compact('notification'),201);
+    }
+
+    public function registerCompaniesNotification(Request $request){
+        $error = $this->validateFields($request);
+        if ($error) return response()->json($error, 400);
+
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $notification = new Notification();
+
+        $notification->createdBy = $user->id;
+        $notification->reason = $request["reason"];
+        $notification->description = $request["description"];
+        $notification->viewed = 0;
+        $notification->allUsersCompany = true;
+        $notification->idError = $request["idError"];
+        $notification->solved = $request["solved"];
+
+        $companiesIds = array_map('intval', $request->companiesNotified);
+        $notification->companiesNotified = json_encode($companiesIds, true);
+
+        $userIds = User::whereIn("idCompany", $companiesIds)->where("deleted", false)->pluck("id");
+        $notification->usersNotified = json_encode($userIds, true);
+
+        $notification->save();
+
+        $uploadImageController = new uploadImageController;
+        $fileSaved = false;
+        if($request->hasFile('image')){
+            $path = $uploadImageController->updateFile($request->file('image'), "notifications/".$notification->id, "image_".Carbon::now()->timestamp);
+            $notification->image = $path;
+            $fileSaved = true;
+        }
+
+        if($request->hasFile('file')){
+            $path = $uploadImageController->updateFile($request->file('file'), "notifications/".$notification->id, "file_".Carbon::now()->timestamp);
+            $notification->file = $path;
+            $fileSaved = true;
+        }
+
+        if($fileSaved) $notification->save();
+
+        $notification->companiesNotified = json_decode($notification->companiesNotified, true);
+        $notification->usersNotified = json_decode($notification->usersNotified, true);
+
+        return response()->json(compact('notification'),201);
+    }
+
+    public function updateNotification($id, Request $request){
+        $error = $this->validateFields($request);
+        if ($error) return response()->json($error, 400);
+
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $notification = Notification::find($id);
+        if(!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
+
+        $notification->createdBy = $user->id;
+        $notification->reason = $request->reason;
+        $notification->description = $request->description;
+        $notification->idError = $request->idError;
+        $notification->solved = $request->solved;
+
+        $companiesIds = array_map('intval', $request->companiesNotified);
+        $notification->companiesNotified = json_encode($companiesIds, true);
+
+        $userIds = User::whereIn("idCompany", $companiesIds)->where("deleted", false)->pluck("id");
+        $notification->usersNotified = json_encode($userIds, true);
+
+        $notification->save();
+
+        $uploadImageController = new uploadImageController;
+        $fileSaved = false;
+        if($request->hasFile('image')){
+            $path = $uploadImageController->updateFile($request->file('image'), "notifications/".$notification->id, "image_".Carbon::now()->timestamp);
+            $notification->image = $path;
+            $fileSaved = true;
+        }
+
+        if($request->hasFile('file')){
+            $path = $uploadImageController->updateFile($request->file('file'), "notifications/".$notification->id, "file_".Carbon::now()->timestamp);
+            $notification->file = $path;
+            $fileSaved = true;
+        }
+
+        if($fileSaved) $notification->save();
+
+        $notification->companiesNotified = json_decode($notification->companiesNotified, true);
+        $notification->usersNotified = json_decode($notification->usersNotified, true);
+
         return response()->json(compact('notification'),201);
     }
 
@@ -108,26 +166,61 @@ class NotificationController extends Controller
         return $errorMessage;
     }
 
-    public function adminList(){
+    public function adminList(Request $request){
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        return Notification::where('createdBy', $user->id)->where('deleted', false)->get();
+
+        $notifications = Notification::where('createdBy', $user->id)->where('deleted', false);
+
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $notifications->where(function ($query) use ($term) {
+                $query->where('reason', 'LIKE', '%' . $term . '%');
+            });
+        }
+
+        $notifications = $notifications->get();
+
+        foreach ($notifications as $notification) {
+            $notification->companiesNotified = json_decode($notification->companiesNotified, true);
+            $notification->usersNotified = json_decode($notification->usersNotified, true);
+        }
+
+        return $notifications;
     }
 
-    public function list(){
+    public function list(Request $request){
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $userIdWithQuotes= "\"".$user->id."\"";
-        return Notification::where("usersNotified", 'LIKE', '%'.$userIdWithQuotes.'%')->where('deleted', false)->get();
+        $notifications = Notification::where("usersNotified", 'LIKE', '%'.$user->id.'%')->where('deleted', false);
+
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $notifications->where(function ($query) use ($term) {
+                $query->where('reason', 'LIKE', '%' . $term . '%');
+            });
+        }
+
+        $notifications = $notifications->get();
+
+        foreach ($notifications as $notification) {
+            $notification->companiesNotified = json_decode($notification->companiesNotified, true);
+            $notification->usersNotified = json_decode($notification->usersNotified, true);
+        }
+
+        return $notifications;
     }
 
     public function find($id){
         $notification = Notification::find($id);
         if (!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
 
-        return $notification;
+        $notification->companiesNotified = json_decode($notification->companiesNotified, true);
+        $notification->usersNotified = json_decode($notification->usersNotified, true);
+
+        return response()->json(compact('notification'),201);
     }
 
     public function delete($id){
@@ -136,6 +229,8 @@ class NotificationController extends Controller
 
         $notification->deleted = true;
         $notification->save();
+
+        NotificationViewed::where('idNotification', $id)->update(['deleted' => true]);
 
         return response()->json(['success' => 'Notificación Eliminada'], 201);
     }
