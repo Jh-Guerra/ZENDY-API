@@ -23,6 +23,8 @@ class ErrorController extends Controller
         if(!$user)
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
+
+
         $errorZendy = new Error();
         $errorZendy->idCompany = $user->idCompany;
         $errorZendy->createdBy = $user->id;
@@ -31,16 +33,34 @@ class ErrorController extends Controller
         $errorZendy->description = $request["description"];
         $errorZendy->image = $request["image"];
         $errorZendy->file = $request["file"];
+        $errorZendy->status = "Pending";
         $errorZendy->save();
 
-        return response()->json(compact('error'),201);
+        $uploadImageController = new uploadImageController;
+        $fileSaved = false;
+        if($request->hasFile('image')){
+            $path = $uploadImageController->updateFile($request->file('image'), "error/".$errorZendy->id, "image_".Carbon::now()->timestamp);
+            $errorZendy->image = $path;
+            $fileSaved = true;
+        }
+
+        if($request->hasFile('file')){
+            $path = $uploadImageController->updateFile($request->file('file'), "error/".$errorZendy->id, "file_".Carbon::now()->timestamp);
+            $errorZendy->file = $path;
+            $fileSaved = true;
+        }
+
+        if($fileSaved){
+            $errorZendy->save();
+        }
+
+        return response()->json(compact('errorZendy'),201);
     }
 
     private function validateFields($request){
         $validator = Validator::make($request->all(), [
             'module' => 'required|string|max:255',
             'reason' => 'required|string|max:255',
-            'description' => 'required|string|max:255',
         ]);
 
         $errorMessage = null;
@@ -51,12 +71,58 @@ class ErrorController extends Controller
         return $errorMessage;
     }
 
+    public function update(Request $request, $id){
+        $errorZendy = Error::find($id);
+
+        $errorMessage = $this->validateFields($request);
+        if ($errorMessage) {
+            return response()->json($errorMessage, 400);
+        }
+
+        if (!$errorZendy) {
+            return response()->json(['error' => 'Error reportado no encontrado'], 400);
+        }
+
+        $errorZendy->idCompany = $request->idCompany;
+        $errorZendy->createdBy = $request->createdBy;
+        $errorZendy->module = $request->module;
+        $errorZendy->reason = $request->reason;
+        $errorZendy->description = $request->description;
+        $errorZendy->image = $request->image;
+        $errorZendy->file = $request->file;
+        $errorZendy->status = "Pending";
+        $errorZendy->save();
+
+        $uploadImageController = new uploadImageController;
+        $fileSaved = false;
+        if($request->hasFile('image')){
+            $path = $uploadImageController->updateFile($request->file('image'), "error/".$errorZendy->id, "image_".Carbon::now()->timestamp);
+            $errorZendy->image = $path;
+            $fileSaved = true;
+        }
+
+        if($request->hasFile('file')){
+            $path = $uploadImageController->updateFile($request->file('file'), "error/".$errorZendy->id, "file_".Carbon::now()->timestamp);
+            $errorZendy->file = $path;
+            $fileSaved = true;
+        }
+
+        if($fileSaved){
+            $errorZendy->save();
+        }
+
+        return response()->json($errorZendy);
+    }
+
     public function list(Request $request) {
         $user = Auth::user();
         if(!$user)
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $errors = Error::where("reported", $user->id)->where("deleted", false);
+        $errors = Error::where(function ($query){
+            $query->where("status", "Pending")
+                ->orWhere("status", "Accepted");
+        })->where("fake", false)->where("deleted", false);
 
         $term = $request->has("term") ? $request->get("term") : "";
         if($term) {
@@ -105,6 +171,36 @@ class ErrorController extends Controller
             $error->company = Company::find($error->idCompany);
 
         return response()->json(compact('error'),201);
+    }
+
+    public function confirmError($id) {
+        $error = Error::find($id);
+
+        if (!$error) {
+            return response()->json(['error' => 'Error reportado no encontrado'], 400);
+        }
+
+        $error->status = "Accepted";
+        $error->save();
+
+        $error->user = User::find($error->createdBy);
+        if($error->idCompany)
+            $error->company = Company::find($error->idCompany);
+
+        return response()->json(compact('error'),201);
+    }
+
+    public function fakeError($id) {
+        $error = Error::find($id);
+
+        if (!$error) {
+            return response()->json(['error' => 'Error reportado no encontrado'], 400);
+        }
+
+        $error->fake = true;
+        $error->save();
+
+        return response()->json(['success' => 'El error Reportado fue considerado como fake'], 201);
     }
 
     public function delete($id) {
