@@ -81,10 +81,13 @@ Route::group(['middleware' => ['jwt.verify']], function() {
 
     Route::prefix('errors')->group(function () {
         Route::post('/register', 'App\Http\Controllers\ErrorController@register');
+        Route::post('/update/{id}', 'App\Http\Controllers\ErrorController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\ErrorController@find');
+        Route::get('/confirmError/{id}', 'App\Http\Controllers\ErrorController@confirmError');
         Route::get('/list', 'App\Http\Controllers\ErrorController@list');
         Route::get('/list-by-user', 'App\Http\Controllers\ErrorController@listByUser');
         Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
+        Route::delete('/fakeError/{id}', 'App\Http\Controllers\ErrorController@fakeError');
     });
 
     Route::prefix('notifications')->group(function(){
