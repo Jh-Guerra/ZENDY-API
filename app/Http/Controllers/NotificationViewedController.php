@@ -20,10 +20,26 @@ class NotificationViewedController extends Controller
         $notificationViewed = new NotificationViewed();
         $notificationViewed->idNotification = $request->idNotification;
         $notificationViewed->viewedIdCompany =$user->idCompany;
-        $notificationViewed->viewedBy =$user->id;
+        $notificationViewed->viewedBy = $user->id;
         $notificationViewed->viewedDate = Carbon::now()->timestamp;
         $notificationViewed->status = "Pendiente";
 
+        $notificationViewed->save();
+
+        return response()->json(compact('notificationViewed'),201);
+    }
+
+    public function registerViewed(Request $request, $id){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $notificationViewed = NotificationViewed::where("idNotification", $id)->where("viewedBy", $user->id)->where("deleted", false)->first();
+        if(!$notificationViewed) return response()->json(['error' => 'Usted no fue incluido en esta notificación'], 400);
+
+        if($notificationViewed->status == "Visto") return response()->json(compact('notificationViewed'),201);
+
+        $notificationViewed->viewedDate = Carbon::now()->timestamp;
+        $notificationViewed->status = "Visto";
         $notificationViewed->save();
 
         return response()->json(compact('notificationViewed'),201);
@@ -43,10 +59,11 @@ class NotificationViewedController extends Controller
     public function listByUser(){
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-        
+
         $notificationsViewed = NotificationViewed::join('notifications', 'notifications.id', 'notification_views.idNotification')->join('users', 'users.id', 'notification_views.viewedBy')
-            ->where("notification_views.viewedBy", $user->id)->where("notification_views.status", "Pendiente")
+            ->where("notification_views.viewedBy", $user->id)
             ->where('notification_views.deleted', false)
+            ->orderBy("notification_views.created_at")
             ->get(["notification_views.*", "notifications.reason as reason", "notifications.description as description", "notifications.id as notificationId"]);
 
 

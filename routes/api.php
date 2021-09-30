@@ -126,8 +126,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     });
 
     Route::prefix('notifications-viewed')->group(function(){
-        Route::post('register', 'App\Http\Controllers\NotificationViewedController@register');
-        Route::post('/update/{id}', 'App\Http\Controllers\NotificationViewedController@update');
+        Route::post('/register', 'App\Http\Controllers\NotificationViewedController@register');
+        Route::post('/register-view/{id}', 'App\Http\Controllers\NotificationViewedController@registerViewed');
         Route::get('/find/{userId}/{notificationId}', 'App\Http\Controllers\NotificationViewedController@find');
         Route::get('/list/{notificationId}', 'App\Http\Controllers\NotificationViewedController@list');
         Route::get('/list-by-user', 'App\Http\Controllers\NotificationViewedController@listByUser');
