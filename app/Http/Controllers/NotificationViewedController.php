@@ -19,12 +19,18 @@ class NotificationViewedController extends Controller
 
         $notificationViewed = new NotificationViewed();
         $notificationViewed->idNotification = $request->idNotification;
+        $notificationViewed->viewedIdCompany =$user->idCompany;
         $notificationViewed->viewedBy =$user->id;
         $notificationViewed->viewedDate = Carbon::now()->timestamp;
+        $notificationViewed->status = "Pendiente";
 
         $notificationViewed->save();
 
         return response()->json(compact('notificationViewed'),201);
+    }
+
+    public function registerMany($notificationsViewed){
+        NotificationViewed::insert($notificationsViewed);
     }
 
     public function list($notificationId){
@@ -32,6 +38,19 @@ class NotificationViewedController extends Controller
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         return NotificationViewed::where("idNotification", $notificationId)->where("deleted", false)->get();
+    }
+
+    public function listByUser(){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        
+        $notificationsViewed = NotificationViewed::join('notifications', 'notifications.id', 'notification_views.idNotification')->join('users', 'users.id', 'notification_views.viewedBy')
+            ->where("notification_views.viewedBy", $user->id)->where("notification_views.status", "Pendiente")
+            ->where('notification_views.deleted', false)
+            ->get(["notification_views.*", "notifications.reason as reason", "notifications.description as description", "notifications.id as notificationId"]);
+
+
+        return $notificationsViewed;
     }
 
     public function find($userId, $notificationId){

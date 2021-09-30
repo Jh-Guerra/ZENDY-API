@@ -94,7 +94,6 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update/{id}', 'App\Http\Controllers\NotificationController@updateNotification');
         Route::get('/find/{id}', 'App\Http\Controllers\NotificationController@find');
         Route::get('/admin/list', 'App\Http\Controllers\NotificationController@adminList');
-        Route::get('/list', 'App\Http\Controllers\NotificationController@list');
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
     });
 
@@ -131,6 +130,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update/{id}', 'App\Http\Controllers\NotificationViewedController@update');
         Route::get('/find/{userId}/{notificationId}', 'App\Http\Controllers\NotificationViewedController@find');
         Route::get('/list/{notificationId}', 'App\Http\Controllers\NotificationViewedController@list');
+        Route::get('/list-by-user', 'App\Http\Controllers\NotificationViewedController@listByUser');
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationViewedController@delete');
 
     });

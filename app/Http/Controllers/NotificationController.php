@@ -57,6 +57,26 @@ class NotificationController extends Controller
         $notification->companiesNotified = json_decode($notification->companiesNotified, true);
         $notification->usersNotified = json_decode($notification->usersNotified, true);
 
+        $notificationViewedController = new NotificationViewedController();
+        $notificationsViewed = [];
+        $users = User::whereIn("id", $userIds)->get();
+
+        foreach ($users as $u) {
+            $newValue = [
+                'idNotification' => $notification->id,
+                'viewedIdCompany' => $u->idCompany,
+                'viewedBy' => $u->id,
+                'viewedDate' => Carbon::now()->timestamp,
+                'status' => "Pendiente",
+                'deleted' => false,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ];
+            array_push($notificationsViewed, $newValue);
+        }
+
+        $notificationViewedController->registerMany($notificationsViewed);
+
         return response()->json(compact('notification'),201);
     }
 
@@ -103,6 +123,26 @@ class NotificationController extends Controller
 
         $notification->companiesNotified = json_decode($notification->companiesNotified, true);
         $notification->usersNotified = json_decode($notification->usersNotified, true);
+
+        $notificationViewedController = new NotificationViewedController();
+        $notificationsViewed = [];
+        $users = User::whereIn("id", $userIds)->get();
+
+        foreach ($users as $u) {
+            $newValue = [
+                'idNotification' => $notification->id,
+                'viewedIdCompany' => $u->idCompany,
+                'viewedBy' => $u->id,
+                'viewedDate' => Carbon::now()->timestamp,
+                'status' => "Pendiente",
+                'deleted' => false,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ];
+            array_push($notificationsViewed, $newValue);
+        }
+
+        $notificationViewedController->registerMany($notificationsViewed);
 
         return response()->json(compact('notification'),201);
     }
@@ -172,29 +212,6 @@ class NotificationController extends Controller
 
 
         $notifications = Notification::where('createdBy', $user->id)->where('deleted', false);
-
-        $term = $request->has("term") ? $request->get("term") : "";
-        if($term){
-            $notifications->where(function ($query) use ($term) {
-                $query->where('reason', 'LIKE', '%' . $term . '%');
-            });
-        }
-
-        $notifications = $notifications->get();
-
-        foreach ($notifications as $notification) {
-            $notification->companiesNotified = json_decode($notification->companiesNotified, true);
-            $notification->usersNotified = json_decode($notification->usersNotified, true);
-        }
-
-        return $notifications;
-    }
-
-    public function list(Request $request){
-        $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-
-        $notifications = Notification::where("usersNotified", 'LIKE', '%'.$user->id.'%')->where('deleted', false);
 
         $term = $request->has("term") ? $request->get("term") : "";
         if($term){
