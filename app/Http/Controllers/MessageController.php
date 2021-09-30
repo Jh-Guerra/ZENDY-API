@@ -56,9 +56,17 @@ class MessageController extends Controller
         return response()->json(compact('message'),201);
     }
 
-    public function list($idChat){
-        return Message::join('users', 'users.id', 'messages.createdBy')->where("messages.idChat", $idChat)->where("messages.deleted", false)
-            ->get(["messages.*", "users.firstName as userFirstName", "users.lastName as userLastName", "users.id as userId", "users.avatar as userAvatar"]);
+    public function list($idChat, Request $request){
+        $messages = Message::join('users', 'users.id', 'messages.createdBy')->where("messages.idChat", $idChat)->where("messages.deleted", false);
+
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $messages->where(function ($query) use ($term) {
+                $query->where('message', 'LIKE', '%'.$term.'%');
+            });
+        }
+
+        return $messages->get(["messages.*", "users.firstName as userFirstName", "users.lastName as userLastName", "users.id as userId", "users.avatar as userAvatar"]);
     }
 
     public function delete($id){
