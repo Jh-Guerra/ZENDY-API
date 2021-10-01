@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Error;
 use App\Models\User;
 use App\Models\Company;
+use App\Models\Module;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +29,7 @@ class ErrorController extends Controller
         $errorZendy = new Error();
         $errorZendy->idCompany = $user->idCompany;
         $errorZendy->createdBy = $user->id;
-        $errorZendy->module = $request["module"];
+        $errorZendy->idModule = $request["idModule"];
         $errorZendy->reason = $request["reason"];
         $errorZendy->description = $request["description"];
         $errorZendy->image = $request["image"];
@@ -59,7 +60,7 @@ class ErrorController extends Controller
 
     private function validateFields($request){
         $validator = Validator::make($request->all(), [
-            'module' => 'required|string|max:255',
+           // 'module' => 'required|string|max:255',
             'reason' => 'required|string|max:255',
         ]);
 
@@ -85,7 +86,7 @@ class ErrorController extends Controller
 
         $errorZendy->idCompany = $request->idCompany;
         $errorZendy->createdBy = $request->createdBy;
-        $errorZendy->module = $request->module;
+        $errorZendy->idModule = $request->idModule;
         $errorZendy->reason = $request->reason;
         $errorZendy->description = $request->description;
         $errorZendy->image = $request->image;
@@ -169,6 +170,8 @@ class ErrorController extends Controller
         $error->user = User::find($error->createdBy);
         if($error->idCompany)
             $error->company = Company::find($error->idCompany);
+        if($error->idModule)
+            $error->module = Module::find($error->idModule);
 
         return response()->json(compact('error'),201);
     }
