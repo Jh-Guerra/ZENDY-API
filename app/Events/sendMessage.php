@@ -15,14 +15,16 @@ class sendMessage implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $message;
+    public $chatId;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($message)
+    public function __construct($message, $chatId)
     {
         $this->message = $message;
+        $this->chatId = $chatId;
     }
 
     /**
@@ -32,7 +34,6 @@ class sendMessage implements ShouldBroadcast
      */
     public function broadcastOn()
     {
-        $channel = Channel::where('status', '!=', false)->get('name');
-        return new PrivateChannel($channel);
+        return new PrivateChannel("chats.".$this->chatId);
     }
 }

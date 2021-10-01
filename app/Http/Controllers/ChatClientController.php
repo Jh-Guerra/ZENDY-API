@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Chat;
+use App\Models\Participant;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -35,16 +36,23 @@ class ChatClientController extends Controller
         $chat->recommendations = 0;
         $chat->scope = "Personal";
 
-        $activeChat = Chat::where("idUser", $user->id)
-            ->where("type", "Cliente")->where("status", "Vigente")
-            ->where("deleted", false)->first();
+        $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
+        $otherChats =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->get(["id", "idUser", "idChat"])->keyBy("idChat");
+        $chats = Chat::whereIn("id", $chatIds)->get();
+        $receiver = $users[0];
 
-        if($activeChat){
-            $chat = $activeChat;
-            return response()->json(compact('chat'),201);
+        foreach ($chats as $c) {
+            $otherChat = array_key_exists($c->id, $otherChats->toArray()) ? $otherChats[$c->id] : null;
+            if($c->status == "Vigente" && $c->scope == "Personal" && $otherChat != null && $otherChat["idUser"] == $receiver["id"]){
+                $chat = $c;
+                return response()->json(compact('chat'),201);
+            }
         }
 
         $chat->save();
+        $chat->channel = "channel_".$chat->id;
+        $chat->save();
+
         $participants = [];
 
         $userRequest = [

@@ -252,6 +252,8 @@ class EntryQueryController extends Controller
         $chat->idEntryQuery = $entryQuery->id;
         $chat->byRecommend = $request["byRecommend"];
         $chat->save();
+        $chat->channel = "channel_".$chat->id;
+        $chat->save();
 
         $participantController = new ParticipantController();
         $participants = [];

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\sendMessage;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Message;
@@ -43,6 +44,9 @@ class MessageController extends Controller
         }
 
         if ($fileSaved) $message->save();
+//        $message->userFirstName = ""
+
+        event(new sendMessage($message, $request["idChat"]));
 
         return response()->json(compact('message'), 201);
 

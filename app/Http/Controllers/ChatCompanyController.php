@@ -54,6 +54,8 @@ class ChatCompanyController extends Controller
         $chat->recommendations = 0;
         $chat->scope = "Grupal";
         $chat->save();
+        $chat->channel = "channel_".$chat->id;
+        $chat->save();
 
         $participants = [];
 

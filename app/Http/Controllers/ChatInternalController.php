@@ -48,6 +48,8 @@ class ChatInternalController extends Controller
         }
 
         $chat->save();
+        $chat->channel = "channel_".$chat->id;
+        $chat->save();
         $participants = [];
 
         $adminRequest = [
