@@ -61,7 +61,7 @@ class ChatController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $chatIds = Participant::where("idUser", $user->id)->where("status", "active")->where("deleted", false)->pluck("idChat");
+        $chatIds = Participant::where("idUser", $user->id)->whereIn("status", ["active", "Activo"])->where("deleted", false)->pluck("idChat");
         $chats = Chat::whereIn("id", $chatIds)->get();
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
