@@ -181,11 +181,26 @@ class ErrorController extends Controller
         }
 
         $error->status = "Accepted";
+        $error->received = true;
         $error->save();
 
         $error->user = User::find($error->createdBy);
         if($error->idCompany)
             $error->company = Company::find($error->idCompany);
+
+        return response()->json(compact('error'),201);
+    }
+
+    public function errorSolved($id) {
+        $error = Error::find($id);
+
+        if (!$error) {
+            return response()->json(['error' => 'Error reportado no encontrado'], 400);
+        }
+
+        $error->status = "Solved";
+        $error->fixed = true;
+        $error->save();
 
         return response()->json(compact('error'),201);
     }
@@ -197,6 +212,7 @@ class ErrorController extends Controller
             return response()->json(['error' => 'Error reportado no encontrado'], 400);
         }
 
+        $error->status = "fake";
         $error->fake = true;
         $error->save();
 

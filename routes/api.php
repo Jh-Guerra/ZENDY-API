@@ -85,6 +85,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update/{id}', 'App\Http\Controllers\ErrorController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\ErrorController@find');
         Route::get('/confirmError/{id}', 'App\Http\Controllers\ErrorController@confirmError');
+        Route::delete('/errorSolved/{id}', 'App\Http\Controllers\ErrorController@errorSolved');
         Route::get('/list', 'App\Http\Controllers\ErrorController@list');
         Route::get('/list-by-user', 'App\Http\Controllers\ErrorController@listByUser');
         Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
