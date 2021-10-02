@@ -204,23 +204,21 @@ class UserController extends Controller
     }
 
     public function listAvailable(Request $request){
-        $start = 0;
-        $limit = 50;
         $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
-        if (!$user) {
-            return response()->json(['error' => 'Usuario no encontrado'], 400);
-        }
-
-        $roles = $request->has("roles") ? $request->get("roles") : ["UserEmpresa"];
-        $term = $request->has("term") ? $request->get("term") : "";
-        $users = User::join('roles', 'users.idRole', '=', 'roles.id')->where('users.deleted', false)
+        $roles = $request->has("roles") ? $request->get("roles") : [];
+        $users = User::join('roles', 'roles.id', '=', 'users.idRole')->where('users.deleted', false)
             ->where('users.id', '!=', $user->id)
             ->whereIn('roles.name', $roles);
 
-        $this->searchUser($users, $term);
-
-        $users->offset($start * $limit)->take($limit);
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $users->where(function ($query) use ($term) {
+                $query->where('firstName', 'LIKE', '%' . $term . '%')
+                    ->orWhere('lastName', 'LIKE', '%' . $term . '%');
+            });
+        }
 
         $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
         $this->addObjectValues($users);
@@ -228,23 +226,40 @@ class UserController extends Controller
         return $users;
     }
 
-    public function listByCompany(Request $request){
-        $start = 0;
-        $limit = 50;
+    public function listAdmins(Request $request){
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
-        $term = $request->has('term') ? $request->get('term') : '';
-        $company = $request->has('company') ? $request->get('company') : '';
+        $users = User::join('roles', 'roles.id', '=', 'users.idRole')->where('users.deleted', false)
+            ->where('users.id', '!=', $user->id)
+            ->where('roles.name', "Admin");
 
-        if (!$company) {
-            return response()->json(['error' => 'Empresa no encontrada'], 400);
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $users->where(function ($query) use ($term) {
+                $query->where('firstName', 'LIKE', '%' . $term . '%')
+                    ->orWhere('lastName', 'LIKE', '%' . $term . '%');
+            });
         }
 
-        $users = User::where('deleted', '!=', true);
+        $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
 
-        $this->searchUserByCompany($users, $company);
-        $this->searchUser($users, $term);
+        return $users;
+    }
 
-        $users->offset($start * $limit)->take($limit);
+    public function listByCompany($idCompany, Request $request){
+        $term = $request->has('term') ? $request->get('term') : '';
+
+        if (!$idCompany) return response()->json(['error' => 'Seleccione una empresa'], 400);
+
+        $users = User::where('idCompany', $idCompany)->where('deleted', false);
+
+        if($term){
+            $users->where(function ($query) use ($term) {
+                $query->where('firstName', 'LIKE', '%' . $term . '%')
+                    ->orWhere('lastName', 'LIKE', '%' . $term . '%');
+            });
+        }
 
         return $users->orderBy("firstName")->orderBy("lastName")->get();
     }
@@ -254,14 +269,6 @@ class UserController extends Controller
             $users->where(function ($query) use ($term) {
                 $query->where('firstName', 'LIKE', '%' . $term . '%')
                     ->orWhere('lastName', 'LIKE', '%' . $term . '%');
-            });
-        }
-    }
-
-    public function searchUserByCompany($users, $company){
-        if ($company) {
-            $users->where(function ($query) use ($company) {
-                $query->where('idCompany', '=', $company);
             });
         }
     }
@@ -322,7 +329,7 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
 
-        $roles = $request->has("roles") ? $request->get("roles") : ["UserEmpresa"];
+        $roles = $request->has("roles") ? $request->get("roles") : [];
         $term = $request->has("term") ? $request->get("term") : "";
         //$company = $request->has("idCompany") ? $request->get("idCompany") : "";
         $users = User::join('roles', 'users.idRole', '=', 'roles.id')->where('users.deleted', false)

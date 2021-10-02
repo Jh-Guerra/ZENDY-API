@@ -13,26 +13,31 @@ use DB;
 
 class ChatCompanyController extends Controller
 {
-    protected $participantController;
-    public function __construct()
-    {
-        $this->participantController = app('App\Http\Controllers\ParticipantController');
-    }
-
     public function register(Request $request){
         $data = json_decode($request->getContent(), true);
-        $userIds = $data["userIds"];
-        $companyId = $data["companyId"];
+        $users = $data["users"];
+        $company = $data["company"];
         $allChecked = $data["allChecked"] || false;
-
-        if(!$userIds) return response()->json(['error' => 'Ningún usuario seleccionado'], 400);
-        if(!$companyId) return response()->json(['error' => 'Ninguna empresa seleccionada'], 400);
 
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
+        if(!$users || count($users) == 0) return response()->json(['error' => 'Ningún usuario seleccionado'], 400);
+        if(!$company) return response()->json(['error' => 'Ninguna empresa seleccionada'], 400);
+
+        $chat = new Chat();
+        $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
+        $chat->type = "Empresa";
+        $chat->status = "Vigente";
+        $chat->idCompany = $company["id"];
+        $chat->idUser = $user->id;
+        $chat->allUsers = $allChecked;
+        $chat->messages = 0;
+        $chat->scope = count($users) > 1 ? "Grupal" : "Personal";
+        $chat->name = $allChecked ? $company["name"] : null;
+
         if($allChecked){
-            $activeChat = Chat::where("idUser", $user->id)->where("idCompany", $companyId)
+            $activeChat = Chat::where("idUser", $user->id)->where("idCompany", $company["id"])
                 ->where("allUsers", true)
                 ->where("type", "Empresa")->where("status", "Vigente")
                 ->where("deleted", false)->first();
@@ -43,23 +48,11 @@ class ChatCompanyController extends Controller
             }
         }
 
-        $chat = new Chat();
-        $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
-        $chat->type = "Empresa";
-        $chat->status = "Vigente";
-        $chat->idCompany = $user->idCompany;
-        $chat->idUser = $user->id;
-        $chat->allUsers = $allChecked;
-        $chat->messages = 0;
-        $chat->recommendations = 0;
-        $chat->scope = "Grupal";
-        $chat->save();
-        $chat->channel = "channel_".$chat->id;
         $chat->save();
 
+        $participantController = new ParticipantController();
         $participants = [];
-
-        $userRequest = [
+        $admin = [
             'idUser' => $user->id,
             'idChat' => $chat->id,
             'type' => "Admin",
@@ -70,11 +63,11 @@ class ChatCompanyController extends Controller
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now()
         ];
-        array_push($participants, $userRequest);
+        array_push($participants, $admin);
 
-        foreach ($userIds as $userId) {
+        foreach ($users as $u) {
             $clientRequest = [
-                'idUser' => $userId,
+                'idUser' => $u["id"],
                 'idChat' => $chat->id,
                 'type' => "Participante",
                 'erp' => false,
@@ -87,7 +80,7 @@ class ChatCompanyController extends Controller
             array_push($participants, $clientRequest);
         }
 
-        $this->participantController->registerMany($participants);
+        $participantController->registerMany($participants);
 
         return response()->json(compact('chat'),201);
     }

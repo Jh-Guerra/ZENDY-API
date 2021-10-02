@@ -114,6 +114,28 @@ class ChatController extends Controller
         return $chats->values()->all();
     }
 
+    public function listAvailableUsersByCompany(Request $request){
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
+
+        $roles = $request->has("roles") ? $request->get("roles") : [];
+        $term = $request->has("term") ? $request->get("term") : "";
+
+
+        $users = User::join('roles', 'roles.id', '=', 'users.idRole')->join("companies", "companies.id", "=", "users.idCompany")
+            ->where("users.idCompany", $user->idCompany)->where('users.deleted', false)
+            ->where('users.id', '!=', $user->id)->whereIn('roles.name', $roles);
+
+        if ($term) {
+            $users->where(function ($query) use ($term) {
+                $query->where('firstName', 'LIKE', '%' . $term . '%')
+                    ->orWhere('lastName', 'LIKE', '%' . $term . '%');
+            });
+        }
+
+        return $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName', 'companies.name as companyName']);
+    }
+
     public function delete($id){
         $chat = Chat::find($id);
 

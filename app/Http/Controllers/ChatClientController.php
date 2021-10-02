@@ -13,18 +13,12 @@ use DB;
 
 class ChatClientController extends Controller
 {
-    protected $participantController;
-    public function __construct(){
-        $this->participantController = app('App\Http\Controllers\ParticipantController');
-    }
-
     public function register(Request $request){
         $users = json_decode($request->getContent(), true);
-        $client = ($users && $users[0]) ? $users[0] : null;
-        $user = Auth::user();
+        if(count($users) == 0) return response()->json(['error' => 'Necesita seleccionar al menos un usuario'], 400);
 
+        $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-        if(!$client) return response()->json(['error' => 'Necesita seleccionar al menos un cliente'], 400);
 
         $chat = new Chat();
         $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
@@ -33,44 +27,31 @@ class ChatClientController extends Controller
         $chat->idCompany = $user->idCompany;
         $chat->idUser = $user->id;
         $chat->messages = 0;
-        $chat->recommendations = 0;
-        $chat->scope = "Personal";
+        $chat->scope = count($users) > 1 ? "Grupal" : "Personal";
 
-        $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
-        $otherChats =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->get(["id", "idUser", "idChat"])->keyBy("idChat");
-        $chats = Chat::whereIn("id", $chatIds)->get();
-        $receiver = $users[0];
+        if($chat->scope == "Personal"){
+            $chatIds = Participant::where("idUser", $user->id)->where("idCompany", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
+            $chats = Chat::whereIn("id", $chatIds)->where("status", "Vigente")->where("scope", "Personal")->get();
+            $otherParticipantsByChat =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->get(["id", "idUser", "idChat"])->keyBy("idChat");
 
-        foreach ($chats as $c) {
-            $otherChat = array_key_exists($c->id, $otherChats->toArray()) ? $otherChats[$c->id] : null;
-            if($c->status == "Vigente" && $c->scope == "Personal" && $otherChat != null && $otherChat["idUser"] == $receiver["id"]){
-                $chat = $c;
-                return response()->json(compact('chat'),201);
+            $receiver = $users[0];
+            foreach ($chats as $c) {
+                $otherParticipant = array_key_exists($c->id, $otherParticipantsByChat->toArray()) ? $otherParticipantsByChat[$c->id] : null;
+                if($otherParticipant && $receiver && $otherParticipant["idUser"] == $receiver["id"]){
+                    $chat = $c;
+                    return response()->json(compact('chat'),201);
+                }
             }
         }
 
         $chat->save();
-        $chat->channel = "channel_".$chat->id;
-        $chat->save();
 
+        $participantController = new ParticipantController();
         $participants = [];
-
-        $userRequest = [
+        $admin = [
             'idUser' => $user->id,
             'idChat' => $chat->id,
             'type' => "Admin",
-            'erp' => true,
-            'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
-            'status' => "Activo",
-            'active' => true,
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now()
-        ];
-
-        $clientRequest = [
-            'idUser' => $client["id"],
-            'idChat' => $chat->id,
-            'type' => "Participante",
             'erp' => false,
             'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
             'status' => "Activo",
@@ -78,11 +59,24 @@ class ChatClientController extends Controller
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now()
         ];
+        array_push($participants, $admin);
 
-        array_push($participants, $userRequest);
-        array_push($participants, $clientRequest);
+        foreach ($users as $u) {
+            $new = [
+                'idUser' => $u["id"],
+                'idChat' => $chat->id,
+                'type' => "Participante",
+                'erp' => false,
+                'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
+                'status' => "Activo",
+                'active' => true,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ];
+            array_push($participants, $new);
+        }
 
-        $this->participantController->registerMany($participants);
+        $participantController->registerMany($participants);
 
         return response()->json(compact('chat'),201);
     }

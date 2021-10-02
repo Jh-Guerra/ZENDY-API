@@ -14,11 +14,9 @@ use DB;
 class ChatInternalController extends Controller
 {
     public function register(Request $request){
-        $participantController = new ParticipantController();
-
         $chat = new Chat();
         $users = json_decode($request->getContent(), true);
-        if (!$users || count($users) == 0) return response()->json(['error' => 'Necesita seleccionar al menos un cliente'], 400);
+        if (!$users || count($users) == 0) return response()->json(['error' => 'Necesita seleccionar al menos un usuario'], 400);
 
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
@@ -26,21 +24,19 @@ class ChatInternalController extends Controller
         $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
         $chat->type = "Interno";
         $chat->status = "Vigente";
-        $chat->idCompany = $user->idCompany;
         $chat->idUser = $user->id;
         $chat->messages = 0;
-        $chat->recommendations = 0;
         $chat->scope = count($users) > 1 ? "Grupal" : "Personal";
 
         if(count($users) == 1){
             $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
-            $otherChats =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->get(["id", "idUser", "idChat"])->keyBy("idChat");
-            $chats = Chat::whereIn("id", $chatIds)->get();
-            $receiver = $users[0];
+            $chats = Chat::whereIn("id", $chatIds)->where("type", "Interno")->where("status", "Vigente")->where("scope", "Personal")->get();
+            $otherParticipantsByChat =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->get(["id", "idUser", "idChat"])->keyBy("idChat");
 
+            $receiver = $users[0];
             foreach ($chats as $c) {
-                $otherChat = array_key_exists($c->id, $otherChats->toArray()) ? $otherChats[$c->id] : null;
-                if($c->status == "Vigente" && $c->scope == "Personal" && $otherChat != null && $otherChat["idUser"] == $receiver["id"]){
+                $otherParticipant = array_key_exists($c->id, $otherParticipantsByChat->toArray()) ? $otherParticipantsByChat[$c->id] : null;
+                if($otherParticipant && $receiver && $otherParticipant["idUser"] == $receiver["id"]){
                     $chat = $c;
                     return response()->json(compact('chat'),201);
                 }
@@ -48,32 +44,34 @@ class ChatInternalController extends Controller
         }
 
         $chat->save();
-        $chat->channel = "channel_".$chat->id;
-        $chat->save();
-        $participants = [];
 
-        $adminRequest = [
+        $participantController = new ParticipantController();
+        $participants = [];
+        $admin = [
             'idUser' => $user->id,
             'idChat' => $chat->id,
             'type' => "Admin",
             'erp' => true,
             'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
             'status' => "Activo",
-            'active' => true
+            'active' => true,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now()
         ];
-        array_push($participants, $adminRequest);
+        array_push($participants, $admin);
 
         foreach ($users as $u) {
             $new = [
                 'idUser' => $u["id"],
                 'idChat' => $chat->id,
                 'type' => "Participante",
-                'erp' => false,
+                'erp' => true,
                 'entryDate' => date('Y-m-d', Carbon::now()->timestamp),
                 'status' => "Activo",
-                'active' => true
+                'active' => true,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
             ];
-
             array_push($participants, $new);
         }
 

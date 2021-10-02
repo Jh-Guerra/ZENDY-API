@@ -27,7 +27,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
         Route::get('/list', 'App\Http\Controllers\UserController@list');
         Route::post('/list-available', 'App\Http\Controllers\UserController@listAvailable');
-        Route::get('/list-by-company', 'App\Http\Controllers\UserController@listByCompany');
+        Route::get('/list-by-company/{idCompany}', 'App\Http\Controllers\UserController@listByCompany');
+        Route::get('/list-admins', 'App\Http\Controllers\UserController@listAdmins');
         Route::delete('/delete/{id}', 'App\Http\Controllers\UserController@delete');
         Route::get('/listUserOnline', 'App\Http\Controllers\UserController@listUserOnline');
         Route::post('/updateStatus/{id}', 'App\Http\Controllers\UserController@updateUserOffLine');
@@ -51,6 +52,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\ChatController@delete');
         Route::post('/finalize/{id}', 'App\Http\Controllers\ChatController@finalize');
         Route::post('/name/{id}', 'App\Http\Controllers\ChatController@nameChat');
+        Route::post('/available-by-company', 'App\Http\Controllers\ChatController@listAvailableUsersByCompany');
     });
 
     Route::prefix('chats-client')->group(function () {
