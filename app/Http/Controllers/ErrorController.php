@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Tymon\JWTAuth\Contracts\Providers\Storage;
 
 class ErrorController extends Controller
 {
@@ -89,8 +90,19 @@ class ErrorController extends Controller
         $errorZendy->idModule = $request->idModule;
         $errorZendy->reason = $request->reason;
         $errorZendy->description = $request->description;
-        $errorZendy->image = $request->image;
-        $errorZendy->file = $request->file;
+        if($request->image){
+            if($request->oldImage){
+                $newImage = substr($request->oldImage, 8);
+                $image_path = storage_path().'/app/public/'."".$newImage;
+                if (@getimagesize($image_path)){
+                    unlink($image_path);
+                }
+            }
+            $errorZendy->image = $request->image;
+        }
+        if($request->file){
+            $errorZendy->file = $request->file;
+        }
         $errorZendy->status = "Pending";
         $errorZendy->save();
 
@@ -232,5 +244,22 @@ class ErrorController extends Controller
         $error->save();
 
         return response()->json(['success' => 'Error reportado eliminado'], 201);
+    }
+
+    public function deleteImage(Request $request){
+        $imageLink = $request->imageLink;
+        $errorId = $request->id;
+
+        $error = Error::find($errorId);
+        $image_path = storage_path().'/app/public/'."".$imageLink;
+        if (@getimagesize($image_path) && $error){
+            unlink($image_path);
+            $error->image = null;
+            $error->save();
+
+            return response()->json(compact('error'),201);
+        }else{
+            return response()->json(['error' => 'Error reportado no encontrado / Archivo no encontrado'], 400);
+        }
     }
 }

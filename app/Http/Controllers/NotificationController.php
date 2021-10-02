@@ -161,6 +161,17 @@ class NotificationController extends Controller
         $notification->idError = $request->idError;
         $notification->solved = $request->solved;
 
+        if($request->image){
+            if($request->oldImage){
+                $newImage = substr($request->oldImage, 8);
+                $image_path = storage_path().'/app/public/'."".$newImage;
+                if (@getimagesize($image_path)){
+                    unlink($image_path);
+                }
+            }
+            $notification->image = $request->image;
+        }
+
         $companiesIds = array_map('intval', $request->companiesNotified);
         $notification->companiesNotified = json_encode($companiesIds, true);
 
@@ -250,4 +261,20 @@ class NotificationController extends Controller
         return response()->json(['success' => 'Notificación Eliminada'], 201);
     }
 
+    public function deleteImage(Request $request){
+        $imageLink = $request->imageLink;
+        $notificationId = $request->id;
+
+        $notification = Notification::find($notificationId);
+        $image_path = storage_path().'/app/public/'."".$imageLink;
+        if (@getimagesize($image_path) && $notification){
+            unlink($image_path);
+            $notification->image = null;
+            $notification->save();
+
+            return response()->json(compact('notification'),201);
+        }else{
+            return response()->json(['error' => 'Notificación no encontrada / Archivo no encontrado'], 400);
+        }
+    }
 }
