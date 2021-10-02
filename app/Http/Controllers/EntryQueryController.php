@@ -28,7 +28,7 @@ class EntryQueryController extends Controller
         //$request = json_decode($request->getContent(), true);
 
         $entryQuery = new EntryQuery();
-        $entryQuery->startDate = date('Y-m-d', Carbon::now()->timestamp);
+        $entryQuery->startDate = Carbon::now()->timestamp;
         $entryQuery->status = "Pendiente";
         $entryQuery->idCompany = $user->idCompany;
         $entryQuery->createdBy = $user->id;
@@ -240,7 +240,7 @@ class EntryQueryController extends Controller
         $entryQuery->save();
 
         $chat = new Chat();
-        $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
+        $chat->startDate = Carbon::now()->timestamp;
         $chat->type = "Consulta";
         $chat->scope = "Personal";
         $chat->status = "Vigente";
