@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Recommendation;
 
 class EntryQueryController extends Controller
 {
@@ -38,7 +39,7 @@ class EntryQueryController extends Controller
         $entryQuery->file = $request["file"];
         $entryQuery->idModule = $request["idModule"];
         $entryQuery->idFrequentQuery = $request["idFrequentQuery"];
-        $entryQuery->isFrequentQuery = $request->isFrequentQuery == true;
+        $entryQuery->isFrequent = $request->isFrequent == true;
 
         $entryQuery->save();
 
@@ -178,7 +179,7 @@ class EntryQueryController extends Controller
         $entryQuery->file = $request["file"];
         $entryQuery->idModule = $request["idModule"];
         $entryQuery->idFrequentQuery = $request["idFrequentQuery"];
-        $entryQuery->isFrequentQuery = $request["isFrequentQuery"];
+        $entryQuery->isFrequent = $request["isFrequent"];
         $entryQuery->save();
 
         $tasks_controller = new uploadImageController;
@@ -323,5 +324,37 @@ class EntryQueryController extends Controller
         $recommendationController->registerMany($newRecommendations);
 
         return response()->json(['success' => 'Recomendaciones enviadas'], 201);
+    }
+
+    public function listFrequent(Request $request){
+        $user = Auth::user();
+        if(!$user)
+            return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $entryQueries = EntryQuery::where("isFrequent", true)->where("deleted", false)->where("idCompany",$user->idCompany);
+
+        return $entryQueries->get();
+    }
+
+    public function updateFrequent(Request $request, $id){
+        $entryQuery = EntryQuery::find($id);
+
+        if(!$entryQuery){
+            return response()->json(['error' => 'Consulta no encontrada'], 400);
+        }
+
+        $user = Auth::user();
+        if(!$user)
+            return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $entryQuery->name = $request["name"];
+        $entryQuery->isFrequent = $request["isFrequent"] = true;
+        $entryQuery->save();
+
+        $entryQuery->user = User::find($entryQuery->createdBy);
+        if($entryQuery->idCompany)
+            $entryQuery->company = Company::find($entryQuery->idCompany);
+
+        return response()->json(compact('entryQuery'),201);
     }
 }

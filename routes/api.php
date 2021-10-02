@@ -80,6 +80,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\EntryQueryController@delete');
         Route::post('/accept/{id}', 'App\Http\Controllers\EntryQueryController@accept');
         Route::post('/{id}/recommend', 'App\Http\Controllers\EntryQueryController@recommendUser');
+        Route::get('/listFrequent', 'App\Http\Controllers\EntryQueryController@listFrequent');
+        Route::post('/updateFrequent/{id}', 'App\Http\Controllers\EntryQueryController@updateFrequent');
     });
 
     Route::prefix('errors')->group(function () {
