@@ -175,8 +175,19 @@ class EntryQueryController extends Controller
 
         $entryQuery->reason = $request["reason"];
         $entryQuery->description = $request["description"];
-        $entryQuery->image = $request["image"];
-        $entryQuery->file = $request["file"];
+        if( $request["image"]){
+            if($request->oldImage){
+                $newImage = substr($request->oldImage, 8);
+                $image_path = storage_path().'/app/public/'."".$newImage;
+                if (@getimagesize($image_path)){
+                    unlink($image_path);
+                }
+            }
+            $entryQuery->image = $request["image"];
+        }
+        if($request["file"]){
+            $entryQuery->file = $request["file"];
+        }
         $entryQuery->idModule = $request["idModule"];
         $entryQuery->idFrequentQuery = $request["idFrequentQuery"];
         $entryQuery->isFrequent = $request["isFrequent"];
@@ -356,5 +367,23 @@ class EntryQueryController extends Controller
             $entryQuery->company = Company::find($entryQuery->idCompany);
 
         return response()->json(compact('entryQuery'),201);
+    }
+
+    public function deleteImage(Request $request)
+    {
+        $imageLink = $request->imageLink;
+        $entryQueryId = $request->id;
+
+        $entryQuery = EntryQuery::find($entryQueryId);
+        $image_path = storage_path() . '/app/public/' . "" . $imageLink;
+        if (@getimagesize($image_path) && $entryQuery) {
+            unlink($image_path);
+            $entryQuery->image = null;
+            $entryQuery->save();
+
+            return response()->json(compact('entryQuery'), 201);
+        } else {
+            return response()->json(['error' => 'Consulta entrante no encontrada / Archivo no encontrado'], 400);
+        }
     }
 }

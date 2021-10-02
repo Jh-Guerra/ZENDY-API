@@ -34,7 +34,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/updateStatus/{id}', 'App\Http\Controllers\UserController@updateUserOffLine');
         Route::post('/updateStatusOn/{id}', 'App\Http\Controllers\UserController@updateUserOnLine');
         Route::post('/list-available-sameCompany', 'App\Http\Controllers\UserController@listAvailableSameCompany');
-
+        Route::post('/deleteImage', 'App\Http\Controllers\UserController@deleteImage');
     });
 
     Route::prefix('companies')->group(function () {
@@ -44,6 +44,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list', 'App\Http\Controllers\CompanyController@list');
         Route::get('/list/count/users', 'App\Http\Controllers\CompanyController@listWithUsersCount');
         Route::delete('/delete/{id}', 'App\Http\Controllers\CompanyController@delete');
+        Route::post('/deleteImage', 'App\Http\Controllers\CompanyController@deleteImage');
     });
 
     Route::prefix('chats')->group(function () {
@@ -82,6 +83,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/{id}/recommend', 'App\Http\Controllers\EntryQueryController@recommendUser');
         Route::get('/listFrequent', 'App\Http\Controllers\EntryQueryController@listFrequent');
         Route::post('/updateFrequent/{id}', 'App\Http\Controllers\EntryQueryController@updateFrequent');
+        Route::post('/deleteImage', 'App\Http\Controllers\EntryQueryController@deleteImage');
     });
 
     Route::prefix('errors')->group(function () {
@@ -94,6 +96,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list-by-user', 'App\Http\Controllers\ErrorController@listByUser');
         Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
         Route::delete('/fakeError/{id}', 'App\Http\Controllers\ErrorController@fakeError');
+        Route::post('/deleteImage', 'App\Http\Controllers\ErrorController@deleteImage');
     });
 
     Route::prefix('notifications')->group(function(){
@@ -103,6 +106,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/find/{id}', 'App\Http\Controllers\NotificationController@find');
         Route::get('/admin/list', 'App\Http\Controllers\NotificationController@adminList');
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
+        Route::post('/deleteImage', 'App\Http\Controllers\NotificationController@deleteImage');
     });
 
     Route::prefix('recommendations')->group(function () {

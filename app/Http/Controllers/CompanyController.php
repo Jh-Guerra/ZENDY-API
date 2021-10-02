@@ -45,6 +45,14 @@ class CompanyController extends Controller
         $this->updateCompanyValues($company, $request);
         $company->save();
 
+        if($request->oldImage){
+            $newImage = substr($request->oldImage, 8);
+            $image_path = storage_path().'/app/public/'."".$newImage;
+            if (@getimagesize($image_path)){
+                unlink($image_path);
+            }
+        }
+
         if($request->hasFile('image')){
             $tasks_controller = new uploadImageController();
             $company->avatar = $tasks_controller->updateFile($request->file('image'), "companies/avatar", $company->id."_".Carbon::now()->timestamp);
@@ -89,10 +97,11 @@ class CompanyController extends Controller
         $company->ruc = $request->ruc;
         $company->email = $request->email;
         $company->phone = $request->phone;
-        $company->avatar = $request->logo;
         $company->currentBytes = $request->currentBytes;
         $company->maxBytes = $request->maxBytes;
-        $company->avatar = $request->avatar;
+        if($request->avatar){
+            $company->avatar = $request->avatar;
+        }
         $company->description = $request->description;
     }
 
@@ -138,5 +147,22 @@ class CompanyController extends Controller
         $company->save();
 
         return response()->json(['success' => 'Empresa Eliminada'], 201);
+    }
+
+    public function deleteImage(Request $request){
+        $imageLink = $request->imageLink;
+        $companyId = $request->id;
+
+        $company = Company::find($companyId);
+        $image_path = storage_path().'/app/public/'."".$imageLink;
+        if (@getimagesize($image_path) && $company){
+            unlink($image_path);
+            $company->avatar = null;
+            $company->save();
+
+            return response()->json(compact('company'),201);
+        }else{
+            return response()->json(['error' => 'Empresa no encontrada / Archivo no encontrado'], 400);
+        }
     }
 }

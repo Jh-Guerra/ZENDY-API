@@ -94,6 +94,14 @@ class UserController extends Controller
         $this->updateUserValues($user, $request);
         $user->save();
 
+        if($request->oldImage){
+            $newImage = substr($request->oldImage, 8);
+            $image_path = storage_path().'/app/public/'."".$newImage;
+            if (@getimagesize($image_path)){
+                unlink($image_path);
+            }
+        }
+
         if($request->hasFile('image')){
             $tasks_controller = new uploadImageController;
             $user->avatar = $tasks_controller->updateFile($request->file('image'), "users/avatar", $user->id."_".Carbon::now()->timestamp);
@@ -154,7 +162,9 @@ class UserController extends Controller
         $user->dob = date('Y-m-d', strtotime($request->dob));
         $user->idRole = $request->idRole;
         $user->idCompany = $request->idCompany;
-        $user->avatar = $request->avatar;
+        if($request->avatar){
+            $user->avatar = $request->avatar;
+        }
     }
 
     public function find($id){
@@ -347,5 +357,21 @@ class UserController extends Controller
         return $users;
     }
 
+    public function deleteImage(Request $request){
+        $imageLink = $request->imageLink;
+        $userId = $request->id;
+
+        $user = User::find($userId);
+        $image_path = storage_path().'/app/public/'."".$imageLink;
+        if (@getimagesize($image_path) && $user){
+            unlink($image_path);
+            $user->avatar = null;
+            $user->save();
+
+            return response()->json(compact('user'),201);
+        }else{
+            return response()->json(['error' => 'Usuario no encontrada / Archivo no encontrado'], 400);
+        }
+    }
 }
 
