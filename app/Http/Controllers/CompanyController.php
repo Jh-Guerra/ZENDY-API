@@ -61,7 +61,6 @@ class CompanyController extends Controller
             'adminName' => 'required|string|max:150',
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:20',
-            'logo' => 'string|nullable',
             'currentBytes' => 'required|int',
             'maxBytes' => 'required|int'
         ]);
@@ -90,7 +89,7 @@ class CompanyController extends Controller
         $company->ruc = $request->ruc;
         $company->email = $request->email;
         $company->phone = $request->phone;
-        $company->logo = $request->logo;
+        $company->avatar = $request->logo;
         $company->currentBytes = $request->currentBytes;
         $company->maxBytes = $request->maxBytes;
         $company->avatar = $request->avatar;

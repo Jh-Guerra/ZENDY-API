@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\sendMessage;
+use App\Models\Participant;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Models\Message;
@@ -22,9 +23,9 @@ class MessageController extends Controller
         $message = new Message();
 
         $message->createdBy = $user->id;
+        $message->createdDate = Carbon::now()->timestamp;
         $message->idChat = $request["idChat"];
         $message->message = $request["message"];
-        $message->viewed = 0;
         $message->resend = $request["resend"];
         $message->originalUserId = $user->id;
         $message->save();
@@ -44,9 +45,22 @@ class MessageController extends Controller
         }
 
         if ($fileSaved) $message->save();
-//        $message->userFirstName = ""
 
         event(new sendMessage($message, $request["idChat"]));
+
+        $chat = Chat::find($request["idChat"]);
+        if($chat){
+            $chat->messages = $chat->messages ? $chat->messages + 1 : 1;
+            $chat->lastMessageUserId = $user->id;
+            $chat->lastMessageId = $message->id;
+            $chat->save();
+
+            $participants = Participant::where("idChat", $chat->id)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
+            foreach ($participants as $participant) {
+                $participant->pendingMessages = $participant->pendingMessages ? $participant->pendingMessages+1 : 1;
+                $participant->save();
+            }
+        }
 
         return response()->json(compact('message'), 201);
 

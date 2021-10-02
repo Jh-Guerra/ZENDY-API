@@ -140,13 +140,14 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationViewedController@delete');
 
     });
-});
 
-Route::prefix('participants')->group(function () {
-    Route::post('/register/{id}', 'App\Http\Controllers\ParticipantController@register');
-    Route::get('/find/{id}', 'App\Http\Controllers\ParticipantController@find');
-    Route::put('/update/{id}', 'App\Http\Controllers\ParticipantController@update');
-    Route::get('/list', 'App\Http\Controllers\ParticipantController@list');
-    Route::post('/delete', 'App\Http\Controllers\ParticipantController@delete');
-});
+    Route::prefix('participants')->group(function () {
+        Route::post('/register/{id}', 'App\Http\Controllers\ParticipantController@register');
+        Route::get('/find/{id}', 'App\Http\Controllers\ParticipantController@find');
+        Route::post('/update/{id}', 'App\Http\Controllers\ParticipantController@update');
+        Route::get('/list', 'App\Http\Controllers\ParticipantController@list');
+        Route::post('/delete', 'App\Http\Controllers\ParticipantController@delete');
+        Route::post('/reset-pending-messages/{idChat}', 'App\Http\Controllers\ParticipantController@resetPendingMessages');
+    });
 
+});

@@ -6,6 +6,7 @@ use App\Models\Chat;
 use App\Models\Participant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class ParticipantController extends Controller
@@ -71,7 +72,7 @@ class ParticipantController extends Controller
         $participant = Participant::where('idUser', $idUser)->where("idChat", $idChat)->where("deleted", false)->first();
 
         if(!$participant){
-            return response()->json(['error' => 'Participante no encontrado'], 400);
+            return response()->json(['error' => 'Participación no encontrado'], 400);
         }
 
         $participant->deleted = true;
@@ -118,5 +119,16 @@ class ParticipantController extends Controller
             $errorMessage = $validator->errors()->toJson();
         }
         return $errorMessage;
+    }
+
+    public function resetPendingMessages($idChat){
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $participant = Participant::where("idChat", $idChat)->where("idUser", $user->id)->where("deleted", false)->first();
+        if (!$participant) return response()->json(['error' => 'Participación no encontrada'], 400);
+
+        $participant->pendingMessages = 0;
+        $participant->save();
     }
 }

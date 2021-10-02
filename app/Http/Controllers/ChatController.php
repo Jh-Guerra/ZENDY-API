@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Chat;
 use App\Models\Company;
+use App\Models\Message;
 use App\Models\Participant;
 use App\Models\User;
 use Carbon\Carbon;
@@ -61,19 +62,30 @@ class ChatController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $chatIds = Participant::where("idUser", $user->id)->whereIn("status", ["active", "Activo"])->where("deleted", false)->pluck("idChat");
-        $chats = Chat::whereIn("id", $chatIds)->get();
+        $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
+        $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
+        $chats = Chat::whereIn("id", $chatIds)->where("deleted", false)->orderBy("updated_at", "desc")->get();
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
 
         $companyIds = [];
+        $lastMessageIds = [];
+        $lastUserIds = [];
         foreach ($chats as $chat){
             if($chat->idCompany && !in_array($chat->idCompany, $companyIds))
                 $companyIds[] = $chat->idCompany;
+
+            if($chat->lastMessageUserId && !in_array($chat->lastMessageUserId, $lastUserIds))
+                $lastUserIds[] = $chat->lastMessageUserId;
+
+            if($chat->lastMessageId && !in_array($chat->lastMessageId, $lastMessageIds))
+                $lastMessageIds[] = $chat->lastMessageId;
         }
 
         $users = User::whereIn("id", $userIds)->get()->keyBy('id');
         $companies = Company::whereIn("id", $companyIds)->get()->keyBy('id');
+        $lastMessages = Message::whereIn("id", $lastMessageIds)->get()->keyBy('id');
+        $lastUsers = User::whereIn("id", $lastUserIds)->get()->keyBy('id');
 
         $participantsByChat = new \stdClass();
         $participantsByChatNames = new \stdClass();
@@ -92,6 +104,9 @@ class ChatController extends Controller
         foreach ($chats as $chat){
             $chat->user = $chat->idUser ? ($chat->idUser == $user->id ? $user : $users[$chat->idUser]) : null;
             $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
+            $chat->lastMessage = $chat->lastMessageId ? $lastMessages[$chat->lastMessageId] : null;
+            $chat->lastMessageUser = $chat->lastMessageUserId ? ($chat->lastMessageUserId == $user->id ? $user : $lastUsers[$chat->lastMessageUserId]) : null;
+            $chat->participation = $participations[$chat->id];
             $idChat = $chat->id;
 
             if(!$chat->name)
@@ -104,8 +119,8 @@ class ChatController extends Controller
         if($term){
             $chats = $chats->filter(function ($chat) use ($term) {
                 $filter = "";
-                if($chat->receiver){
-                    $filter = strtolower($chat->receiver->firstName." ".$chat->receiver->lastName);
+                if($chat->name){
+                    $filter = strtolower($chat->name);
                 }
                 return str_contains(strtolower($filter), strtolower($term)) !== false;
             });

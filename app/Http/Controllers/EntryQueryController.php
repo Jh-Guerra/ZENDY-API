@@ -290,7 +290,6 @@ class EntryQueryController extends Controller
         $message->createdBy = $user->id;
         $message->idChat = $chat->id;
         $message->message = "Hola, buen dia, su consulta ha sido atendida. En unos minutos nos comunicaremos contigo";
-        $message->viewed = 0;
         $message->resend = false;
         $message->originalUserId = $user->id;
 
