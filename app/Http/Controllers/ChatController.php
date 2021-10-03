@@ -64,7 +64,7 @@ class ChatController extends Controller
 
         $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
         $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
-        $chats = Chat::whereIn("id", $chatIds)->where("deleted", false)->orderBy("updated_at", "desc")->get();
+        $chats = Chat::whereIn("id", $chatIds)->where("deleted", false)->where("status",$request->status)->orderBy("updated_at", "desc")->get();
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
 
