@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Error;
+use App\Models\Notification;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\Module;
@@ -184,6 +185,9 @@ class ErrorController extends Controller
             $error->company = Company::find($error->idCompany);
         if($error->idModule)
             $error->module = Module::find($error->idModule);
+
+        $Notification = Notification::where("idError", $error->id)->get();
+        $error->Notifications = $Notification;
 
         return response()->json(compact('error'),201);
     }
