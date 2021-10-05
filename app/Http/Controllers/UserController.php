@@ -373,5 +373,23 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuario no encontrada / Archivo no encontrado'], 400);
         }
     }
+
+    public function listSameCompany(Request $request){
+        $start = 0;
+        $limit = 50;
+        $user = Auth::user();
+        $term = $request->has("term") ? $request->get("term") : "";
+
+        $users = User::join('roles', 'users.idRole', '=', 'roles.id')->where('users.idCompany','=',$user->idCompany)
+            ->where('users.deleted', '!=', true);
+        $this->searchUser($users, $term);
+
+        $users->offset($start * $limit)->take($limit);
+
+        $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
+        $this->addObjectValues($users);
+
+        return $users;
+    }
 }
 

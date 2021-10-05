@@ -35,6 +35,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/updateStatusOn/{id}', 'App\Http\Controllers\UserController@updateUserOnLine');
         Route::post('/list-available-sameCompany', 'App\Http\Controllers\UserController@listAvailableSameCompany');
         Route::post('/deleteImage', 'App\Http\Controllers\UserController@deleteImage');
+        Route::get('/list-same-company', 'App\Http\Controllers\UserController@listSameCompany');
     });
 
     Route::prefix('companies')->group(function () {
