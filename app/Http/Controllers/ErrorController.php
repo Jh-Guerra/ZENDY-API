@@ -62,8 +62,8 @@ class ErrorController extends Controller
 
     private function validateFields($request){
         $validator = Validator::make($request->all(), [
-           // 'module' => 'required|string|max:255',
             'reason' => 'required|string|max:255',
+            'description' => 'required|string'
         ]);
 
         $errorMessage = null;
