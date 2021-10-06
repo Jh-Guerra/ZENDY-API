@@ -219,6 +219,7 @@ class UserController extends Controller
 
         $roles = $request->has("roles") ? $request->get("roles") : [];
         $users = User::join('roles', 'roles.id', '=', 'users.idRole')->where('users.deleted', false)
+            ->where("users.idCompany", $user->idCompany)
             ->where('users.id', '!=', $user->id)
             ->whereIn('roles.name', $roles);
 

@@ -84,7 +84,7 @@ class MessageController extends Controller
             });
         }
 
-        return $messages->get(["messages.*", "users.firstName as userFirstName", "users.lastName as userLastName", "users.id as userId", "users.avatar as userAvatar"]);
+        return $messages->get(["messages.*", "users.firstName as userFirstName", "users.lastName as userLastName", "users.id as userId", "users.avatar as userAvatar", "users.sex as userSex"]);
     }
 
     public function delete($id){
