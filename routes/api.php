@@ -104,6 +104,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/register-company', 'App\Http\Controllers\NotificationController@registerCompanyNotification');
         Route::post('/register-companies', 'App\Http\Controllers\NotificationController@registerCompaniesNotification');
         Route::post('/update/{id}', 'App\Http\Controllers\NotificationController@updateNotification');
+        Route::post('/update-users-notified/{id}', 'App\Http\Controllers\NotificationController@updateListUsersNotified');
         Route::get('/find/{id}', 'App\Http\Controllers\NotificationController@find');
         Route::get('/admin/list', 'App\Http\Controllers\NotificationController@adminList');
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
@@ -144,8 +145,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/find/{userId}/{notificationId}', 'App\Http\Controllers\NotificationViewedController@find');
         Route::get('/list/{notificationId}', 'App\Http\Controllers\NotificationViewedController@list');
         Route::get('/list-by-user', 'App\Http\Controllers\NotificationViewedController@listByUser');
+        Route::get('/list-by-notification/{notificationId}', 'App\Http\Controllers\NotificationViewedController@listByUserNotification');
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationViewedController@delete');
-
     });
 
     Route::prefix('participants')->group(function () {

@@ -70,6 +70,20 @@ class NotificationViewedController extends Controller
         return $notificationsViewed;
     }
 
+    public function listByUserNotification($notificationId){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $listNotificationsViewed = NotificationViewed::where("idNotification", $notificationId)->join('companies', 'companies.id', "=", 'notification_views.viewedIdCompany')->join('users as userOne', 'userOne.id', "=", 'notification_views.viewedBy')
+            ->join('roles as rolesOne', 'userOne.idRole', "=", 'rolesOne.id')
+            ->where('notification_views.deleted', false)
+            ->where('notification_views.status', "Pendiente")
+            ->orderBy("notification_views.updated_at")
+            ->get(["notification_views.*", "userOne.firstName AS firstName","userOne.lastName AS lastName", "rolesOne.name as rol", "companies.name as companyName", "userOne.email as email"]);
+
+        return $listNotificationsViewed;
+    }
+
     public function find($userId, $notificationId){
         $notificationViewed = NotificationViewed::where("viewedBy", $userId)->where("idNotification", $notificationId)->first();
         if (!$notificationViewed) return response()->json(['error' => 'Este usuario no ha visto la notificación'], 400);
