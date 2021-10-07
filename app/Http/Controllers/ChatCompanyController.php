@@ -85,34 +85,6 @@ class ChatCompanyController extends Controller
         return response()->json(compact('chat'),201);
     }
 
-    public function list(Request $request){
-        $user = Auth::user();
-
-        $activeChats = Chat::where("idUser", $user->id)
-            ->where("type", "Cliente")->where("status", "Vigente")
-            ->where("deleted", false)->get();
-
-        $userIds = [];
-        foreach ($activeChats as $chat){
-            if($chat->idUser && !in_array($chat->idUser, $userIds))
-                $userIds[] = $chat->idUser;
-
-            if($chat->idReceiver && !in_array($chat->idReceiver, $userIds))
-                $userIds[] = $chat->idReceiver;
-        }
-
-        $users = User::whereIn("id", $userIds)->get()->keyBy('id');
-
-        foreach ($activeChats as $chat){
-            $chat->user = $chat->idUser ? $users[$chat->idUser] : null;
-            $chat->receiver = $chat->idReceiver ? $users[$chat->idReceiver] : null;
-        }
-
-        $term = $request->has("term") ? $request->get("term") : "";
-
-        return $this->searchChatClient($activeChats, $term);
-    }
-
     public function searchChatClient($activeChats, $term){
         if($term){
             $activeChats = $activeChats->filter(function ($chat) use ($term) {
