@@ -202,6 +202,45 @@ class NotificationController extends Controller
         return response()->json(compact('notification'),201);
     }
 
+    public function updateListUsersNotified($id, Request $request){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $notification = Notification::find($id);
+        if(!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
+
+        $request = json_decode($request->getContent(), true);
+        $userIds = $request["usersNotified"];
+
+        $notificationViewedController = new NotificationViewedController();
+        $notificationsViewed = [];
+        $users = User::whereIn("id", $userIds)->get();
+
+        foreach ($users as $u) {
+            $newValue = [
+                'idNotification' => $notification->id,
+                'viewedIdCompany' => $u->idCompany,
+                'viewedBy' => $u->id,
+                'status' => "Pendiente",
+                'deleted' => false,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ];
+            array_push($notificationsViewed, $newValue);
+        }
+
+        $notificationViewedController->registerMany($notificationsViewed);
+        $notification->usersNotified = json_decode($notification->usersNotified, true);
+        $newNotifications = array_merge($notification->usersNotified, $userIds);
+        $notification->usersNotified = json_encode($newNotifications, true);
+
+        $notification->save();
+
+        $notification->usersNotified = json_decode($notification->usersNotified, true);
+
+        return response()->json(compact('notification'),201);
+    }
+
     private function validateFields($request){
         $validator = Validator::make($request->all(), [
             'reason' => 'required|string|max:255',
