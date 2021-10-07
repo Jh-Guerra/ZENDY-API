@@ -80,34 +80,6 @@ class ChatInternalController extends Controller
         return response()->json(compact('chat'),201);
     }
 
-    public function list(Request $request){
-        $user = Auth::user();
-
-        $activeChats = Chat::where("idUser", $user->id)
-            ->where("type", "Interno")->where("status", "Vigente")
-            ->where("deleted", false)->get();
-
-        $userIds = [];
-        foreach ($activeChats as $chat){
-            if(!in_array($chat->idUser, $userIds))
-                $userIds[] = $chat->idUser;
-
-            if(!in_array($chat->idReceiver, $userIds))
-                $userIds[] = $chat->idReceiver;
-        }
-
-        $users = User::whereIn("id", $userIds)->get()->keyBy('id');
-
-        foreach ($activeChats as $chat){
-            $chat->user = $users[$chat->idUser];
-            $chat->receiver = $users[$chat->idReceiver];
-        }
-
-        $term = $request->has("term") ? $request->get("term") : "";
-
-        return $this->searchChatClient($activeChats, $term);
-    }
-
     public function searchChatClient($activeChats, $term){
         if($term){
             $activeChats = $activeChats->filter(function ($chat) use ($term) {

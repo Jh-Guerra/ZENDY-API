@@ -59,17 +59,14 @@ Route::group(['middleware' => ['jwt.verify']], function() {
 
     Route::prefix('chats-client')->group(function () {
         Route::post('/register', 'App\Http\Controllers\ChatClientController@register');
-        Route::get('/list', 'App\Http\Controllers\ChatClientController@list');
     });
 
     Route::prefix('chats-company')->group(function () {
         Route::post('/register', 'App\Http\Controllers\ChatCompanyController@register');
-//        Route::get('/list', 'App\Http\Controllers\ChatClientController@list');
     });
 
     Route::prefix('chats-internal')->group(function () {
         Route::post('/register', 'App\Http\Controllers\ChatInternalController@register');
-        Route::get('/list', 'App\Http\Controllers\ChatInternalController@list');
     });
 
     Route::prefix('entry-queries')->group(function () {
