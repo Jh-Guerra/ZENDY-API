@@ -22,6 +22,8 @@ class NotificationController extends Controller
 
         $notification = new Notification();
 
+        $notification->idCompany = $user->idCompany;
+        $notification->byAdmin = $user->idRole == 1;
         $notification->createdBy = $user->id;
         $notification->reason = $request["reason"];
         $notification->description = $request["description"];
@@ -88,6 +90,8 @@ class NotificationController extends Controller
 
         $notification = new Notification();
 
+        $notification->idCompany = $user->idCompany;
+        $notification->byAdmin = $user->idRole == 1;
         $notification->createdBy = $user->id;
         $notification->reason = $request["reason"];
         $notification->description = $request["description"];
@@ -155,6 +159,8 @@ class NotificationController extends Controller
         $notification = Notification::find($id);
         if(!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
 
+        $notification->idCompany = $user->idCompany;
+        $notification->byAdmin = $user->idRole == 1;
         $notification->createdBy = $user->id;
         $notification->reason = $request->reason;
         $notification->description = $request->description;
@@ -258,8 +264,30 @@ class NotificationController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
+        $notifications = Notification::where("byAdmin", true)->where('deleted', false);
 
-        $notifications = Notification::where('createdBy', $user->id)->where('deleted', false);
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $notifications->where(function ($query) use ($term) {
+                $query->where('reason', 'LIKE', '%' . $term . '%');
+            });
+        }
+
+        $notifications = $notifications->orderBy("created_at", "desc")->get();
+
+        foreach ($notifications as $notification) {
+            $notification->companiesNotified = json_decode($notification->companiesNotified, true);
+            $notification->usersNotified = json_decode($notification->usersNotified, true);
+        }
+
+        return $notifications;
+    }
+
+    public function listNotificationsByCompany(Request $request){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $notifications = Notification::where('deleted', false);
 
         $term = $request->has("term") ? $request->get("term") : "";
         if($term){
