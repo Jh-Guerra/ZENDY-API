@@ -46,8 +46,6 @@ class MessageController extends Controller
 
         if ($fileSaved) $message->save();
 
-        event(new sendMessage($message, $request["idChat"]));
-
         $chat = Chat::find($request["idChat"]);
         if($chat){
             $chat->messages = $chat->messages ? $chat->messages + 1 : 1;
@@ -61,6 +59,8 @@ class MessageController extends Controller
                 $participant->save();
             }
         }
+
+        event(new sendMessage($message, $request["idChat"], $user));
 
         return response()->json(compact('message'), 201);
 

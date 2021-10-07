@@ -16,14 +16,16 @@ class sendMessage implements ShouldBroadcast
 
     public $message;
     public $chatId;
+    public $user;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($message, $chatId)
+    public function __construct($message, $chatId, $user)
     {
         $this->message = $message;
+        $this->user = $user;
         $this->chatId = $chatId;
     }
 
