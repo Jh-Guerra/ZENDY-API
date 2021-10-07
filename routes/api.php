@@ -55,6 +55,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/finalize/{id}', 'App\Http\Controllers\ChatController@finalize');
         Route::post('/name/{id}', 'App\Http\Controllers\ChatController@nameChat');
         Route::post('/available-by-company', 'App\Http\Controllers\ChatController@listAvailableUsersByCompany');
+        Route::get('/finalize-list', 'App\Http\Controllers\ChatController@listFinalize');
     });
 
     Route::prefix('chats-client')->group(function () {
