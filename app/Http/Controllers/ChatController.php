@@ -194,4 +194,81 @@ class ChatController extends Controller
 
         return response()->json(compact('chat'),201);
     }
+
+    public function listFinalize(Request $request){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $from= $request->has("fromDate") ? $request->get("fromDate") : "";
+        $fromDate1 = (int)$from;
+        $to = $request->has("toDate") ? $request->get("toDate") : "";
+        $fromTo1 = (int)$to;
+        
+        $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
+        $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
+        
+        $chats = Chat::whereIn("id", $chatIds)->where("deleted", false)->where("status",$request->status)->whereBetween('finalizeDate', [$fromDate1 ,$to])->orderBy("updated_at", "desc")->get();
+        $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
+        $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
+
+        $companyIds = [];
+        $lastMessageIds = [];
+        $lastUserIds = [];
+        foreach ($chats as $chat){
+            if($chat->idCompany && !in_array($chat->idCompany, $companyIds))
+                $companyIds[] = $chat->idCompany;
+
+            if($chat->lastMessageUserId && !in_array($chat->lastMessageUserId, $lastUserIds))
+                $lastUserIds[] = $chat->lastMessageUserId;
+
+            if($chat->lastMessageId && !in_array($chat->lastMessageId, $lastMessageIds))
+                $lastMessageIds[] = $chat->lastMessageId;
+        }
+
+        $users = User::whereIn("id", $userIds)->get()->keyBy('id');
+        $companies = Company::whereIn("id", $companyIds)->get()->keyBy('id');
+        $lastMessages = Message::whereIn("id", $lastMessageIds)->get()->keyBy('id');
+        $lastUsers = User::whereIn("id", $lastUserIds)->get()->keyBy('id');
+
+        $participantsByChat = new \stdClass();
+        $participantsByChatNames = new \stdClass();
+        foreach ($participants as $participant) {
+            $participant->user = $users[$participant->idUser];
+
+            $idChat = $participant->idChat;
+            $currentChatParticipants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
+            array_push($currentChatParticipants, $participant);
+            $participantsByChat->$idChat = $currentChatParticipants;
+
+            $currentParticipantsName = property_exists($participantsByChatNames, $idChat) ? $participantsByChatNames->$idChat : "";
+            $participantsByChatNames->$idChat = $currentParticipantsName.$participant->user->firstName." ".$participant->user->lastName.", ";
+        }
+
+        foreach ($chats as $chat){
+            $chat->user = $chat->idUser ? ($chat->idUser == $user->id ? $user : $users[$chat->idUser]) : null;
+            $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
+            $chat->lastMessage = $chat->lastMessageId ? $lastMessages[$chat->lastMessageId] : null;
+            $chat->lastMessageUser = $chat->lastMessageUserId ? ($chat->lastMessageUserId == $user->id ? $user : $lastUsers[$chat->lastMessageUserId]) : null;
+            $chat->participation = $participations[$chat->id];
+            $idChat = $chat->id;
+
+            if(!$chat->name)
+                $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName." ".$user->lastName);
+
+            $chat->participants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
+        }
+
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $chats = $chats->filter(function ($chat) use ($term) {
+                $filter = "";
+                if($chat->name){
+                    $filter = strtolower($chat->name);
+                }
+                return str_contains(strtolower($filter), strtolower($term)) !== false;
+            });
+        }
+
+        return $chats->values()->all();
+    }
 }
