@@ -53,32 +53,12 @@ class NotificationViewedController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        return NotificationViewed::where("idNotification", $notificationId)->where("deleted", false)->get();
-    }
-
-    public function listByUser(){
-        $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-
-        $notificationsViewed = NotificationViewed::join('notifications', 'notifications.id', 'notification_views.idNotification')->join('users', 'users.id', 'notification_views.viewedBy')
-            ->where("notification_views.viewedBy", $user->id)
-            ->where('notification_views.deleted', false)
-            ->orderBy("notification_views.created_at")
-            ->get(["notification_views.*", "notifications.reason as reason", "notifications.description as description", "notifications.id as notificationId"]);
-
-
-        return $notificationsViewed;
-    }
-
-    public function listByUserNotification($notificationId){
-        $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-
         $listNotificationsViewed = NotificationViewed::where("idNotification", $notificationId)->join('companies', 'companies.id', "=", 'notification_views.viewedIdCompany')->join('users as userOne', 'userOne.id', "=", 'notification_views.viewedBy')
             ->join('roles as rolesOne', 'userOne.idRole', "=", 'rolesOne.id')
             ->where('notification_views.deleted', false)
-            ->where('notification_views.status', "Pendiente")
-            ->orderBy("notification_views.updated_at")
+            ->orderBy("notification_views.status", "desc")
+            ->orderBy("userOne.firstName")
+            ->orderBy("userOne.LastName")
             ->get(["notification_views.*", "userOne.firstName AS firstName","userOne.lastName AS lastName", "rolesOne.name as rol", "companies.name as companyName", "userOne.email as email"]);
 
         return $listNotificationsViewed;

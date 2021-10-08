@@ -287,16 +287,37 @@ class NotificationController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $notifications = Notification::where('deleted', false);
+        $notificationsIds = NotificationViewed::where("viewedIdCompany", $user->idCompany)->where('deleted', false)->orderBy("created_at", "desc")->pluck("idNotification");
+        $notifications = Notification::whereIn("id", $notificationsIds)->where("deleted", false);
+        $term = $request->has("term") ? $request->get("term") : "";
+        if($term){
+            $notifications->where(function ($query) use ($term) {
+                $query->where('reason', 'LIKE', '%'.$term.'%');
+            });
+        }
+        $notifications = $notifications->orderBy("created_at", "desc")->get();
 
+        foreach ($notifications as $notification) {
+            $notification->companiesNotified = json_decode($notification->companiesNotified, true);
+            $notification->usersNotified = json_decode($notification->usersNotified, true);
+        }
+
+        return $notifications;
+    }
+
+    public function listNotificationsByUser(Request $request){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $notificationsIds = NotificationViewed::where("viewedIdCompany", $user->idCompany)->where("viewedBy", $user->id)->where("status", "Pendiente")->where('deleted', false)->orderBy("created_at", "desc")->pluck("idNotification");
+        $notifications = Notification::whereIn("id", $notificationsIds)->where("deleted", false);
         $term = $request->has("term") ? $request->get("term") : "";
         if($term){
             $notifications->where(function ($query) use ($term) {
                 $query->where('reason', 'LIKE', '%' . $term . '%');
             });
         }
-
-        $notifications = $notifications->get();
+        $notifications = $notifications->orderBy("created_at", "desc")->get();
 
         foreach ($notifications as $notification) {
             $notification->companiesNotified = json_decode($notification->companiesNotified, true);

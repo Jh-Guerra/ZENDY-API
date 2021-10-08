@@ -259,11 +259,14 @@ class UserController extends Controller
     }
 
     public function listByCompany($idCompany, Request $request){
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
+
         $term = $request->has('term') ? $request->get('term') : '';
 
         if (!$idCompany) return response()->json(['error' => 'Seleccione una empresa'], 400);
 
-        $users = User::where('idCompany', $idCompany)->where('deleted', false);
+        $users = User::where('idCompany', $idCompany)->where("id", "!=", $user->id)->where('deleted', false);
 
         if($term){
             $users->where(function ($query) use ($term) {
