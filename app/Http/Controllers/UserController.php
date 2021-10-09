@@ -398,5 +398,24 @@ class UserController extends Controller
 
         return $users;
     }
+
+    public function listCompanyNotify(Request $request){
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
+
+        $term = $request->has('term') ? $request->get('term') : '';
+
+        $users = Company::where('companies.deleted', false);
+
+        if($term){
+            $users->where(function ($query) use ($term) {
+                $query->where('companies.name', 'LIKE', '%' . $term . '%');
+            });
+        }
+
+        $users = $users->orderBy("name")->get();
+
+        return $users;
+    }
 }
 
