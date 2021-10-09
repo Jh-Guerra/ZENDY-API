@@ -26,8 +26,6 @@ class EntryQueryController extends Controller
         if(!$user)
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        //$request = json_decode($request->getContent(), true);
-
         $entryQuery = new EntryQuery();
         $entryQuery->startDate = Carbon::now()->timestamp;
         $entryQuery->status = "Pendiente";
@@ -38,7 +36,6 @@ class EntryQueryController extends Controller
         $entryQuery->image = $request["image"];
         $entryQuery->file = $request["file"];
         $entryQuery->idModule = $request["idModule"];
-        $entryQuery->idFrequentQuery = $request["idFrequentQuery"];
         $entryQuery->isFrequent = $request->isFrequent == true;
 
         $entryQuery->save();
@@ -189,7 +186,6 @@ class EntryQueryController extends Controller
             $entryQuery->file = $request["file"];
         }
         $entryQuery->idModule = $request["idModule"];
-        $entryQuery->idFrequentQuery = $request["idFrequentQuery"];
         $entryQuery->isFrequent = $request["isFrequent"];
         $entryQuery->save();
 
@@ -339,12 +335,11 @@ class EntryQueryController extends Controller
 
     public function listFrequent(Request $request){
         $user = Auth::user();
-        if(!$user)
-            return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $entryQueries = EntryQuery::where("isFrequent", true)->where("deleted", false)->where("idCompany",$user->idCompany);
 
-        return $entryQueries->get();
+        return $entryQueries->orderBy("name")->get();
     }
 
     public function updateFrequent(Request $request, $id){
