@@ -106,7 +106,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/find/{id}', 'App\Http\Controllers\NotificationController@find');
         Route::get('/admin/list', 'App\Http\Controllers\NotificationController@adminList');
         Route::get('/company/list', 'App\Http\Controllers\NotificationController@listNotificationsByCompany');
-        Route::get('/user/list', 'App\Http\Controllers\NotificationController@listNotificationsByUser');
+        Route::get('/user/list/{status}', 'App\Http\Controllers\NotificationController@listNotificationsByUser');
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
         Route::post('/deleteImage', 'App\Http\Controllers\NotificationController@deleteImage');
     });
