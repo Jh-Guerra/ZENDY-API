@@ -58,6 +58,16 @@ class ChatController extends Controller
         return response()->json(compact('chat'),201);
     }
 
+    public function findImages($id){
+        $user = Auth::user();
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $images = Message::where("idChat", $id)->where("image", "!=", "")->where("deleted", false)->pluck("image");
+        if(!$images) return response()->json(['error' => 'El chat no cuenta con imagenes'], 400);
+
+        return response()->json(compact('images'),201);
+    }
+
     public function listActive(Request $request){
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
@@ -203,10 +213,10 @@ class ChatController extends Controller
         $fromDate1 = (int)$from;
         $to = $request->has("toDate") ? $request->get("toDate") : "";
         $fromTo1 = (int)$to;
-        
+
         $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
         $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
-        
+
         $chats = Chat::whereIn("id", $chatIds)->where("deleted", false)->where("status",$request->status)->whereBetween('finalizeDate', [$fromDate1 ,$to])->orderBy("updated_at", "desc")->get();
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
