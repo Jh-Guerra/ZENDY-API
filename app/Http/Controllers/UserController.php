@@ -266,16 +266,19 @@ class UserController extends Controller
 
         if (!$idCompany) return response()->json(['error' => 'Seleccione una empresa'], 400);
 
-        $users = User::where('idCompany', $idCompany)->where("id", "!=", $user->id)->where('deleted', false);
+        $users = User::join('roles', 'roles.id', '=', 'users.idRole')->where('users.deleted', false)
+            ->where('users.idCompany', $idCompany)->where("users.id", "!=", $user->id)->where('users.deleted', false);
 
         if($term){
             $users->where(function ($query) use ($term) {
-                $query->where('firstName', 'LIKE', '%' . $term . '%')
-                    ->orWhere('lastName', 'LIKE', '%' . $term . '%');
+                $query->where('users.firstName', 'LIKE', '%' . $term . '%')
+                    ->orWhere('users.lastName', 'LIKE', '%' . $term . '%');
             });
         }
 
-        return $users->orderBy("firstName")->orderBy("lastName")->get();
+        $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
+
+        return $users;
     }
 
     public function searchUser($users, $term){
