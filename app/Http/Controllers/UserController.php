@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Chat;
 use App\Models\Company;
 use App\Models\Role;
+use App\Models\Section;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -35,6 +36,9 @@ class UserController extends Controller
 
         $role = Role::find($user->idRole);
         $role->permissions = json_decode($role->permissions, true);
+        $role->sectionIds = json_decode($role->sectionIds, true);
+
+        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
 
         return response()->json(compact('token', 'user', 'role'));
     }
