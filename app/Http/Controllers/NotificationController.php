@@ -305,11 +305,15 @@ class NotificationController extends Controller
         return $notifications;
     }
 
-    public function listNotificationsByUser(Request $request){
+    public function listNotificationsByUser(Request $request, $status){
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $notificationsIds = NotificationViewed::where("viewedIdCompany", $user->idCompany)->where("viewedBy", $user->id)->where("status", "Pendiente")->where('deleted', false)->orderBy("created_at", "desc")->pluck("idNotification");
+        if(!$status){
+            $status = "Pendiente";
+        }
+
+        $notificationsIds = NotificationViewed::where("viewedIdCompany", $user->idCompany)->where("viewedBy", $user->id)->where("status",'=',$status)->where('deleted', false)->orderBy("created_at", "desc")->pluck("idNotification");
         $notifications = Notification::whereIn("id", $notificationsIds)->where("deleted", false);
         $term = $request->has("term") ? $request->get("term") : "";
         if($term){
