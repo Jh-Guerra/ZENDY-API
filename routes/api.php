@@ -36,6 +36,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/list-available-sameCompany', 'App\Http\Controllers\UserController@listAvailableSameCompany');
         Route::post('/deleteImage', 'App\Http\Controllers\UserController@deleteImage');
         Route::get('/list-same-company', 'App\Http\Controllers\UserController@listSameCompany');
+        Route::get('/list-company-notify', 'App\Http\Controllers\UserController@listCompanyNotify');
     });
 
     Route::prefix('companies')->group(function () {
@@ -110,6 +111,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/user/list/{status}', 'App\Http\Controllers\NotificationController@listNotificationsByUser');
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
         Route::post('/deleteImage', 'App\Http\Controllers\NotificationController@deleteImage');
+        Route::post('/update-companies-notified/{id}', 'App\Http\Controllers\NotificationController@updateListCompaniesNotified');
     });
 
     Route::prefix('recommendations')->group(function () {
