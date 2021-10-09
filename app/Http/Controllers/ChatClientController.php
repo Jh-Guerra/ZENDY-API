@@ -30,7 +30,7 @@ class ChatClientController extends Controller
         $chat->scope = count($users) > 1 ? "Grupal" : "Personal";
 
         if($chat->scope == "Personal"){
-            $chatIds = Participant::where("idUser", $user->id)->where("idCompany", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
+            $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
             $chats = Chat::whereIn("id", $chatIds)->where("status", "Vigente")->where("scope", "Personal")->get();
             $otherParticipantsByChat =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->get(["id", "idUser", "idChat"])->keyBy("idChat");
 
