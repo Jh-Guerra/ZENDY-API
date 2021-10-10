@@ -381,4 +381,31 @@ class EntryQueryController extends Controller
             return response()->json(['error' => 'Consulta entrante no encontrada / Archivo no encontrado'], 400);
         }
     }
+
+    public function registerFrequent(Request $request){
+        $error = $this->validateFields($request);
+        if ($error) {
+            return response()->json($error, 400);
+        }
+        $user = Auth::user();
+        if(!$user)
+            return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $entryQuery = new EntryQuery();
+        $entryQuery->startDate = Carbon::now()->timestamp;
+        $entryQuery->status = "Pendiente";
+        $entryQuery->idCompany = $user->idCompany;
+        $entryQuery->createdBy = $user->id;
+        $entryQuery->reason = $request["reason"];
+        $entryQuery->description = $request["description"];
+        $entryQuery->image = $request["image"];
+        $entryQuery->file = $request["file"];
+        $entryQuery->idModule = $request["idModule"];
+        $entryQuery->isFrequent = $request->isFrequent == true;
+
+        $entryQuery->save();
+
+        return response()->json(compact('entryQuery'),201);
+    }
+
 }
