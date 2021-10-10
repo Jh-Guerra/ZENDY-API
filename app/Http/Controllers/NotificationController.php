@@ -30,8 +30,6 @@ class NotificationController extends Controller
         $notification->viewed = 0;
         $notification->allUsersCompany = $request["allUsersCompany"];
         $notification->idError = $request["idError"];
-        $notification->solved = $request["solved"];
-
         $companiesIds = array_map('intval', $request->companiesNotified);
         $notification->companiesNotified = json_encode($companiesIds, true);
 
@@ -98,7 +96,6 @@ class NotificationController extends Controller
         $notification->viewed = 0;
         $notification->allUsersCompany = true;
         $notification->idError = $request["idError"];
-        $notification->solved = $request["solved"];
 
         $companiesIds = array_map('intval', $request->companiesNotified);
         $notification->companiesNotified = json_encode($companiesIds, true);
@@ -165,7 +162,6 @@ class NotificationController extends Controller
         $notification->reason = $request->reason;
         $notification->description = $request->description;
         $notification->idError = $request->idError;
-        $notification->solved = $request->solved;
 
         if($request->image){
             if($request->oldImage){
@@ -377,7 +373,7 @@ class NotificationController extends Controller
         $notification = Notification::find($id);
         if(!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
 
-        
+
         $request = json_decode($request->getContent(), true);
         $companiesIds = $request["companiesNotified"];
 
@@ -401,7 +397,7 @@ class NotificationController extends Controller
         }
 
         $notificationViewedController->registerMany($notificationsViewed);
-        
+
         $notification->companiesNotified = json_decode($notification->companiesNotified, true);
         $newNotifications = array_merge($notification->companiesNotified, $companiesIds);
         $notification->companiesNotified = json_encode($newNotifications, true);
@@ -410,7 +406,7 @@ class NotificationController extends Controller
 
         $notification->usersNotified  = json_decode($notification->usersNotified , true);
         $newNotifications1 = array_merge($notification->usersNotified ,$userIds->toArray());
-        $notification->usersNotified  = json_encode($newNotifications1, true); 
+        $notification->usersNotified  = json_encode($newNotifications1, true);
 
 
         $notification->save();
