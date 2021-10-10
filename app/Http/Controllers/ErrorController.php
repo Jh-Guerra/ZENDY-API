@@ -135,7 +135,14 @@ class ErrorController extends Controller
             $errors->where('reason', 'LIKE', '%' . $term . '%');
         }
 
-        return $errors->orderByDesc("created_at")->get();
+        $errors = $errors->orderByDesc("created_at")->get();
+
+        foreach ($errors as $error) {
+            if($error->idCompany){
+                $error->company = Company::find($error->idCompany);
+            }
+        }
+        return  $errors;
     }
 
     public function listByUser(Request $request) {
