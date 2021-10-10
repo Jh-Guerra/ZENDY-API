@@ -18,15 +18,11 @@ class ErrorController extends Controller
     public function register(Request $request){
 
         $error = $this->validateFields($request);
-        if($error){
+        if($error)
             return response()->json($error, 400);
-        }
 
         $user = Auth::user();
-        if(!$user)
-            return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-
-
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $errorZendy = new Error();
         $errorZendy->idCompany = $user->idCompany;
@@ -36,7 +32,7 @@ class ErrorController extends Controller
         $errorZendy->description = $request["description"];
         $errorZendy->image = $request["image"];
         $errorZendy->file = $request["file"];
-        $errorZendy->status = "Pending";
+        $errorZendy->status = "Pendiente";
         $errorZendy->save();
 
         $uploadImageController = new uploadImageController;
@@ -104,7 +100,7 @@ class ErrorController extends Controller
         if($request->file){
             $errorZendy->file = $request->file;
         }
-        $errorZendy->status = "Pending";
+        $errorZendy->status = "Pendiente";
         $errorZendy->save();
 
         $uploadImageController = new uploadImageController;
@@ -130,48 +126,32 @@ class ErrorController extends Controller
 
     public function list(Request $request) {
         $user = Auth::user();
-        if(!$user)
-            return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $errors = Error::where(function ($query){
-            $query->where("status", "Pending")
-                ->orWhere("status", "Accepted");
-        })->where("fake", false)->where("deleted", false);
+        $errors = Error::whereIn("status", ["Pendiente", "Aceptado"])->where("fake", false)->where("deleted", false);
 
         $term = $request->has("term") ? $request->get("term") : "";
-        if($term) {
-            $this->searchErrors($errors, $term);
+        if($term){
+            $errors->where('reason', 'LIKE', '%' . $term . '%');
         }
-
-        $errors->get();
 
         return $errors->orderByDesc("created_at")->get();
     }
 
     public function listByUser(Request $request) {
         $user = Auth::user();
-        if(!$user)
-            return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $errors = Error::where("createdBy", $user->id)->where("deleted", false);
-
-        if($user->idCompany)
-            $errors->where("idCompany", $user->idCompany);
+        $errors = Error::where("createdBy", $user->id)->where("idCompany", $user->idCompany)->where("deleted", false);
 
         $term = $request->has("term") ? $request->get("term") : "";
-        if($term) {
-            $this->searchErrors($errors, $term);
+        if($term){
+            $errors->where('reason', 'LIKE', '%' . $term . '%');
         }
 
         $errors = $errors->orderByDesc("created_at")->get();
 
-        return $errors->values()->all();;
-    }
-
-    public function searchErrors($errors, $term){
-        if($term){
-            $errors->where('reason', 'LIKE', '%' . $term . '%');
-        }
+        return $errors;
     }
 
     public function find($id) {
@@ -199,7 +179,7 @@ class ErrorController extends Controller
             return response()->json(['error' => 'Error reportado no encontrado'], 400);
         }
 
-        $error->status = "Accepted";
+        $error->status = "Aceptado";
         $error->received = true;
         $error->save();
 
@@ -217,7 +197,7 @@ class ErrorController extends Controller
             return response()->json(['error' => 'Error reportado no encontrado'], 400);
         }
 
-        $error->status = "Solved";
+        $error->status = "Resuelto";
         $error->fixed = true;
         $error->save();
 
@@ -231,7 +211,7 @@ class ErrorController extends Controller
             return response()->json(['error' => 'Error reportado no encontrado'], 400);
         }
 
-        $error->status = "fake";
+        $error->status = "Falso";
         $error->fake = true;
         $error->save();
 
