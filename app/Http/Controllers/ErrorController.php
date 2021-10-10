@@ -143,9 +143,14 @@ class ErrorController extends Controller
             $this->searchErrors($errors, $term);
         }
 
-        $errors->get();
+        $errors = $errors->orderByDesc("created_at")->get();
 
-        return $errors->orderByDesc("created_at")->get();
+        foreach ($errors as $error) {
+            if($error->idCompany){
+                $error->company = Company::find($error->idCompany);
+            }
+        }
+        return  $errors;
     }
 
     public function listByUser(Request $request) {
