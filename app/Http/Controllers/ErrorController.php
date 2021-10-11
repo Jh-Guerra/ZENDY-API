@@ -164,8 +164,7 @@ class ErrorController extends Controller
     public function find($id) {
         $error = Error::find($id);
 
-        if(!$error)
-            return response()->json(['error' => 'Error reportado no encontrado'], 400);
+        if(!$error) return response()->json(['error' => 'Error reportado no encontrado'], 400);
 
         $error->user = User::find($error->createdBy);
         if($error->idCompany)
@@ -174,7 +173,7 @@ class ErrorController extends Controller
             $error->module = Module::find($error->idModule);
 
         $Notification = Notification::where("idError", $error->id)->get();
-        $error->Notifications = $Notification;
+        $error->notifications = $Notification;
 
         return response()->json(compact('error'),201);
     }

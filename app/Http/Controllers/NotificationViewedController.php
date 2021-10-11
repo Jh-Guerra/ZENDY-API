@@ -56,7 +56,7 @@ class NotificationViewedController extends Controller
         $listNotificationsViewed = NotificationViewed::where("idNotification", $notificationId)->join('companies', 'companies.id', "=", 'notification_views.viewedIdCompany')->join('users as userOne', 'userOne.id', "=", 'notification_views.viewedBy')
             ->join('roles as rolesOne', 'userOne.idRole', "=", 'rolesOne.id')
             ->where('notification_views.deleted', false)
-            ->orderBy("notification_views.status", "desc")
+            ->orderByDesc("notification_views.status")
             ->orderBy("userOne.firstName")
             ->orderBy("userOne.LastName")
             ->get(["notification_views.*", "userOne.firstName AS firstName","userOne.lastName AS lastName", "rolesOne.name as rol", "companies.name as companyName", "userOne.email as email"]);
