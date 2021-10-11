@@ -27,7 +27,7 @@ class EntryQueryController extends Controller
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $entryQuery = new EntryQuery();
-        $entryQuery->startDate = Carbon::now()->timestamp;
+        $entryQuery->startDate = date('Y-m-d', Carbon::now()->timestamp);
         $entryQuery->status = "Pendiente";
         $entryQuery->idCompany = $user->idCompany;
         $entryQuery->createdBy = $user->id;
@@ -247,7 +247,7 @@ class EntryQueryController extends Controller
         $entryQuery->byRecommend = $request["byRecommend"];
         $entryQuery->save();
 
-        if($entryQuery->byRecommend = true){
+        if($entryQuery->byRecommend){
             $firstRecommendation = Recommendation::where("idEntryQuery", $entryQuery->id)->where("recommendUser", $user->id)->first();
             $firstRecommendation->accepted = true;
             $firstRecommendation->status = "Aceptado";
@@ -259,7 +259,7 @@ class EntryQueryController extends Controller
         }
 
         $chat = new Chat();
-        $chat->startDate = Carbon::now()->timestamp;
+        $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
         $chat->type = "Consulta";
         $chat->scope = "Personal";
         $chat->status = "Vigente";

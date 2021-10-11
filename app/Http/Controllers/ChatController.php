@@ -25,7 +25,8 @@ class ChatController extends Controller
         if($chat->idCompany)
             $chat->company = Company::find($chat->idCompany);
 
-        $participants =  Participant::where("idChat", $chat->id)->where("deleted", false)->get();
+        $participants =  Participant::join("users", "users.id", "participants.idUser")->where("participants.idChat", $chat->id)->where("participants.deleted", false)
+            ->orderBy("users.firstName")->orderBy("users.lastName")->get(["participants.*"]);
         foreach($participants as $participant){
             $userData = User::find($participant->idUser);
             $participant->user = $userData;

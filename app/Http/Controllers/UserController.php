@@ -221,9 +221,11 @@ class UserController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : "";
+
         $roles = $request->has("roles") ? $request->get("roles") : [];
         $users = User::join('roles', 'roles.id', '=', 'users.idRole')->where('users.deleted', false)
-            ->where("users.idCompany", $user->idCompany)
+            ->where("users.idCompany", $user->idCompany ? $user->idCompany : $idCompany)
             ->where('users.id', '!=', $user->id)
             ->whereIn('roles.name', $roles);
 
