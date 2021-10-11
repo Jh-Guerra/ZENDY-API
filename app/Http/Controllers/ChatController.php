@@ -189,6 +189,8 @@ class ChatController extends Controller
         $chat->finalizeUser = $user->id;
         $chat->save();
 
+        Participant::where('idChat', $id)->update(['active' => false, 'outputDate' => date('Y-m-d', Carbon::now()->timestamp)]);
+
         return response()->json(compact('chat'),201);
     }
 
