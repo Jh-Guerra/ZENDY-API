@@ -172,8 +172,8 @@ class ErrorController extends Controller
         if($error->idModule)
             $error->module = Module::find($error->idModule);
 
-        $Notification = Notification::where("idError", $error->id)->get();
-        $error->notifications = $Notification;
+        $notifications = Notification::where("idError", $error->id)->orderByDesc("created_at")->get();
+        $error->notifications = $notifications;
 
         return response()->json(compact('error'),201);
     }
