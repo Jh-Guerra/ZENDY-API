@@ -247,6 +247,17 @@ class EntryQueryController extends Controller
         $entryQuery->byRecommend = $request["byRecommend"];
         $entryQuery->save();
 
+        if($entryQuery->byRecommend = true){
+            $firstRecommendation = Recommendation::where("idEntryQuery", $entryQuery->id)->where("recommendUser", $user->id)->first();
+            $firstRecommendation->accepted = true;
+            $firstRecommendation->status = "Aceptado";
+            $firstRecommendation->save();
+
+            Recommendation::where("idEntryQuery", $entryQuery->id)->where("recommendUser", "!=", $user->id)->update(['accepted' => false, 'status' => "No aceptado"]);
+        } else {
+            Recommendation::where("idEntryQuery", $entryQuery->id)->update(['accepted' => false, 'status' => "No aceptado"]);
+        }
+
         $chat = new Chat();
         $chat->startDate = Carbon::now()->timestamp;
         $chat->type = "Consulta";
