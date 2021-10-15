@@ -393,6 +393,23 @@ class EntryQueryController extends Controller
         }
     }
 
+    public function deleteFile(Request $request){
+        $link = $request->link;
+        $entryQueryId = $request->id;
+
+        $entryQuery = EntryQuery::find($entryQueryId);
+        $file_path = storage_path().'/app/public/'.$link;
+        if ($file_path && $entryQuery){
+            unlink($file_path);
+            $entryQuery->file = null;
+            $entryQuery->save();
+
+            return response()->json(compact('entryQuery'),201);
+        }else{
+            return response()->json(['error' => 'Consulta no encontrada / Archivo no encontrado'], 400);
+        }
+    }
+
     public function registerFrequent(Request $request){
         $error = $this->validateFields($request);
         if ($error) {
