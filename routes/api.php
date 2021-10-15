@@ -102,6 +102,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\ErrorController@delete');
         Route::delete('/fakeError/{id}', 'App\Http\Controllers\ErrorController@fakeError');
         Route::post('/deleteImage', 'App\Http\Controllers\ErrorController@deleteImage');
+        Route::post('/deleteFile', 'App\Http\Controllers\ErrorController@deleteFile');
     });
 
     Route::prefix('notifications')->group(function(){

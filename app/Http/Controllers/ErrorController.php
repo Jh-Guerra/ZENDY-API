@@ -252,4 +252,21 @@ class ErrorController extends Controller
             return response()->json(['error' => 'Error reportado no encontrado / Archivo no encontrado'], 400);
         }
     }
+
+    public function deleteFile(Request $request){
+        $link = $request->link;
+        $errorId = $request->id;
+
+        $error = Error::find($errorId);
+        $file_path = storage_path().'/app/public/'.$link;
+        if ($file_path && $error){
+            unlink($file_path);
+            $error->file = null;
+            $error->save();
+
+            return response()->json(compact('error'),201);
+        }else{
+            return response()->json(['error' => 'Notificación no encontrada / Archivo no encontrado'], 400);
+        }
+    }
 }
