@@ -366,6 +366,23 @@ class NotificationController extends Controller
         }
     }
 
+    public function deleteFile(Request $request){
+        $link = $request->link;
+        $notificationId = $request->id;
+
+        $notification = Notification::find($notificationId);
+        $file_path = storage_path().'/app/public/'.$link;
+        if ($file_path && $notification){
+            unlink($file_path);
+            $notification->file = null;
+            $notification->save();
+
+            return response()->json(compact('notification'),201);
+        }else{
+            return response()->json(['error' => 'Notificación no encontrada / Archivo no encontrado'], 400);
+        }
+    }
+
     public function updateListCompaniesNotified($id, Request $request){
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);

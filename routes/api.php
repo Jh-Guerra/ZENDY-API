@@ -15,13 +15,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::post('register', 'App\Http\Controllers\UserController@register');
-
 Route::post('login', 'App\Http\Controllers\UserController@authenticate');
 
 Route::group(['middleware' => ['jwt.verify']], function() {
 
     Route::post('user','App\Http\Controllers\UserController@getAuthenticatedUser');
+    Route::post('register', 'App\Http\Controllers\UserController@register');
     Route::prefix('users')->group(function () {
         Route::post('/update/{id}', 'App\Http\Controllers\UserController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
@@ -37,6 +36,10 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/deleteImage', 'App\Http\Controllers\UserController@deleteImage');
         Route::get('/list-same-company', 'App\Http\Controllers\UserController@listSameCompany');
         Route::get('/list-company-notify', 'App\Http\Controllers\UserController@listCompanyNotify');
+    });
+
+    Route::prefix('roles')->group(function () {
+        Route::get('/list', 'App\Http\Controllers\RoleController@list');
     });
 
     Route::prefix('companies')->group(function () {
@@ -112,6 +115,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/user/list/{status}', 'App\Http\Controllers\NotificationController@listNotificationsByUser');
         Route::delete('/delete/{id}', 'App\Http\Controllers\NotificationController@delete');
         Route::post('/deleteImage', 'App\Http\Controllers\NotificationController@deleteImage');
+        Route::post('/deleteFile', 'App\Http\Controllers\NotificationController@deleteFile');
         Route::post('/update-companies-notified/{id}', 'App\Http\Controllers\NotificationController@updateListCompaniesNotified');
     });
 
