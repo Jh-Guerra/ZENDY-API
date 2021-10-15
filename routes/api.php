@@ -89,6 +89,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/updateFrequent/{id}', 'App\Http\Controllers\EntryQueryController@updateFrequent');
         Route::post('/deleteImage', 'App\Http\Controllers\EntryQueryController@deleteImage');
         Route::post('/register-frequent', 'App\Http\Controllers\EntryQueryController@registerFrequent');
+        Route::post('/deleteFile', 'App\Http\Controllers\EntryQueryController@deleteFile');
     });
 
     Route::prefix('errors')->group(function () {
