@@ -8,6 +8,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use DB;
+use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Http;
 
 class CompanyController extends Controller
 {
@@ -164,5 +166,37 @@ class CompanyController extends Controller
         }else{
             return response()->json(['error' => 'Empresa no encontrada / Archivo no encontrado'], 400);
         }
+    }
+
+    public function importERPCompanies(Request $response){
+ 
+/*       usando GuzzleHttp\Client
+
+ $client = new Client();
+        $res = $client->request('POST', 'http://apitest.softnet.cl/login', [
+            'form_params' => [
+                "username" => "usuario",
+                "password" => "demo",
+                "rut"=> "22222222-2",
+            ]
+        ]);
+        echo $res->getStatusCode();
+        // 200
+        echo $res->getHeader('content-type');
+        // 'application/json; charset=utf8'
+        echo $res->getBody();
+ */
+$response = Http::post('http://apitest.softnet.cl/login', [
+    "username" => "usuario",
+                "password" => "demo",
+                "rut"=> "22222222-2",
+]);
+dd($response->json());
+
+/*        otro metodo GuzzleHttp\Client
+ $client = new GuzzleHttp\Client();
+        $res = $client->get('http://apitest.softnet.cl/datoEmpresa', ['auth' =>  ['usuario ', 'demo']]);
+        echo $res->getStatusCode(); // 200
+        echo $res->getBody(); */
     }
 }

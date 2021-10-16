@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use GuzzleHttp\Client;
 
 class UserController extends Controller
 {
@@ -422,6 +423,22 @@ class UserController extends Controller
         $users = $users->orderBy("name")->get();
 
         return $users;
+    }
+
+    public function importERPUsers($id){
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
+
+        return $user;
+    }
+    public function loginERP(Request $request){
+        $client = new GuzzleHttp\Client();
+        $res = $client->post('http://apitest.softnet.cl/login', ['auth' =>  ['usuario', 'demo', '22222222-2']]);
+        echo $res->getStatusCode(); // 200
+        echo $res->getBody();
     }
 }
 

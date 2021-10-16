@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('login', 'App\Http\Controllers\UserController@authenticate');
+Route::post('importCompanies', 'App\Http\Controllers\CompanyController@importERPCompanies');
+Route::get('importUsers', 'App\Http\Controllers\UserController@importERPUsers');
+
 
 Route::group(['middleware' => ['jwt.verify']], function() {
 
