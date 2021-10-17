@@ -31,8 +31,33 @@ class UserController extends Controller
         }
 
         $user = Auth::user();
-        $user->isOnline = true;
-        $user->save();
+
+        $role = Role::find($user->idRole);
+        $role->permissions = json_decode($role->permissions, true);
+        $role->sectionIds = json_decode($role->sectionIds, true);
+
+        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+
+        return response()->json(compact('token', 'user', 'role'));
+    }
+
+    public function authenticateErp(Request $request){
+        $credentials = $request->only('email', 'password');
+        $user = User::where("email", $credentials["email"])->where("deleted", false)->first();
+        if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
+
+        if($user->password != $credentials["password"]){
+            return response()->json(['error' => 'Credenciales inválidas'], 400);
+        }
+
+        try {
+            $token = JWTAuth::fromUser($user);
+            if (!$token) {
+                return response()->json(['error' => 'Credenciales inválidas3'], 400);
+            }
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'could_not_create_token'], 500);
+        }
 
         $role = Role::find($user->idRole);
         $role->permissions = json_decode($role->permissions, true);
@@ -68,7 +93,7 @@ class UserController extends Controller
 
         $user = new User();
         $this->updateUserValues($user, $request);
-        $user->password = Hash::make($request->password);
+        $user->password = bcrypt($request->password);
         $user->save();
 
         if($request->hasFile('image')){
