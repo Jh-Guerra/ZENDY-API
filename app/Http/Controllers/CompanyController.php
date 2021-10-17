@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use DB;
+use Illuminate\Support\Facades\Http;
 
 class CompanyController extends Controller
 {
@@ -163,6 +164,54 @@ class CompanyController extends Controller
             return response()->json(compact('company'),201);
         }else{
             return response()->json(['error' => 'Empresa no encontrada / Archivo no encontrado'], 400);
+        }
+    }
+
+    public function importERPCompanies(){
+        try {
+            $res1 = Http::post('http://apitest.softnet.cl/login', [
+                "username" => "usuario",
+                "password" => "demo",
+                "rut"=> "22222222-2",
+            ]);
+            $res1 = $res1->json();
+            $erpToken = $res1["token"];
+
+            $res2 = Http::withHeaders([
+                'token' => $erpToken,
+            ])->get('http://apitest.softnet.cl/datoEmpresa', []);
+            $res2 = $res2->json();
+
+            $newCompanies = [];
+            $companies = Company::where("deleted", false)->get()->keyBy("ruc");
+            foreach ($res2 as $erpCompany) {
+                if(!array_key_exists($erpCompany["rut_empresa"], $companies->toArray())){
+
+                    $new = [
+                        'name' => $erpCompany["razon"],
+                        'address' => $erpCompany["direccion"].", ".$erpCompany["comuna"].", ".$erpCompany["ciudad"],
+                        'email' => $erpCompany["web"],
+                        'phone' => $erpCompany["telefono"],
+                        'ruc' => $erpCompany["rut_empresa"],
+                        'adminName' => $erpCompany["nombre_representante1"],
+                        'currentBytes' => 0,
+                        'maxBytes' => 0,
+                        'avatar' => null,
+                        'description' => $erpCompany["giro1"].". ".$erpCompany["giro2"],
+                        'deleted' => 0,
+                        'created_at' => Carbon::now(),
+                        'updated_at' => Carbon::now(),
+                    ];
+
+                    array_push($newCompanies, $new);
+                }
+            }
+
+            Company::insert($newCompanies);
+            return response()->json("Import exitoso, ".count($newCompanies)." empresas registradas",201);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 }

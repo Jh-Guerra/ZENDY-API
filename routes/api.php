@@ -37,6 +37,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/deleteImage', 'App\Http\Controllers\UserController@deleteImage');
         Route::get('/list-same-company', 'App\Http\Controllers\UserController@listSameCompany');
         Route::get('/list-company-notify', 'App\Http\Controllers\UserController@listCompanyNotify');
+        Route::post('/import-erp', 'App\Http\Controllers\UserController@importERPUsers');
+
     });
 
     Route::prefix('roles')->group(function () {
@@ -51,6 +53,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list/count/users', 'App\Http\Controllers\CompanyController@listWithUsersCount');
         Route::delete('/delete/{id}', 'App\Http\Controllers\CompanyController@delete');
         Route::post('/deleteImage', 'App\Http\Controllers\CompanyController@deleteImage');
+        Route::post('/import-erp', 'App\Http\Controllers\CompanyController@importERPCompanies');
     });
 
     Route::prefix('chats')->group(function () {

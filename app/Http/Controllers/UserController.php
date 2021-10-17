@@ -11,10 +11,12 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use GuzzleHttp\Client;
 
 class UserController extends Controller
 {
@@ -31,6 +33,7 @@ class UserController extends Controller
         }
 
         $user = Auth::user();
+        if($user->idRole != 1 && !$user->idCompany) return response()->json(['error' => 'El usuario no pertenece a alguna empresa'], 500);
 
         $role = Role::find($user->idRole);
         $role->permissions = json_decode($role->permissions, true);
@@ -49,6 +52,8 @@ class UserController extends Controller
         if($user->password != $credentials["password"]){
             return response()->json(['error' => 'Credenciales inválidas'], 400);
         }
+
+        if($user->idRole != 1 && !$user->idCompany) return response()->json(['error' => 'El usuario no pertenece a alguna empresa'], 500);
 
         try {
             $token = JWTAuth::fromUser($user);
@@ -448,5 +453,59 @@ class UserController extends Controller
 
         return $users;
     }
+
+    public function importERPUsers()
+    {
+        try {
+            $res1 = Http::post('http://apitest.softnet.cl/login', [
+                "username" => "usuario",
+                "password" => "demo",
+                "rut" => "22222222-2",
+            ]);
+            $res1 = $res1->json();
+            $erpToken = $res1["token"];
+
+            $res2 = Http::withHeaders([
+                'token' => $erpToken,
+            ])->get('http://apitest.softnet.cl/datoUsuario', []);
+            $res2 = $res2->json();
+
+            $newUsers = [];
+            $users = User::where("deleted", false)->get()->keyBy("email");
+            $erpCompanies = Company::where("deleted", false)->get()->keyBy("ruc");
+
+            foreach ($res2 as $erpUser) {
+                if (!array_key_exists($erpUser["email"], $users->toArray())) {
+
+                    $new = [
+                        'name' => null,
+                        'firstName' => $erpUser["nombre"],
+                        'lastName' => " ",
+                        'ruc' => $erpUser["rut_usuario"],
+                        'email' => $erpUser["email"],
+                        'password' => bcrypt($erpUser["rut_usuario"]),
+                        'dob' => null,
+                        'phone' => null,
+                        'sex' => "O",
+                        'idRole' => $erpUser["usuario"] == "admin" ? 1 : 4,
+                        'idCompany' => null,
+                        'avatar' => null,
+                        'deleted' => false,
+                        'created_at' => Carbon::now(),
+                        'updated_at' => Carbon::now(),
+                    ];
+
+                    array_push($newUsers, $new);
+                }
+            }
+
+            User::insert($newUsers);
+            return response()->json("Import exitoso, " . count($newUsers) . " usuarios registrados", 201);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
 }
 
