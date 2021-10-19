@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
-use \App\Models\Chat;
+use \App\Models\User;
 use \App\Models\Participant;
 
 /*
@@ -18,4 +18,9 @@ use \App\Models\Participant;
 Broadcast::channel('chats.{id}', function ($user, $id) {
     $participant = Participant::where("idChat", $id)->where("idUser", $user->id)->where("deleted", false)->first();
     return $participant != null;
+});
+
+Broadcast::channel('user.{id}', function ($user, $id) {
+    $User = User::where("id", $id)->where("deleted", false)->first();
+    return $User != null;
 });

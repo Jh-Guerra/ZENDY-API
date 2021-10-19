@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\notificationMessage;
 use App\Events\sendMessage;
 use App\Models\Participant;
 use Carbon\Carbon;
@@ -56,6 +57,7 @@ class MessageController extends Controller
             $participants = Participant::where("idChat", $chat->id)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
             foreach ($participants as $participant) {
                 $participant->pendingMessages = $participant->pendingMessages ? $participant->pendingMessages+1 : 1;
+                event(new notificationMessage($participant["idUser"]));
                 $participant->save();
             }
         }
