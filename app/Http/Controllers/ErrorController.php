@@ -221,7 +221,7 @@ class ErrorController extends Controller
         $error->fake = true;
         $error->save();
 
-        return response()->json(['success' => 'El error Reportado fue considerado como fake'], 201);
+        return response()->json(['success' => 'El error Reportado fue considerado como falso'], 201);
     }
 
     public function delete($id) {
