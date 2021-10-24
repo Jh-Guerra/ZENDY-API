@@ -15,13 +15,15 @@ class notificationMessage implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $userId;
+    public $chatId;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($userId)
+    public function __construct($userId,$chatId)
     {
+        $this->chatId = $chatId;
         $this->userId = $userId;
     }
 

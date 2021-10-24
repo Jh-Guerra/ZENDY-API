@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\notificationMessage;
 use App\Models\Chat;
 use App\Models\Company;
 use App\Models\Message;
@@ -189,7 +190,12 @@ class ChatController extends Controller
         $chat->finalizeUser = $user->id;
         $chat->save();
 
+        $participants = Participant::where("idChat", $id)->where("idUser", "!=", $user->id)->where("active", true)->get();
         Participant::where('idChat', $id)->update(['active' => false, 'outputDate' => date('Y-m-d', Carbon::now()->timestamp)]);
+
+        foreach ($participants as $participant) {
+            event(new notificationMessage($participant["idUser"],$id));
+        }
 
         return response()->json(compact('chat'),201);
     }
@@ -204,6 +210,11 @@ class ChatController extends Controller
 
         $chat->name = $request->name;
         $chat->save();
+
+        $participants = Participant::where("idChat", $id)->where("idUser", "!=", $user->id)->where("active", true)->get();
+        foreach ($participants as $participant) {
+            event(new notificationMessage($participant["idUser"],$id));
+        }
 
         return response()->json(compact('chat'),201);
     }

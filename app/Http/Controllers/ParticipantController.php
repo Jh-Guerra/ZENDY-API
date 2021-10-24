@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\notificationMessage;
 use App\Models\Chat;
 use App\Models\Participant;
 use Illuminate\Database\Eloquent\Model;
@@ -21,6 +22,10 @@ class ParticipantController extends Controller
             $chat->scope = "Grupal";
             $chat->save();
         }
+
+        $dataRequest = json_decode($value, true);
+        $participant = Participant::where('idUser', $dataRequest[0]["idUser"])->where("idChat", $id)->where("deleted", false)->first();
+        event(new notificationMessage($participant["idUser"],$id));
         return response()->json(compact('chat'),201);
     }
 
@@ -77,6 +82,7 @@ class ParticipantController extends Controller
 
         $participant->deleted = true;
         $participant->save();
+        event(new notificationMessage($participant["idUser"],$idChat));
 
         $Participants = Participant::where('idChat', $idChat)->where("deleted", false)->get();
         $chat = Chat::find($idChat);
@@ -84,6 +90,8 @@ class ParticipantController extends Controller
             $chat->scope = "Personal";
             $chat->save();
         }
+
+
 
         return response()->json(['success' => 'Participante Eliminado'], 201);
     }
