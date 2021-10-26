@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\notificationMessage;
 use App\Models\Chat;
 use App\Models\Participant;
 use App\Models\User;
@@ -81,6 +82,9 @@ class ChatCompanyController extends Controller
         }
 
         $participantController->registerMany($participants);
+        foreach ($participants as $participant) {
+            event(new notificationMessage($participant["idUser"],null));
+        }
 
         return response()->json(compact('chat'),201);
     }
