@@ -33,16 +33,22 @@ class NotificationViewedController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $notificationViewed = NotificationViewed::where("idNotification", $id)->where("viewedBy", $user->id)->where("deleted", false)->first();
-        if(!$notificationViewed) return response()->json(['error' => 'Usted no fue incluido en esta notificación'], 400);
+        $notification = Notification::find($id);
+        if(!$notification) return response()->json(['error' => 'Notificación no encontrada.'], 400);
 
-        if($notificationViewed->status == "Visto") return response()->json(compact('notificationViewed'),201);
+        if($notification->createdBy != $user->id){
+            $notificationViewed = NotificationViewed::where("idNotification", $id)->where('viewedBy', $user->id)->where("deleted", false)->first();
+            if(!$notificationViewed) return response()->json(['error' => 'Usted no fue incluido en esta notificación'], 400);
 
-        $notificationViewed->viewedDate = Carbon::now()->timestamp;
-        $notificationViewed->status = "Visto";
-        $notificationViewed->save();
+            if($notificationViewed->status == "Visto") return response()->json(compact('notificationViewed'),201);
 
-        return response()->json(compact('notificationViewed'),201);
+            $notificationViewed->viewedDate = Carbon::now()->timestamp;
+            $notificationViewed->status = "Visto";
+            $notificationViewed->save();
+
+            return response()->json(compact('notificationViewed'),201);
+        }
+        return response()->json(compact('notification'),201);
     }
 
     public function registerMany($notificationsViewed){
