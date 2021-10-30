@@ -25,7 +25,8 @@ class UserController extends Controller
         $credentials = $request->only('email', 'password');
 
         try {
-            if (!$token = JWTAuth::attempt(['email' => $credentials["email"], 'password' => $credentials["password"], 'deleted' => false])) {
+            $fieldType = filter_var($credentials["email"], FILTER_VALIDATE_EMAIL) ? 'email' : 'userName';
+            if (!$token = JWTAuth::attempt([$fieldType => $credentials["email"], 'password' => $credentials["password"], 'deleted' => false])) {
                 return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
         } catch (JWTException $e) {
@@ -46,7 +47,9 @@ class UserController extends Controller
 
     public function authenticateErp(Request $request){
         $credentials = $request->only('email', 'password');
-        $user = User::where("email", $credentials["email"])->where("deleted", false)->first();
+
+        $fieldType = filter_var($credentials["email"], FILTER_VALIDATE_EMAIL) ? 'email' : 'userName';
+        $user = User::where($fieldType, $credentials["email"])->where("deleted", false)->first();
         if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
         if($user->password != $credentials["password"]){
@@ -149,6 +152,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'firstName' => 'required|string|max:80',
             'lastName' => 'required|string|max:80',
+            'userName' => 'required|string|max:255',
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:15',
             'dob' => 'required|string',
@@ -158,11 +162,11 @@ class UserController extends Controller
 
         $errorMessage = null;
         if (!$validator->fails()) {
-            $user = User::where('email', $request->email)->where('deleted', false)->first();
+            $user = User::where('userName', $request->userName)->where('deleted', false)->first();
             if ($user && $user->id != $request->id) {
                 $errorMessage = new \stdClass();
                 $errorMessage->email = [
-                    "El correo electrónico ya está registrado."
+                    "El nombre de usuario ya existe."
                 ];
             }
         } else {
@@ -176,6 +180,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'firstName' => 'required|string|max:80',
             'lastName' => 'required|string|max:80',
+            'userName' => 'required|string|max:255',
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:15',
             'dob' => 'required|string',
@@ -190,6 +195,7 @@ class UserController extends Controller
     private function updateUserValues($user, $request){
         $user->firstName = $request->firstName;
         $user->lastName = $request->lastName;
+        $user->userName = $request->userName;
         $user->email = $request->email;
         $user->sex = $request->sex;
         $user->phone = $request->phone;
