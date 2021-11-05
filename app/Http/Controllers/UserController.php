@@ -502,5 +502,19 @@ class UserController extends Controller
         }
     }
 
+    public function findUserByUserName($userName){
+        $user =  User::where('userName', $userName)->where('deleted', false)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
+        $company = Company::find($user->idCompany);
+        if ($company) {
+            $user->company = $company;
+        }
+
+        return $user;
+    }
+
 }
 

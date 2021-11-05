@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('login', 'App\Http\Controllers\UserController@authenticate');
 Route::post('login-erp', 'App\Http\Controllers\UserController@authenticateErp');
+Route::get('findUser/{userName}', 'App\Http\Controllers\UserController@findUserByUserName');
+Route::post('/contactar/{userName}', 'App\Http\Controllers\EmailController@contact')->name('contact');
 
 Route::group(['middleware' => ['jwt.verify']], function() {
 
