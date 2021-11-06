@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Crypt;
 
 class UserController extends Controller
 {
@@ -508,5 +509,31 @@ class UserController extends Controller
         }
     }
 
+    public function updatePassword(Request $request, $id){
+
+        $users = User::find($id);
+
+         $this->validate($request, [ 
+            'password' => 'required',
+            'encrypted_password' => 'required',
+        ]);
+        $error = null;
+
+        if (!$users) {
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
+        $hashedPassword = Auth::user()->password;
+        if (\Hash::check($request->password , $hashedPassword)) {
+                $users->password = bcrypt($request->encrypted_password);
+                $users->encrypted_password = Crypt::encryptString($request->encrypted_password);
+
+                $users->save();
+                return response()->json(['success' => 'Cambio de contraseña exitosa.'], 201);
+        } else {
+            return response()->json(['error' => 'Contraseña actual incorrecta.'], 400);
+        }
+       
+    }
+    
 }
 
