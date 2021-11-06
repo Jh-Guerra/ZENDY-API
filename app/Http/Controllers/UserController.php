@@ -103,6 +103,7 @@ class UserController extends Controller
         $user = new User();
         $this->updateUserValues($user, $request);
         $user->password = bcrypt($request->password);
+        $user->encrypted_password = Crypt::encryptString($request->password);
         $user->save();
 
         if($request->hasFile('image')){
@@ -513,7 +514,7 @@ class UserController extends Controller
 
         $users = User::find($id);
 
-         $this->validate($request, [ 
+         $this->validate($request, [
             'password' => 'required',
             'encrypted_password' => 'required',
         ]);
@@ -532,8 +533,8 @@ class UserController extends Controller
         } else {
             return response()->json(['error' => 'Contraseña actual incorrecta.'], 400);
         }
-       
+
     }
-    
+
 }
 
