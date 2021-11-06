@@ -510,11 +510,12 @@ class UserController extends Controller
         }
     }
 
-    public function updatePassword(Request $request, $id){
+    public function updatePassword(Request $request, $id)
+    {
 
         $users = User::find($id);
 
-         $this->validate($request, [
+        $this->validate($request, [
             'password' => 'required',
             'encrypted_password' => 'required',
         ]);
@@ -524,17 +525,29 @@ class UserController extends Controller
             return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
         $hashedPassword = Auth::user()->password;
-        if (\Hash::check($request->password , $hashedPassword)) {
-                $users->password = bcrypt($request->encrypted_password);
-                $users->encrypted_password = Crypt::encryptString($request->encrypted_password);
+        if (\Hash::check($request->password, $hashedPassword)) {
+            $users->password = bcrypt($request->encrypted_password);
+            $users->encrypted_password = Crypt::encryptString($request->encrypted_password);
 
-                $users->save();
-                return response()->json(['success' => 'Cambio de contraseña exitosa.'], 201);
+            $users->save();
+            return response()->json(['success' => 'Cambio de contraseña exitosa.'], 201);
         } else {
             return response()->json(['error' => 'Contraseña actual incorrecta.'], 400);
         }
-
     }
 
+    public function findUserByUserName($userName){
+        $user =  User::where('userName', $userName)->where('deleted', false)->first();
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
+        $company = Company::find($user->idCompany);
+        if ($company) {
+            $user->company = $company;
+        }
+
+        return $user;
+    }
 }
 
