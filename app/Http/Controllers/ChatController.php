@@ -11,6 +11,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
 class ChatController extends Controller
 {
@@ -39,7 +40,6 @@ class ChatController extends Controller
                 foreach($participants as $participant){
                     if($participant->idUser != $user->id && $participant->user){
                         $chatName = $chatName.$participant->user->firstName. ' ' .$participant->user->lastName;
-                        $chat->companyUser = Company::find($participant->user->idCompany);
                     }
                 }
             }
@@ -71,12 +71,12 @@ class ChatController extends Controller
     }
 
     public function listActive(Request $request){
-        $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        $user = JWTAuth::toUser($request->bearerToken());
 
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
         $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
         $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
-        $chats = Chat::whereIn("id", $chatIds)->where("deleted", false)->where("status",$request->status)->orderByDesc("updated_at")->get();
+        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $request->idCompany)->where("deleted", false)->where("status",$request->status)->orderByDesc("updated_at")->get();
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
 
@@ -147,10 +147,12 @@ class ChatController extends Controller
 
         $roles = $request->has("roles") ? $request->get("roles") : [];
         $term = $request->has("term") ? $request->get("term") : "";
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+        $company = Company::find($idCompany);
 
-
-        $users = User::join('roles', 'roles.id', '=', 'users.idRole')->join("companies", "companies.id", "=", "users.idCompany")
-            ->where("users.idCompany", $user->idCompany)->where('users.deleted', false)
+        $users = User::join('roles', 'roles.id', '=', 'users.idRole')
+            ->where('users.companies', 'LIKE', '%' . "\"".$idCompany."\"" . '%')
+            ->where('users.deleted', false)
             ->where('users.id', '!=', $user->id)->whereIn('roles.name', $roles);
 
         if ($term) {
@@ -160,7 +162,12 @@ class ChatController extends Controller
             });
         }
 
-        return $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName', 'companies.name as companyName']);
+        $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
+        foreach ($users as $user) {
+            $user->companyName = $company->name;
+        }
+
+        return $users;
     }
 
     public function delete($id){
@@ -228,10 +235,12 @@ class ChatController extends Controller
         $to = $request->has("toDate") ? $request->get("toDate") : "";
         $fromTo1 = (int)$to;
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
         $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
         $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
 
-        $chats = Chat::whereIn("id", $chatIds)->where("deleted", false)->where("status", ["Finalizado", "Cancelado"])->whereBetween('finalizeDate', [$fromDate1 ,$to])->orderByDesc("updated_at")->get();
+        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idCompany)->where("deleted", false)->where("status", ["Finalizado", "Cancelado"])->whereBetween('finalizeDate', [$fromDate1 ,$to])->orderByDesc("updated_at")->get();
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
 

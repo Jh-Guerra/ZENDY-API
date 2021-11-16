@@ -26,10 +26,12 @@ class EntryQueryController extends Controller
         if(!$user)
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
         $entryQuery = new EntryQuery();
-        $entryQuery->startDate = date('Y-m-d', Carbon::now()->timestamp);
+        $entryQuery->startDate = Carbon::now()->timestamp;
         $entryQuery->status = "Pendiente";
-        $entryQuery->idCompany = $user->idCompany;
+        $entryQuery->idCompany = $idCompany;
         $entryQuery->createdBy = $user->id;
         $entryQuery->reason = $request["reason"];
         $entryQuery->description = $request["description"];
@@ -105,7 +107,10 @@ class EntryQueryController extends Controller
     }
 
     public function listPendings(Request $request){
-        $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("status", "Pendiente")->where("entry_queries.deleted", false);
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
+        $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("entry_queries.idCompany", $idCompany)
+            ->where("status", "Pendiente")->where("entry_queries.deleted", false);
         $term = $request->has("term") ? $request->get("term") : "";
         if($term)
             $this->search($entryQueries, $term);
@@ -136,14 +141,15 @@ class EntryQueryController extends Controller
 
     public function listQuery(Request $request, $status){
         $user = Auth::user();
-        if(!$user)
-        return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         if(!$status){
             $status = "Pendiente";
         }
 
-        $entryQueries = EntryQuery::where("deleted", false)->where("createdBy", '=',$user->id)->where("status",'=',$status);
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
+        $entryQueries = EntryQuery::where("deleted", false)->where("idCompany", $idCompany)->where("createdBy", $user->id)->where("status",'=',$status);
 
         $term = $request->has("term") ? $request->get("term") : "";
         if($term)
@@ -210,13 +216,11 @@ class EntryQueryController extends Controller
         if($entryQuery->idCompany)
             $entryQuery->company = Company::find($entryQuery->idCompany);
 
-
-
-
         return response()->json(compact('entryQuery'),201);
     }
 
     public function accept($id, Request $request){
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
         $request = json_decode($request->getContent(), true);
 
         $user = Auth::user();
@@ -263,7 +267,7 @@ class EntryQueryController extends Controller
         $chat->type = "Consulta";
         $chat->scope = "Personal";
         $chat->status = "Vigente";
-        $chat->idCompany = $queryUser->idCompany;
+        $chat->idCompany = $idCompany;
         $chat->idUser = $user->id;
         $chat->allUsers = 0;
         $chat->messages = 0;
@@ -325,9 +329,12 @@ class EntryQueryController extends Controller
         $userIds = json_decode($request->getContent(), true);
         $recommendationController = new RecommendationController();
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
         $newRecommendations = [];
         foreach ($userIds as $userId) {
             $new = [
+                'idCompany' => $idCompany,
                 'idEntryQuery' => $id,
                 'recommendUser' => $userId,
                 'recommendDate' => Carbon::now()->timestamp,
@@ -348,7 +355,8 @@ class EntryQueryController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $entryQueries = EntryQuery::where("isFrequent", true)->where("deleted", false)->where("idCompany",$user->idCompany);
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+        $entryQueries = EntryQuery::where("isFrequent", true)->where("idCompany", $idCompany)->where("deleted", false);
 
         return $entryQueries->orderBy("name")->get();
     }
@@ -419,10 +427,12 @@ class EntryQueryController extends Controller
         if(!$user)
             return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
         $entryQuery = new EntryQuery();
         $entryQuery->startDate = Carbon::now()->timestamp;
         $entryQuery->status = "Pendiente";
-        $entryQuery->idCompany = $user->idCompany;
+        $entryQuery->idCompany = $idCompany;
         $entryQuery->createdBy = $user->id;
         $entryQuery->reason = $request["reason"];
         $entryQuery->description = $request["description"];

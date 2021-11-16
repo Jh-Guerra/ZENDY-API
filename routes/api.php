@@ -17,14 +17,14 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('login', 'App\Http\Controllers\UserController@authenticate');
 Route::post('login-erp', 'App\Http\Controllers\UserController@authenticateErp');
-Route::get('findUser/{userName}', 'App\Http\Controllers\UserController@findUserByUserName');
-Route::post('/contactar/{userName}', 'App\Http\Controllers\EmailController@contact')->name('contact');
+Route::get('findUser/{username}', 'App\Http\Controllers\UserController@findUserByUserName');
+Route::post('/sendEmail/{username}', 'App\Http\Controllers\EmailController@contact')->name('contact');
 
 Route::group(['middleware' => ['jwt.verify']], function() {
 
     Route::post('user','App\Http\Controllers\UserController@getAuthenticatedUser');
-    Route::post('register', 'App\Http\Controllers\UserController@register');
     Route::prefix('users')->group(function () {
+        Route::post('/register', 'App\Http\Controllers\UserController@register');
         Route::post('/update/{id}', 'App\Http\Controllers\UserController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
         Route::get('/list', 'App\Http\Controllers\UserController@list');
@@ -35,7 +35,6 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/listUserOnline', 'App\Http\Controllers\UserController@listUserOnline');
         Route::post('/updateStatus/{id}', 'App\Http\Controllers\UserController@updateUserOffLine');
         Route::post('/updateStatusOn/{id}', 'App\Http\Controllers\UserController@updateUserOnLine');
-        Route::post('/list-available-sameCompany', 'App\Http\Controllers\UserController@listAvailableSameCompany');
         Route::post('/deleteImage', 'App\Http\Controllers\UserController@deleteImage');
         Route::get('/list-same-company', 'App\Http\Controllers\UserController@listSameCompany');
         Route::get('/list-company-notify', 'App\Http\Controllers\UserController@listCompanyNotify');
@@ -48,7 +47,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     });
 
     Route::prefix('companies')->group(function () {
-        Route::post('register', 'App\Http\Controllers\CompanyController@register');
+        Route::post('/register', 'App\Http\Controllers\CompanyController@register');
         Route::post('/update/{id}', 'App\Http\Controllers\CompanyController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\CompanyController@find');
         Route::get('/list', 'App\Http\Controllers\CompanyController@list');

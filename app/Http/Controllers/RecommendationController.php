@@ -14,6 +14,7 @@ namespace App\Http\Controllers;
 class RecommendationController extends Controller
 {
     public function register(Request $request){
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
         $request = json_decode($request->getContent(), true);
 
         $user = Auth::user();
@@ -22,6 +23,7 @@ class RecommendationController extends Controller
         $recommendation = new Recommendation();
         $recommendation->idEntryQuery = $request["idEntryQuery"];
         $recommendation->recommendUser = $request["recommendUser"];
+        $recommendation->idCompany = $idCompany;
         $recommendation->recommendDate = Carbon::now()->timestamp;
         $recommendation->recommendBy = $user->id;
         $recommendation->status = "Pendiente";
@@ -62,18 +64,24 @@ class RecommendationController extends Controller
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $term = $request->has("term") ? $request->get("term") : "";
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
-        $recommendations = Recommendation::join('users', 'users.id', 'recommendations.recommendBy')->where("recommendBy", $user->id)->where("recommendations.deleted", false)
+        $recommendations = Recommendation::join('users', 'users.id', 'recommendations.recommendBy')
+            ->where("idCompany", $idCompany)
+            ->where("recommendBy", $user->id)->where("recommendations.deleted", false)
             ->get(['recommendations.*', 'users.firstName AS userFirstName', 'users.lastName AS userLastName']);
 
         return $recommendations;
     }
 
-    public function listMyRecommendations(){
+    public function listMyRecommendations(Request $request){
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
         return Recommendation::join('users', 'users.id', 'recommendations.recommendBy')->join('entry_queries', 'entry_queries.id', 'recommendations.idEntryQuery')
+            ->where("recommendations.idCompany", $idCompany)
             ->where("recommendUser", $user->id)->where("recommendations.status", "Pendiente")->where("recommendations.deleted", false)
             ->get(['recommendations.*', 'users.firstName AS userFirstName', 'users.lastName AS userLastName', 'users.avatar as userAvatar', 'users.sex as userSex',
                 'entry_queries.reason as queryReason']);

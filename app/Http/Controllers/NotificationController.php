@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Models\NotificationViewed;
 use App\Models\User;
+use App\Models\UserCompany;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -21,8 +22,9 @@ class NotificationController extends Controller
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $notification = new Notification();
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
-        $notification->idCompany = $user->idCompany;
+        $notification->idCompany = $idCompany;
         $notification->byAdmin = $user->idRole == 1;
         $notification->createdBy = $user->id;
         $notification->reason = $request["reason"];
@@ -64,7 +66,7 @@ class NotificationController extends Controller
         foreach ($users as $u) {
             $newValue = [
                 'idNotification' => $notification->id,
-                'viewedIdCompany' => $u->idCompany,
+                'viewedIdCompany' => $idCompany,
                 'viewedBy' => $u->id,
                 'status' => "Pendiente",
                 'deleted' => false,
@@ -88,7 +90,7 @@ class NotificationController extends Controller
 
         $notification = new Notification();
 
-        $notification->idCompany = $user->idCompany;
+        $notification->idCompany = null;
         $notification->byAdmin = $user->idRole == 1;
         $notification->createdBy = $user->id;
         $notification->reason = $request["reason"];
@@ -100,7 +102,8 @@ class NotificationController extends Controller
         $companiesIds = array_map('intval', $request->companiesNotified);
         $notification->companiesNotified = json_encode($companiesIds, true);
 
-        $userIds = User::whereIn("idCompany", $companiesIds)->where("deleted", false)->pluck("id");
+        $userCompanies = UserCompany::whereIn("idCompany", $companiesIds)->where("deleted", false)->pluck("idUser");
+        $userIds = User::whereIn("id", $userCompanies)->where("deleted", false)->pluck("id");
         $notification->usersNotified = json_encode($userIds, true);
 
         $notification->save();
@@ -131,7 +134,7 @@ class NotificationController extends Controller
         foreach ($users as $u) {
             $newValue = [
                 'idNotification' => $notification->id,
-                'viewedIdCompany' => $u->idCompany,
+                'viewedIdCompany' => null,
                 'viewedBy' => $u->id,
                 'status' => "Pendiente",
                 'deleted' => false,
@@ -156,7 +159,6 @@ class NotificationController extends Controller
         $notification = Notification::find($id);
         if(!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
 
-        $notification->idCompany = $user->idCompany;
         $notification->byAdmin = $user->idRole == 1;
         $notification->createdBy = $user->id;
         $notification->reason = $request->reason;
@@ -177,7 +179,8 @@ class NotificationController extends Controller
         $companiesIds = array_map('intval', $request->companiesNotified);
         $notification->companiesNotified = json_encode($companiesIds, true);
 
-        $userIds = User::whereIn("idCompany", $companiesIds)->where("deleted", false)->pluck("id");
+        $userCompanies = UserCompany::whereIn("idCompany", $companiesIds)->where("deleted", false)->pluck("idUser");
+        $userIds = User::whereIn("id", $userCompanies)->where("deleted", false)->pluck("id");
         $notification->usersNotified = json_encode($userIds, true);
 
         $notification->save();
@@ -211,6 +214,8 @@ class NotificationController extends Controller
         $notification = Notification::find($id);
         if(!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
         $request = json_decode($request->getContent(), true);
         $userIds = $request["usersNotified"];
 
@@ -221,7 +226,7 @@ class NotificationController extends Controller
         foreach ($users as $u) {
             $newValue = [
                 'idNotification' => $notification->id,
-                'viewedIdCompany' => $u->idCompany,
+                'viewedIdCompany' => $idCompany,
                 'viewedBy' => $u->id,
                 'status' => "Pendiente",
                 'deleted' => false,
@@ -283,7 +288,11 @@ class NotificationController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $notificationsIds = NotificationViewed::where("viewedIdCompany", $user->idCompany)->where('deleted', false)->orderByDesc("created_at")->pluck("idNotification");
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
+        $notificationsIds = NotificationViewed::where(function ($query) use ($idCompany) {
+            $query->where('viewedIdCompany',$idCompany)->orWhereNull('viewedIdCompany');
+        })->where('deleted', false)->orderByDesc("created_at")->pluck("idNotification");
         $notifications = Notification::whereIn("id", $notificationsIds)->where("deleted", false);
         $term = $request->has("term") ? $request->get("term") : "";
         if($term){
@@ -309,7 +318,11 @@ class NotificationController extends Controller
             $status = "Pendiente";
         }
 
-        $notificationsIds = NotificationViewed::where("viewedIdCompany", $user->idCompany)->where("viewedBy", $user->id)->where("status",'=',$status)->where('deleted', false)->orderByDesc("created_at")->pluck("idNotification");
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
+        $notificationsIds = NotificationViewed::where(function ($query) use ($idCompany) {
+            $query->where('viewedIdCompany',$idCompany)->orWhereNull('viewedIdCompany');
+        })->where("viewedBy", $user->id)->where("status", $status)->where('deleted', false)->orderByDesc("created_at")->pluck("idNotification");
         $notifications = Notification::whereIn("id", $notificationsIds)->where("deleted", false);
         $term = $request->has("term") ? $request->get("term") : "";
         if($term){
@@ -390,11 +403,13 @@ class NotificationController extends Controller
         $notification = Notification::find($id);
         if(!$notification) return response()->json(['error' => 'Notificación no encontrada'], 400);
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
         $request = json_decode($request->getContent(), true);
         $companiesIds = $request["companiesNotified"];
 
-        $userIds = User::whereIn("idCompany", $companiesIds)->where("deleted", false)->pluck("id");
+        $userCompanies = UserCompany::whereIn("idCompany", $companiesIds)->where("deleted", false)->pluck("idUser");
+        $userIds = User::whereIn("id", $userCompanies)->where("deleted", false)->pluck("id");
 
         $notificationViewedController = new NotificationViewedController();
         $notificationsViewed = [];
@@ -403,7 +418,7 @@ class NotificationController extends Controller
         foreach ($users as $u) {
             $newValue = [
                 'idNotification' => $notification->id,
-                'viewedIdCompany' => $u->idCompany,
+                'viewedIdCompany' => $idCompany,
                 'viewedBy' => $u->id,
                 'status' => "Pendiente",
                 'deleted' => false,

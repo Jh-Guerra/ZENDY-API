@@ -149,7 +149,7 @@
                                     style="font-size:0px;padding:0px 25px 0px 25px;padding-top:0px;padding-right:50px;padding-bottom:0px;padding-left:50px;word-break:break-word;">
                                     <div
                                         style="font-family:Open Sans, Helvetica, Arial, sans-serif;font-size:15px;line-height:22px;text-align:left;color:#797e82;">
-                                        <p style="margin: 10px 0; text-align: center;">Nombre de usuario: <i style="font-style:normal"><b style="font-weight:700">{{ $data['userName'] }}</b></i></p>
+                                        <p style="margin: 10px 0; text-align: center;">Nombre de usuario: <i style="font-style:normal"><b style="font-weight:700">{{ $data['username'] }}</b></i></p>
                                         <p style="margin: 10px 0; text-align: center;">Contraseña: <i style="font-style:normal"><b style="font-weight:700">{{ $data['password'] }}</b></i></p>
                                     </div>
                                 </td>

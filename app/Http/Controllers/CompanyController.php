@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\uploadImageController;
 use App\Models\Company;
+use App\Models\UserCompany;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -123,10 +124,11 @@ class CompanyController extends Controller
     public function listWithUsersCount(Request $request){
         $term = $request->has("term") ? $request->get("term") : "";
 
-        $companies = Company::join('users', 'users.idCompany', 'companies.id')
-                                ->select([
-                                    'companies.*', DB::raw('(SELECT COUNT(*) FROM users WHERE users.idCompany = companies.id) as usersCount')
-                                ])->where('companies.deleted', '!=', true)->groupBy('companies.id')->get();
+        $companies = Company::where('companies.deleted', '!=', true)->groupBy('companies.id')->get();
+
+        foreach ($companies as $company){
+            $company->usersCount = count(UserCompany::where("idCompany", $company->id)->where("deleted", false)->get());
+        }
 
         if($term){
             $companies = $companies->filter(function ($company) use ($term) {

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\Notification;
 use App\Models\NotificationViewed;
 use App\Models\User;
@@ -17,9 +18,11 @@ class NotificationViewedController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
         $notificationViewed = new NotificationViewed();
         $notificationViewed->idNotification = $request->idNotification;
-        $notificationViewed->viewedIdCompany =$user->idCompany;
+        $notificationViewed->viewedIdCompany = $idCompany;
         $notificationViewed->viewedBy = $user->id;
         $notificationViewed->viewedDate = Carbon::now()->timestamp;
         $notificationViewed->status = "Pendiente";
@@ -36,15 +39,24 @@ class NotificationViewedController extends Controller
         $notification = Notification::find($id);
         if(!$notification) return response()->json(['error' => 'Notificación no encontrada.'], 400);
 
+        $saveViewed = true;
         if($notification->createdBy != $user->id){
             $notificationViewed = NotificationViewed::where("idNotification", $id)->where('viewedBy', $user->id)->where("deleted", false)->first();
-            if(!$notificationViewed) return response()->json(['error' => 'Usted no fue incluido en esta notificación'], 400);
+            if(!$notificationViewed){
+                if($user->idRole != 3 && $user->idRole != 1){
+                    return response()->json(['error' => 'Usted no fue incluido en esta notificación'], 400);
+                }else{
+                    $saveViewed = false;
+                }
+            }
 
-            if($notificationViewed->status == "Visto") return response()->json(compact('notificationViewed'),201);
+            if($saveViewed){
+                if($notificationViewed->status == "Visto") return response()->json(compact('notificationViewed'),201);
 
-            $notificationViewed->viewedDate = Carbon::now()->timestamp;
-            $notificationViewed->status = "Visto";
-            $notificationViewed->save();
+                $notificationViewed->viewedDate = Carbon::now()->timestamp;
+                $notificationViewed->status = "Visto";
+                $notificationViewed->save();
+            }
 
             return response()->json(compact('notificationViewed'),201);
         }
@@ -59,13 +71,14 @@ class NotificationViewedController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $listNotificationsViewed = NotificationViewed::where("idNotification", $notificationId)->join('companies', 'companies.id', "=", 'notification_views.viewedIdCompany')->join('users as userOne', 'userOne.id', "=", 'notification_views.viewedBy')
+        $listNotificationsViewed = NotificationViewed::where("idNotification", $notificationId)
+            ->join('users as userOne', 'userOne.id', "=", 'notification_views.viewedBy')
             ->join('roles as rolesOne', 'userOne.idRole', "=", 'rolesOne.id')
             ->where('notification_views.deleted', false)
             ->orderByDesc("notification_views.status")
             ->orderBy("userOne.firstName")
             ->orderBy("userOne.LastName")
-            ->get(["notification_views.*", "userOne.firstName AS firstName","userOne.lastName AS lastName", "rolesOne.name as rol", "companies.name as companyName", "userOne.email as email"]);
+            ->get(["notification_views.*", "userOne.firstName AS firstName","userOne.lastName AS lastName", "rolesOne.name as rol", "userOne.email as email"]);
 
         return $listNotificationsViewed;
     }

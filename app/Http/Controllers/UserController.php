@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\Role;
 use App\Models\Section;
 use App\Models\User;
+use App\Models\UserCompany;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,56 +24,92 @@ class UserController extends Controller
 {
 
     public function authenticate(Request $request){
-        $credentials = $request->only('email', 'password');
+        $credentials = $request->only('username', 'password', 'rut');
 
         try {
-            $fieldType = filter_var($credentials["email"], FILTER_VALIDATE_EMAIL) ? 'email' : 'userName';
-            if (!$token = JWTAuth::attempt([$fieldType => $credentials["email"], 'password' => $credentials["password"], 'deleted' => false])) {
-                return response()->json(['error' => 'Credenciales inválidas'], 400);
+            if($credentials["rut"]){
+                $userCompany = UserCompany::where("username", $credentials["username"])->where("rutCompany", $credentials["rut"])->where("deleted", false)->first();
+                if(!$userCompany) return response()->json(['error' => 'Credenciales inválidas'], 400);
+
+                $user = User::where("id", $userCompany->idUser)->where("deleted", false)->first();
+                if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
+
+                if(!\Hash::check($request->password, $user->password)) return response()->json(['error' => 'Credenciales inválidas'], 400);
+
+                $company = Company::where("ruc", $credentials["rut"])->where("deleted", false)->first();
+                $user->idCompany = $company->id;
+                $user->company = $company;
+
+                $role = Role::find($user->idRole);
+                $role->permissions = json_decode($role->permissions, true);
+                $role->sectionIds = json_decode($role->sectionIds, true);
+                $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+                $user->companies = $user->companies ? json_decode($user->companies, true) : [];
+
+                $token = JWTAuth::fromUser($user);
+                if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
+            }else{
+                $user = User::where("username", $credentials["username"])->where("deleted", false)->first();
+                if(!$user || $user->idRole!=1) return response()->json(['error' => 'Credenciales inválidas'], 400);
+
+                if(!\Hash::check($request->password, $user->password)) return response()->json(['error' => 'Credenciales inválidas'], 400);
+
+                $user->idCompany = null;
+                $role = Role::find($user->idRole);
+                $role->permissions = json_decode($role->permissions, true);
+                $role->sectionIds = json_decode($role->sectionIds, true);
+                $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+                $user->companies = $user->companies ? json_decode($user->companies, true) : [];
+
+                $token = JWTAuth::fromUser($user);
+                if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
         } catch (JWTException $e) {
             return response()->json(['error' => 'could_not_create_token'], 500);
         }
-
-        $user = Auth::user();
-        if($user->idRole != 1 && !$user->idCompany) return response()->json(['error' => 'El usuario no pertenece a alguna empresa'], 500);
-
-        $role = Role::find($user->idRole);
-        $role->permissions = json_decode($role->permissions, true);
-        $role->sectionIds = json_decode($role->sectionIds, true);
-
-        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
 
         return response()->json(compact('token', 'user', 'role'));
     }
 
     public function authenticateErp(Request $request){
-        $credentials = $request->only('email', 'password');
+        $credentials = $request->only('username', 'password', 'rut');
 
-        $fieldType = filter_var($credentials["email"], FILTER_VALIDATE_EMAIL) ? 'email' : 'userName';
-        $user = User::where($fieldType, $credentials["email"])->where("deleted", false)->first();
-        if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
+        if($credentials["rut"]){
+            $userCompany = User::where("username", $credentials["username"])->where("rutCompany", $credentials["rut"])
+                ->where("deleted", false)->first();
+            if(!$userCompany) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
-        if($user->password != $credentials["password"]){
-            return response()->json(['error' => 'Credenciales inválidas'], 400);
-        }
+            $user = User::where("id", $userCompany->id)->where("deleted", false)->first();
+            if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
-        if($user->idRole != 1 && !$user->idCompany) return response()->json(['error' => 'El usuario no pertenece a alguna empresa'], 500);
-
-        try {
-            $token = JWTAuth::fromUser($user);
-            if (!$token) {
-                return response()->json(['error' => 'Credenciales inválidas3'], 400);
+            if($user->password != $credentials["password"]){
+                return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
-        } catch (JWTException $e) {
-            return response()->json(['error' => 'could_not_create_token'], 500);
+
+            $company = Company::where("id", $userCompany->idCompany)->where("deleted", false)->first();
+            $user->idCompany = $company->id;
+            $user->company = $company;
+        }else{
+            $user = User::where("username", $credentials["username"])->where("idRole", 1)->where("deleted", false)->first();
+            if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
+
+            if($user->password != $credentials["password"]){
+                return response()->json(['error' => 'Credenciales inválidas'], 400);
+            }
         }
 
         $role = Role::find($user->idRole);
         $role->permissions = json_decode($role->permissions, true);
         $role->sectionIds = json_decode($role->sectionIds, true);
-
         $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+
+        try {
+            $token = JWTAuth::fromUser($user);
+            if (!$token) return response()->json(['error' => 'Credenciales inválidas3'], 400);
+
+        } catch (JWTException $e) {
+            return response()->json(['error' => 'could_not_create_token'], 500);
+        }
 
         return response()->json(compact('token', 'user', 'role'));
     }
@@ -96,9 +133,7 @@ class UserController extends Controller
 
     public function register(Request $request){
         $error = $this->validateFields($request);
-        if ($error) {
-            return response()->json($error, 400);
-        }
+        if ($error) return response()->json($error, 400);
 
         $user = new User();
         $this->updateUserValues($user, $request);
@@ -112,23 +147,21 @@ class UserController extends Controller
             $user->save();
         }
 
+        if($user->idRole != 1){
+            $this->updateUserCompanies($user, $request);
+        }
+
         $token = JWTAuth::fromUser($user); // ??
 
         return response()->json(compact('user', 'token'), 201);
     }//
 
     public function update(Request $request, $id){
-
         $user = User::find($id);
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
-        $error = $this->validateFieldsUpdate($request);
-        if ($error) {
-            return response()->json($error, 400);
-        }
-
-        if (!$user) {
-            return response()->json(['error' => 'Usuario no encontrado'], 400);
-        }
+        $error = $this->validateFields($request);
+        if ($error) return response()->json($error, 400);
 
         $this->updateUserValues($user, $request);
         $user->save();
@@ -147,6 +180,10 @@ class UserController extends Controller
             $user->save();
         }
 
+        if($user->idRole != 1){
+            $this->updateUserCompanies($user, $request);
+        }
+
         return response()->json($user);
     }
 
@@ -154,23 +191,39 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), [
             'firstName' => 'required|string|max:80',
             'lastName' => 'required|string|max:80',
-            'userName' => 'required|string|max:255',
+            'username' => 'required|string|max:255',
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:15',
             'dob' => 'required|string',
-            'idRole' => 'required|string',
-            'idCompany' => 'nullable|int'
+            'idRole' => 'required|string'
         ]);
 
         $errorMessage = null;
         if (!$validator->fails()) {
-            $user = User::where('userName', $request->userName)->where('deleted', false)->first();
-            if ($user && $user->id != $request->id) {
-                $errorMessage = new \stdClass();
-                $errorMessage->email = [
-                    "El nombre de usuario ya existe."
-                ];
+            if($request->idRole != 1){
+                $userCompany = UserCompany::where("username", $request->username)->whereIn("idCompany", $request->companies ? $request->companies : [])
+                    ->where("deleted", false)->first();
+                if($userCompany){
+                    if (!$request->id || ($userCompany->idUser != $request->id)) {
+                        $company = Company::find($userCompany->idCompany);
+                        $errorMessage = new \stdClass();
+                        $errorMessage->email = [
+                            "El nombre de usuario ya existe en la empresa ".$company->name
+                        ];
+                    }
+                }
+            }else{
+                $user = User::where("username", $request->username)->where("idRole", 1)->where("deleted", false)->first();
+                if($user){
+                    if (!$request->id || ($user->id != $request->id)) {
+                        $errorMessage = new \stdClass();
+                        $errorMessage->email = [
+                            "El nombre de usuario ya existe"
+                        ];
+                    }
+                }
             }
+
         } else {
             $errorMessage = $validator->errors()->toJson();
         }
@@ -178,42 +231,50 @@ class UserController extends Controller
         return $errorMessage;
     }
 
-    private function validateFieldsUpdate($request){
-        $validator = Validator::make($request->all(), [
-            'firstName' => 'required|string|max:80',
-            'lastName' => 'required|string|max:80',
-            'userName' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255',
-            'phone' => 'string|max:15',
-            'dob' => 'required|string',
-            'idRole' => 'required|string',
-            'idCompany' => 'nullable|int',
-        ]);
-        $errorMessage = null;
-
-        return $errorMessage;
-    }
-
     private function updateUserValues($user, $request){
         $user->firstName = $request->firstName;
         $user->lastName = $request->lastName;
-        $user->userName = $request->userName;
+        $user->username = $request->username;
         $user->email = $request->email;
         $user->sex = $request->sex;
         $user->phone = $request->phone;
         $user->dob = date('Y-m-d', strtotime($request->dob));
         $user->idRole = $request->idRole;
-        $user->idCompany = $request->idCompany;
+        $user->companies = $request->companies ? json_encode($request->companies, true) : null;
         if($request->avatar){
             $user->avatar = $request->avatar;
         }
     }
 
+    public function updateUserCompanies($user, $request){
+        $userCompanies = UserCompany::where("idUser", $user->id)->where("deleted", false)->pluck("id");
+        UserCompany::destroy($userCompanies);
+
+        $newUserCompanies = [];
+        $companies = Company::whereIn("id", $request->companies)->where("deleted", false)->get();
+        foreach ($companies as $company) {
+            $new = [
+                'idUser' => $user->id,
+                'idCompany' => $company->id,
+                'rutCompany' => $company->ruc,
+                'username' => $request->username,
+                'deleted' => false,
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now()
+            ];
+            array_push($newUserCompanies, $new);
+        }
+        UserCompany::insert($newUserCompanies);
+    }
+
     public function find($id){
         $user = User::find($id);
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
-        if (!$user) {
-            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        $user->companies = $user->companies ? json_decode($user->companies, true) : [];
+        if(count($user->companies) > 0){
+            $companies = Company::whereIn("id", $user->companies)->where("deleted", false)->get();
+            $user->mappedCompanies = $companies;
         }
 
         return $user;
@@ -227,25 +288,16 @@ class UserController extends Controller
         $this->searchUser($users, $term);
 
         $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
-        $this->addObjectValues($users);
 
         return $users;
     }
 
-    public function addObjectValues($users){
-        $companyIds = [];
-        foreach ($users as $user) {
-            if ($user->idCompany && !in_array($user->idCompany, $companyIds))
-                $companyIds[] = $user->idCompany;
+    public function addObjectValues($users, $idCompany){
+        $company = Company::find($idCompany);
 
-        }
-        if (count($companyIds) > 0) {
-            $companies = Company::whereIn('id', $companyIds)->get(["companies.id", "companies.name"])->keyBy('id');
-
+        if($company){
             foreach ($users as $user) {
-                if ($user->idCompany)
-                    $user->company = $companies[$user->idCompany];
-
+                $user->company = $company;
             }
         }
     }
@@ -254,11 +306,12 @@ class UserController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
-        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : "";
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
         $roles = $request->has("roles") ? $request->get("roles") : [];
-        $users = User::join('roles', 'roles.id', '=', 'users.idRole')->where('users.deleted', false)
-            ->where("users.idCompany", $user->idCompany ? $user->idCompany : $idCompany)
+        $users = User::join('roles', 'roles.id', '=', 'users.idRole')
+            ->where('users.deleted', false)
+            ->where('users.companies', 'LIKE', '%' . "\"".$idCompany."\"" . '%')
             ->where('users.id', '!=', $user->id)
             ->whereIn('roles.name', $roles);
 
@@ -271,7 +324,7 @@ class UserController extends Controller
         }
 
         $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
-        $this->addObjectValues($users);
+        $this->addObjectValues($users, $idCompany);
 
         return $users;
     }
@@ -305,8 +358,10 @@ class UserController extends Controller
 
         if (!$idCompany) return response()->json(['error' => 'Seleccione una empresa'], 400);
 
-        $users = User::join('roles', 'roles.id', '=', 'users.idRole')->where('users.deleted', false)
-            ->where('users.idCompany', $idCompany)->where("users.id", "!=", $user->id)->where('users.deleted', false);
+        $users = User::join('roles', 'roles.id', '=', 'users.idRole')
+            ->where('users.deleted', false)
+            ->where('users.companies', 'LIKE', '%' . "\"".$idCompany."\"" . '%')
+            ->where("users.id", "!=", $user->id);
 
         if($term){
             $users->where(function ($query) use ($term) {
@@ -375,34 +430,6 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    // List getUserCompany
-    public function listAvailableSameCompany(Request $request){
-        $start = 0;
-        $limit = 50;
-        $user = Auth::user();
-
-        if (!$user) {
-            return response()->json(['error' => 'Usuario no encontrado'], 400);
-        }
-
-        $roles = $request->has("roles") ? $request->get("roles") : [];
-        $term = $request->has("term") ? $request->get("term") : "";
-        //$company = $request->has("idCompany") ? $request->get("idCompany") : "";
-        $users = User::join('roles', 'users.idRole', '=', 'roles.id')->where('users.deleted', false)
-            ->where('users.idCompany','=',$user->idCompany)
-            ->where('users.id', '!=', $user->id)
-            ->whereIn('roles.name', $roles);
-
-        $this->searchUser($users, $term);
-
-        $users->offset($start * $limit)->take($limit);
-
-        $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
-        $this->addObjectValues($users);
-
-        return $users;
-    }
-
     public function deleteImage(Request $request){
         $imageLink = $request->imageLink;
         $userId = $request->id;
@@ -425,15 +452,17 @@ class UserController extends Controller
         $limit = 50;
         $user = Auth::user();
         $term = $request->has("term") ? $request->get("term") : "";
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
-        $users = User::join('roles', 'users.idRole', '=', 'roles.id')->where('users.idCompany','=',$user->idCompany)
+        $users = User::join('roles', 'users.idRole', '=', 'roles.id')
+            ->where('users.companies', 'LIKE', '%' . "\"".$idCompany."\"" . '%')
             ->where('users.deleted', '!=', true);
         $this->searchUser($users, $term);
 
         $users->offset($start * $limit)->take($limit);
 
         $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
-        $this->addObjectValues($users);
+        $this->addObjectValues($users, $idCompany);
 
         return $users;
     }
@@ -474,16 +503,16 @@ class UserController extends Controller
             $res2 = $res2->json();
 
             $newUsers = [];
-            $users = User::where("deleted", false)->get()->keyBy("email");
+            $users = User::where("deleted", false)->get()->keyBy("username");
             $erpCompanies = Company::where("deleted", false)->get()->keyBy("ruc");
 
             foreach ($res2 as $erpUser) {
-                if (!array_key_exists($erpUser["email"], $users->toArray())) {
+                if (!array_key_exists($erpUser["usuario"], $users->toArray())) {
 
                     $new = [
-                        'name' => null,
                         'firstName' => $erpUser["nombre"],
                         'lastName' => " ",
+                        'username' => $erpUser["usuario"],
                         'ruc' => $erpUser["rut_usuario"],
                         'email' => $erpUser["email"],
                         'password' => bcrypt($erpUser["rut_usuario"]),
@@ -492,6 +521,7 @@ class UserController extends Controller
                         'sex' => "O",
                         'idRole' => $erpUser["usuario"] == "admin" ? 1 : 4,
                         'idCompany' => null,
+                        'companies' => null,
                         'avatar' => null,
                         'deleted' => false,
                         'created_at' => Carbon::now(),
@@ -536,15 +566,18 @@ class UserController extends Controller
         }
     }
 
-    public function findUserByUserName($userName){
-        $user =  User::where('userName', $userName)->where('deleted', false)->first();
+    public function findUserByUserName($userName, Request $request){
+        $rut = $request->has("rut") ? $request->get("rut") : "";
 
-        if (!$user) {
-            return response()->json(['error' => 'Usuario no encontrado'], 400);
-        }
-        $company = Company::find($user->idCompany);
-        if ($company) {
-            $user->company = $company;
+        if($rut){
+            $userCompany = UserCompany::where("username", $userName)->where("rutCompany", $rut)->where("deleted", false)->first();
+            if (!$userCompany) return response()->json(['error' => 'Usuario no encontrado'], 400);
+
+            $user = User::where("id", $userCompany->idUser)->where("deleted", false)->first();
+            if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }else{
+            $user = User::where('username', $userName)->where("idRole", 1)->where('deleted', false)->first();
+            if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
 
         return $user;

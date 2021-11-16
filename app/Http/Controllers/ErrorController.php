@@ -24,8 +24,10 @@ class ErrorController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
         $errorZendy = new Error();
-        $errorZendy->idCompany = $user->idCompany;
+        $errorZendy->idCompany = $idCompany;
         $errorZendy->createdBy = $user->id;
         $errorZendy->idModule = $request["idModule"];
         $errorZendy->reason = $request["reason"];
@@ -82,7 +84,6 @@ class ErrorController extends Controller
             return response()->json(['error' => 'Error reportado no encontrado'], 400);
         }
 
-        $errorZendy->idCompany = $request->idCompany;
         $errorZendy->createdBy = $request->createdBy;
         $errorZendy->idModule = $request->idModule;
         $errorZendy->reason = $request->reason;
@@ -149,7 +150,9 @@ class ErrorController extends Controller
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $errors = Error::where("createdBy", $user->id)->where("idCompany", $user->idCompany)->where("deleted", false);
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
+        $errors = Error::where("createdBy", $user->id)->where("idCompany", $idCompany)->where("deleted", false);
 
         $term = $request->has("term") ? $request->get("term") : "";
         if($term){

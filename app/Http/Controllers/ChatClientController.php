@@ -15,6 +15,7 @@ class ChatClientController extends Controller
 {
     public function register(Request $request){
         $users = json_decode($request->getContent(), true);
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
         if(count($users) == 0) return response()->json(['error' => 'Necesita seleccionar al menos un usuario'], 400);
 
         $user = Auth::user();
@@ -24,14 +25,14 @@ class ChatClientController extends Controller
         $chat->startDate = date('Y-m-d', Carbon::now()->timestamp);
         $chat->type = "Cliente";
         $chat->status = "Vigente";
-        $chat->idCompany = $user->idCompany;
+        $chat->idCompany = $idCompany;
         $chat->idUser = $user->id;
         $chat->messages = 0;
         $chat->scope = count($users) > 1 ? "Grupal" : "Personal";
 
         if($chat->scope == "Personal"){
             $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
-            $chats = Chat::whereIn("id", $chatIds)->where("status", "Vigente")->where("scope", "Personal")->get();
+            $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idCompany)->where("status", "Vigente")->where("scope", "Personal")->get();
             $otherParticipantsByChat =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->get(["id", "idUser", "idChat"])->keyBy("idChat");
 
             $receiver = $users[0];

@@ -15,7 +15,7 @@ class EmailController extends Controller
         $email = $request->email;
         $data = [
             'name'          => $user->firstName." ".$user->lastName,
-            'userName'      => $user->userName,
+            'username'      => $user->username,
             'password'      => Crypt::decryptString($user->encrypted_password),
         ];
         Mail::to($email)->send(new sendMail($data));
