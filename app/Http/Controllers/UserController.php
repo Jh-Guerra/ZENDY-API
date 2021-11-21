@@ -79,12 +79,12 @@ class UserController extends Controller
                 ->where("deleted", false)->first();
             if(!$userCompany) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
-            $user = User::where("id", $userCompany->id)->where("deleted", false)->first();
+            $user = User::where("id", $userCompany->idUser)->where("deleted", false)->first();
             if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
-            if($user->password != $credentials["password"]){
-                return response()->json(['error' => 'Credenciales inválidas'], 400);
-            }
+            $hashedPassword = $credentials["password"];
+            $decryptedPassword = Crypt::decryptString($user->encrypted_password);
+            if(!\Hash::check($decryptedPassword, $hashedPassword)) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
             $company = Company::where("id", $userCompany->idCompany)->where("deleted", false)->first();
             $user->idCompany = $company->id;
@@ -93,9 +93,9 @@ class UserController extends Controller
             $user = User::where("username", $credentials["username"])->where("idRole", 1)->where("deleted", false)->first();
             if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
-            if($user->password != $credentials["password"]){
-                return response()->json(['error' => 'Credenciales inválidas'], 400);
-            }
+            $hashedPassword = $credentials["password"];
+            $decryptedPassword = Crypt::decryptString($user->encrypted_password);
+            if(!\Hash::check($decryptedPassword, $hashedPassword)) return response()->json(['error' => 'Credenciales inválidas'], 400);
         }
 
         $role = Role::find($user->idRole);
