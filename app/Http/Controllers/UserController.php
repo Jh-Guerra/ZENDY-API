@@ -75,7 +75,7 @@ class UserController extends Controller
         $credentials = $request->only('username', 'password', 'rut');
 
         if($credentials["rut"]){
-            $userCompany = User::where("username", $credentials["username"])->where("rutCompany", $credentials["rut"])
+            $userCompany = UserCompany::where("username", $credentials["username"])->where("rutCompany", $credentials["rut"])
                 ->where("deleted", false)->first();
             if(!$userCompany) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
