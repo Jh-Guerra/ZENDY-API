@@ -8,6 +8,6 @@ use Illuminate\Http\Request;
 class RoleController extends Controller
 {
     public function list(){
-        return Role::where("status", true)->orderBy("name")->get();
+        return Role::where("status", true)->get();
     }
 }

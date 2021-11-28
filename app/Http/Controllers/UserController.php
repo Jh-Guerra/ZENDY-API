@@ -335,7 +335,7 @@ class UserController extends Controller
 
         $users = User::join('roles', 'roles.id', '=', 'users.idRole')->where('users.deleted', false)
             ->where('users.id', '!=', $user->id)
-            ->where('roles.name', "Admin");
+            ->where('roles.name', "SuperAdmin");
 
         $term = $request->has("term") ? $request->get("term") : "";
         if($term){
@@ -519,7 +519,7 @@ class UserController extends Controller
                         'dob' => null,
                         'phone' => null,
                         'sex' => "O",
-                        'idRole' => $erpUser["usuario"] == "admin" ? 1 : 4,
+                        'idRole' => $erpUser["usuario"] == "admin" ? 1 : 5,
                         'idCompany' => null,
                         'companies' => null,
                         'avatar' => null,

@@ -43,7 +43,7 @@ class NotificationViewedController extends Controller
         if($notification->createdBy != $user->id){
             $notificationViewed = NotificationViewed::where("idNotification", $id)->where('viewedBy', $user->id)->where("deleted", false)->first();
             if(!$notificationViewed){
-                if($user->idRole != 3 && $user->idRole != 1){
+                if($user->idRole != 4 && $user->idRole != 1){
                     return response()->json(['error' => 'Usted no fue incluido en esta notificación'], 400);
                 }else{
                     $saveViewed = false;

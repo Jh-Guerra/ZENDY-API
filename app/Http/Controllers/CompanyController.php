@@ -71,8 +71,6 @@ class CompanyController extends Controller
             'adminName' => 'required|string|max:150',
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:20',
-            'currentBytes' => 'required|int',
-            'maxBytes' => 'required|int'
         ]);
 
         $errorMessage = null;
@@ -99,8 +97,6 @@ class CompanyController extends Controller
         $company->ruc = $request->ruc;
         $company->email = $request->email;
         $company->phone = $request->phone;
-        $company->currentBytes = $request->currentBytes;
-        $company->maxBytes = $request->maxBytes;
         if($request->avatar){
             $company->avatar = $request->avatar;
         }
@@ -196,8 +192,6 @@ class CompanyController extends Controller
                         'phone' => $erpCompany["telefono"],
                         'ruc' => $erpCompany["rut_empresa"],
                         'adminName' => $erpCompany["nombre_representante1"],
-                        'currentBytes' => 0,
-                        'maxBytes' => 0,
                         'avatar' => null,
                         'description' => $erpCompany["giro1"].". ".$erpCompany["giro2"],
                         'deleted' => 0,

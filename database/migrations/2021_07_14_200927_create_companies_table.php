@@ -21,8 +21,6 @@ class CreateCompaniesTable extends Migration
             $table->string('phone', 20);
             $table->string('adminName')->nullable()->default('');
             $table->string('logo')->nullable()->default('');
-            $table->bigInteger('currentBytes')->nullable();
-            $table->bigInteger('maxBytes')->nullable();
             $table->boolean('deleted')->nullable()->default(0);
             $table->timestamps();
         });
