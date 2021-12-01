@@ -117,6 +117,14 @@ class CompanyController extends Controller
         return Company::where('deleted', '!=', true)->orderBy("name")->get();
     }
 
+    public function listClient(){
+        return Company::where('deleted', '!=', true)->where('isHelpDesk', false)->orderBy("name")->get();
+    }
+
+    public function listHelpdesk(){
+        return Company::where('deleted', '!=', true)->where('isHelpDesk', true)->orderBy("name")->get();
+    }
+
     public function listWithUsersCount(Request $request){
         $term = $request->has("term") ? $request->get("term") : "";
 

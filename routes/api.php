@@ -62,6 +62,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/find/{id}', 'App\Http\Controllers\CompanyController@find');
         Route::get('/list', 'App\Http\Controllers\CompanyController@list');
         Route::get('/list/count/users', 'App\Http\Controllers\CompanyController@listWithUsersCount');
+        Route::get('/list-client', 'App\Http\Controllers\CompanyController@listClient');
+        Route::get('/list-helpdesk', 'App\Http\Controllers\CompanyController@listHelpdesk');
         Route::delete('/delete/{id}', 'App\Http\Controllers\CompanyController@delete');
         Route::post('/deleteImage', 'App\Http\Controllers\CompanyController@deleteImage');
         Route::post('/import-erp', 'App\Http\Controllers\CompanyController@importERPCompanies');
