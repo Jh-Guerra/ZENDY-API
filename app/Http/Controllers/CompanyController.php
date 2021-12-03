@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\uploadImageController;
+use App\Http\Controllers\UserController;
 use App\Models\Company;
 use App\Models\UserCompany;
 use Carbon\Carbon;
@@ -64,7 +65,7 @@ class CompanyController extends Controller
         return response()->json($company);
     }
 
-    private function validateFields($request){
+    public function validateFields($request){
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:150',
             'address' => 'required|string|max:150',

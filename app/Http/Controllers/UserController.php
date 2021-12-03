@@ -135,10 +135,49 @@ class UserController extends Controller
         $error = $this->validateFields($request);
         if ($error) return response()->json($error, 400);
 
+        $idCompany = null;
+        if($request->company){
+            $request->company = json_decode($request->company, true);
+            //$company_controller = new CompanyController();
+            $error = $this->validateCompanyFields($request->company);
+            if($error) return response()->json($error, 400);
+
+            $company = new Company();
+
+            $company->name = $request->company['name'];
+            $company->address = $request->company['address'];
+            $company->adminName = $request->company['adminName'];
+            $company->ruc = $request->company['ruc'];
+            $company->email = $request->company['email'];
+            $company->phone = $request->company['phone'];
+            if($request->company['avatar']){
+                $company->avatar = $request->company['avatar'];
+            }
+            $company->description = $request->company['description'];
+
+            $company->save();
+    
+            //$request->company = json_decode($request->company, false);
+           // $request->company = json_decode($request->company, true);
+            if($request->hasFile('imageCompany')){
+                $tasks_controller = new uploadImageController();
+                $company->avatar = $tasks_controller->updateFile($request->file('imageCompany'), "companies/avatar", $company->id."_".Carbon::now()->timestamp);
+                $company->save();
+            }
+            $idCompany = $company->id;
+        }
+
         $user = new User();
         $this->updateUserValues($user, $request);
         $user->password = bcrypt($request->password);
         $user->encrypted_password = Crypt::encryptString($request->password);
+       // $user->companies = (string)$request->company['id'];
+       //$request->has("company") ? $request->get("company") : null
+       if($request->company){
+        $companyID = $idCompany;
+        $company2ID = (string)$companyID;
+        $user->companies = $idCompany ? json_encode([$company2ID]) : [];
+       }
         $user->save();
 
         if($request->hasFile('image')){
@@ -148,13 +187,40 @@ class UserController extends Controller
         }
 
         if($user->idRole != 1){
-            $this->updateUserCompanies($user, $request);
+           // $this->updateUserCompanies($user, $request, $request->company ? [$request->company] : null);
+            $this->updateUserCompanies($user, $request, $idCompany ? [$idCompany] : null);
+
         }
 
         $token = JWTAuth::fromUser($user); // ??
 
         return response()->json(compact('user', 'token'), 201);
-    }//
+    }
+
+    public function validateCompanyFields($request){
+        $validator = Validator::make($request, [
+            'name' => 'required|string|max:150',
+            'address' => 'required|string|max:150',
+            'adminName' => 'required|string|max:150',
+            'email' => 'required|string|email|max:255',
+            'phone' => 'string|max:20',
+        ]);
+
+        $errorMessage = null;
+        if(!$validator->fails()){
+            $company = Company::where('name', $request['name'])->where('deleted', false)->first();
+            if($company){
+                $errorMessage = new \stdClass();
+                $errorMessage->email = [
+                    "La empresa ya está registrada."
+                ];
+            }
+        }else{
+            $errorMessage = $validator->errors()->toJson();
+        }
+
+        return $errorMessage;
+    }
 
     public function update(Request $request, $id){
         $user = User::find($id);
@@ -181,7 +247,7 @@ class UserController extends Controller
         }
 
         if($user->idRole != 1){
-            $this->updateUserCompanies($user, $request);
+            $this->updateUserCompanies($user, $request, null);
         }
 
         return response()->json($user);
@@ -246,12 +312,12 @@ class UserController extends Controller
         }
     }
 
-    public function updateUserCompanies($user, $request){
+    public function updateUserCompanies($user, $request, $companies){
         $userCompanies = UserCompany::where("idUser", $user->id)->where("deleted", false)->pluck("id");
         UserCompany::destroy($userCompanies);
 
         $newUserCompanies = [];
-        $companies = Company::whereIn("id", $request->companies)->where("deleted", false)->get();
+        $companies = Company::whereIn("id", $companies ? $companies : $request->companies)->where("deleted", false)->get();
         foreach ($companies as $company) {
             $new = [
                 'idUser' => $user->id,
