@@ -101,11 +101,18 @@ class CompanyController extends Controller
             $company->avatar = $request->avatar;
         }
         $company->description = $request->description;
+        $company->isHelpDesk = filter_var($request->isHelpDesk, FILTER_VALIDATE_BOOLEAN);
+        $company->helpDesks = $request->helpDesks ? json_encode($request->helpDesks, true) : null;
     }
 
     public function find($id){
         $company = Company::find($id);
 
+        $company->helpDesks = $company->helpDesks ? json_decode($company->helpDesks, true) : [];
+        if(count($company->helpDesks) > 0){
+            $companies = Company::whereIn("id", $company->helpDesks)->where("deleted", false)->get();
+            $company->mappedCompanies = $companies;
+        }
         if(!$company){
             return response()->json(['error' => 'Empresa no encontrada'], 400);
         }
