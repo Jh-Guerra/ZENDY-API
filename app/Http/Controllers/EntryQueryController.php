@@ -271,6 +271,7 @@ class EntryQueryController extends Controller
         $chat->idUser = $user->id;
         $chat->allUsers = 0;
         $chat->messages = 0;
+        $chat->isQuery = true;
         $chat->idEntryQuery = $entryQuery->id;
         $chat->byRecommend = $request["byRecommend"];
         $chat->save();
