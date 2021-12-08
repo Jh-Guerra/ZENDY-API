@@ -121,16 +121,13 @@ class CompanyController extends Controller
     }
 
     public function updateHelpDeskCompany($id){
-        $companies = Company::where('deleted', '!=', true)->where('isHelpDesk', false)->get();
+        $companies = Company::where('deleted', '!=', true)->where('isHelpDesk', false)->where('helpDesks', 'LIKE', '%' ."\"$id\"". '%')->get();
 
         foreach ($companies as $company){
             $companyHelpDenk = $company->helpDesks ? json_decode($company->helpDesks, true) : [];
-            if(in_array($id, $companyHelpDenk))
-            {
-                $newCompanyHelpDenk =  array_diff($companyHelpDenk, array("$id"));
-                $company->helpDesks = count($newCompanyHelpDenk)>0 ?  "[\"".implode('","', $newCompanyHelpDenk)."\"]" : "";
-                $company->save();
-            }
+            $newCompanyHelpDenk =  array_diff($companyHelpDenk, array("$id"));
+            $company->helpDesks = count($newCompanyHelpDenk)>0 ?  "[\"".implode('","', $newCompanyHelpDenk)."\"]" : "";
+            $company->save();
         }
         return response()->json("Actualizacion correcta",201);
     }
