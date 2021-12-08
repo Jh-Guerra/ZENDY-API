@@ -43,9 +43,16 @@ class UserController extends Controller
                 $role = Role::find($user->idRole);
                 $role->permissions = json_decode($role->permissions, true);
                 $role->sectionIds = json_decode($role->sectionIds, true);
-                $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+                if($company->helpDesks != null){
+                    $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+               } 
+                  else {
+                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('4')))->where("active", true)->where("deleted", false)->get();                    
+                }  
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
 
+                $helpDesk=null;
+                $helpDeskName="pruebaBack";
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
             }else{
@@ -60,7 +67,8 @@ class UserController extends Controller
                 $role->sectionIds = json_decode($role->sectionIds, true);
                 $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
-
+                $helpDesk=1;
+                $helpDeskName="pruebaBack";
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
@@ -68,7 +76,7 @@ class UserController extends Controller
             return response()->json(['error' => 'could_not_create_token'], 500);
         }
 
-        return response()->json(compact('token', 'user', 'role'));
+        return response()->json(compact('token', 'user', 'role', 'helpDesk', 'helpDeskName'));
     }
 
     public function authenticateErp(Request $request){

@@ -39,6 +39,7 @@ class EntryQueryController extends Controller
         $entryQuery->file = $request["file"];
         $entryQuery->idModule = $request["idModule"];
         $entryQuery->isFrequent = $request->isFrequent == true;
+        $entryQuery->idHelpdesk = $request["idHelpdesk"];
 
         $entryQuery->save();
 
@@ -67,6 +68,7 @@ class EntryQueryController extends Controller
         $validator = Validator::make($request->all(), [
             'reason' => 'required',
             'description' => 'required',
+            'idHelpdesk' => 'required|int',
         ]);
 
 
