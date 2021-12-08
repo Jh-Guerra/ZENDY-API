@@ -60,6 +60,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/register', 'App\Http\Controllers\CompanyController@register');
         Route::post('/update/{id}', 'App\Http\Controllers\CompanyController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\CompanyController@find');
+        Route::get('/updateHelpDeskCompany/{id}', 'App\Http\Controllers\CompanyController@updateHelpDeskCompany');
         Route::get('/list', 'App\Http\Controllers\CompanyController@list');
         Route::get('/list/count/users', 'App\Http\Controllers\CompanyController@listWithUsersCount');
         Route::get('/list-client', 'App\Http\Controllers\CompanyController@listClient');
