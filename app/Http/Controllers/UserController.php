@@ -45,10 +45,10 @@ class UserController extends Controller
                 $role->sectionIds = json_decode($role->sectionIds, true);
                 if($company->helpDesks != null){
                     $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
-               } 
+               }
                   else {
-                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('4')))->where("active", true)->where("deleted", false)->get();                    
-                }  
+                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('4')))->where("active", true)->where("deleted", false)->get();
+                }
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
 
                 $helpDesk=null;
@@ -69,6 +69,8 @@ class UserController extends Controller
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
                 $helpDesk=1;
                 $helpDeskName="pruebaBack";
+                $user->helpDesk = Company::where("isHelpDesk", true)->where("deleted", false)->first();
+                $user->idHelpDesk = $user->helpDesk->id;
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
@@ -589,6 +591,27 @@ class UserController extends Controller
         }
 
         return $user;
+    }
+
+    public function changeHelpDesk(Request $request, $id){
+
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], 400);
+        }
+
+        $role = Role::find($user->idRole);
+        $role->permissions = json_decode($role->permissions, true);
+        $role->sectionIds = json_decode($role->sectionIds, true);
+        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+        $token = JWTAuth::fromUser($user);
+        if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
+
+        $user->helpDesk = Company::where("isHelpDesk", true)->where("id", $request->id)->where("deleted", false)->first();
+        $user->idHelpDesk = $user->helpDesk->id;
+
+        return response()->json(compact('token', 'user', 'role'));
     }
 }
 

@@ -40,6 +40,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list-company-notify', 'App\Http\Controllers\UserController@listCompanyNotify');
         Route::post('/import-erp', 'App\Http\Controllers\UserController@importERPUsers');
         Route::post('/update-password/{id}', 'App\Http\Controllers\UserController@updatePassword');
+        Route::post('/changeHelpDesk/{id}', 'App\Http\Controllers\UserController@changeHelpDesk');
     });
 
     Route::prefix('roles')->group(function () {
