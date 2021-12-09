@@ -51,8 +51,10 @@ class UserController extends Controller
                 }
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
 
-                $helpDesk=null;
-                $helpDeskName="pruebaBack";
+                $helpDesk=14;
+                $helpDeskName="Fractal";
+                $user->helpDesk = Company::where("id", 14)->where("deleted", false)->first();
+                $user->idHelpDesk = $user->helpDesk->id;
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
             }else{
@@ -67,10 +69,6 @@ class UserController extends Controller
                 $role->sectionIds = json_decode($role->sectionIds, true);
                 $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
-                $helpDesk=1;
-                $helpDeskName="pruebaBack";
-                $user->helpDesk = Company::where("isHelpDesk", true)->where("deleted", false)->first();
-                $user->idHelpDesk = $user->helpDesk->id;
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
