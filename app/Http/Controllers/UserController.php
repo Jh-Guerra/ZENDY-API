@@ -50,11 +50,11 @@ class UserController extends Controller
                     $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('4')))->where("active", true)->where("deleted", false)->get();
                 }
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
-
-                $helpDesk=14;
-                $helpDeskName="Fractal";
-                $user->helpDesk = Company::where("id", 14)->where("deleted", false)->first();
-                $user->idHelpDesk = $user->helpDesk->id;
+                $company->helpDesks = json_decode($company->helpDesks, true);
+                $helpDesks = $company->helpDesks;
+                $firstHelpDesk = Company::where("id", $helpDesks[0])->where("deleted", false)->first();
+                $user->helpDesk = $firstHelpDesk;
+                $user->idHelpDesk = $firstHelpDesk->id;
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
             }else{
@@ -76,7 +76,7 @@ class UserController extends Controller
             return response()->json(['error' => 'could_not_create_token'], 500);
         }
 
-        return response()->json(compact('token', 'user', 'role', 'helpDesk', 'helpDeskName'));
+        return response()->json(compact('token', 'user', 'role'));
     }
 
     public function authenticateErp(Request $request){
@@ -606,6 +606,13 @@ class UserController extends Controller
         $token = JWTAuth::fromUser($user);
         if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
+        //$firstUser = User::where("id", $id)->where("deleted", false)->first();
+        $user->companies = json_decode($user->companies, true);
+        $companies = $user->companies;
+        $company = Company::where("id", $companies[0])->where("deleted", false)->first();
+        $company->helpDesks = json_decode($company->helpDesks, true);
+        $user->company = $company;
+        $user->companies = $companies;
         $user->helpDesk = Company::where("isHelpDesk", true)->where("id", $request->id)->where("deleted", false)->first();
         $user->idHelpDesk = $user->helpDesk->id;
 
