@@ -47,12 +47,11 @@ class UserController extends Controller
                     $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
                }
                   else {
-                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('4')))->where("active", true)->where("deleted", false)->get();
+                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('3','4')))->where("active", true)->where("deleted", false)->get();
                 }
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
 
-                $helpDesk=14;
-                $helpDeskName="Fractal";
+
                 $user->helpDesk = Company::where("id", 14)->where("deleted", false)->first();
                 $user->idHelpDesk = $user->helpDesk->id;
                 $token = JWTAuth::fromUser($user);
@@ -76,7 +75,7 @@ class UserController extends Controller
             return response()->json(['error' => 'could_not_create_token'], 500);
         }
 
-        return response()->json(compact('token', 'user', 'role', 'helpDesk', 'helpDeskName'));
+        return response()->json(compact('token', 'user', 'role'));
     }
 
     public function authenticateErp(Request $request){
