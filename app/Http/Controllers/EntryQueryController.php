@@ -108,8 +108,9 @@ class EntryQueryController extends Controller
         return response()->json(compact('entryQueries'),201);
     }
 
-    public function listPendings(Request $request, $idHelpdesk){
+    public function listPendings(Request $request){
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+        $idHelpdesk = $request->has("idHelpdesk") ? $request->get("idHelpdesk") : null;
 
         if(!$idHelpdesk){
             $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("entry_queries.idCompany", $idCompany)
