@@ -55,9 +55,11 @@ class UserController extends Controller
 
                 $company->helpDesks = json_decode($company->helpDesks, true);
                 $helpDesks = $company->helpDesks;
-                $firstHelpDesk = Company::where("id", $helpDesks[0])->where("deleted", false)->first();
-                $user->helpDesk = $firstHelpDesk;
-                $user->idHelpDesk = $firstHelpDesk->id;
+                if($helpDesks && count($helpDesks) > 0){
+                    $firstHelpDesk = Company::where("id", $helpDesks[0])->where("deleted", false)->first();
+                    $user->helpDesk = $firstHelpDesk;
+                    $user->idHelpDesk = $firstHelpDesk->id;
+                }
 
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
