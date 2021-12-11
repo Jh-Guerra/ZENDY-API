@@ -43,13 +43,14 @@ class UserController extends Controller
                 $role = Role::find($user->idRole);
                 $role->permissions = json_decode($role->permissions, true);
                 $role->sectionIds = json_decode($role->sectionIds, true);
-                
+
                 if($company->isHelpDesk){
                     //es mesa de ayuda
-                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('3','4')))->where("active", true)->where("deleted", false)->get();
+                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('3','4')))->where("active", true)->where("deleted", false)->orderBy("order")->get();
                 }else {
-                      $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('2','3')))->where("active", true)->where("deleted", false)->get();
+                      $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('2','3')))->where("active", true)->where("deleted", false)->orderBy("order")->get();
                 }
+
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
 
                 $company->helpDesks = json_decode($company->helpDesks, true);
@@ -70,7 +71,7 @@ class UserController extends Controller
                 $role = Role::find($user->idRole);
                 $role->permissions = json_decode($role->permissions, true);
                 $role->sectionIds = json_decode($role->sectionIds, true);
-                $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+                $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy()->get();
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
@@ -112,7 +113,7 @@ class UserController extends Controller
         $role = Role::find($user->idRole);
         $role->permissions = json_decode($role->permissions, true);
         $role->sectionIds = json_decode($role->sectionIds, true);
-        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy("order")->get();
 
         try {
             $token = JWTAuth::fromUser($user);
@@ -605,7 +606,7 @@ class UserController extends Controller
         $role = Role::find($user->idRole);
         $role->permissions = json_decode($role->permissions, true);
         $role->sectionIds = json_decode($role->sectionIds, true);
-        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy()->get();
         $token = JWTAuth::fromUser($user);
         if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
