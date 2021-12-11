@@ -108,11 +108,17 @@ class EntryQueryController extends Controller
         return response()->json(compact('entryQueries'),201);
     }
 
-    public function listPendings(Request $request){
+    public function listPendings(Request $request, $idHelpdesk){
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
-        $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("entry_queries.idCompany", $idCompany)
-            ->where("status", "Pendiente")->where("entry_queries.deleted", false);
+        if(!$idHelpdesk){
+            $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("entry_queries.idCompany", $idCompany)
+                ->where("status", "Pendiente")->where("entry_queries.deleted", false);
+        } else {
+            $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')
+            ->where("status", "Pendiente")->where("entry_queries.idHelpdesk", $idHelpdesk)->where("entry_queries.deleted", false);
+        }
+
         $term = $request->has("term") ? $request->get("term") : "";
         if($term)
             $this->search($entryQueries, $term);
@@ -141,7 +147,7 @@ class EntryQueryController extends Controller
         return response()->json(compact('entryQuery'),201);
     }
 
-    public function listQuery(Request $request, $status){
+    public function listQuery(Request $request, $status, $idHelpdesk){
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
@@ -151,7 +157,11 @@ class EntryQueryController extends Controller
 
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
-        $entryQueries = EntryQuery::where("deleted", false)->where("idCompany", $idCompany)->where("createdBy", $user->id)->where("status",'=',$status);
+        if(!$idHelpdesk){
+            $entryQueries = EntryQuery::where("deleted", false)->where("idCompany", $idCompany)->where("createdBy", $user->id)->where("status",'=',$status);
+        } else {
+            $entryQueries = EntryQuery::where("deleted", false)->where("idCompany", $idCompany)->where("idHelpdesk", $idHelpdesk)->where("createdBy", $user->id)->where("status",'=',$status);
+        }
 
         $term = $request->has("term") ? $request->get("term") : "";
         if($term)

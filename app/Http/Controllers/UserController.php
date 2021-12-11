@@ -43,11 +43,13 @@ class UserController extends Controller
                 $role = Role::find($user->idRole);
                 $role->permissions = json_decode($role->permissions, true);
                 $role->sectionIds = json_decode($role->sectionIds, true);
-                if($company->helpDesks != null){
-                    $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+                if($company->isHelpDesk || helpDesks != null){
+                    //es mesa de ayuda
+                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('4')))->where("active", true)->where("deleted", false)->get();
                }
                   else {
-                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('4')))->where("active", true)->where("deleted", false)->get();
+                      //no es mesa de ayuda
+                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('2','3')))->where("active", true)->where("deleted", false)->get();
                 }
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
 
