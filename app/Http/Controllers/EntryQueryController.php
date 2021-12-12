@@ -251,11 +251,10 @@ class EntryQueryController extends Controller
 
         $thereVigentChat = false;
         foreach ($userParticipations as $userParticipation) {
-            if(in_array($userParticipation->chatId, $queryUserParticipations) && $userParticipation->chatScope == "Personal"){
+            if(in_array($userParticipation->idChat, $queryUserParticipations) && $userParticipation->chatScope == "Personal"){
                 $thereVigentChat = true;
             }
         }
-
         if($thereVigentChat) return response()->json(['error' => 'Este usuario ya cuenta con una consulta activa.'], 400);
 
         $entryQuery->acceptDate = Carbon::now()->timestamp;
