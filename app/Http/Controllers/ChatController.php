@@ -77,12 +77,11 @@ class ChatController extends Controller
         $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
         $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
 
-        $isQuery = $request->isQuery == "true" ? true : false;
-        if($isQuery) {
-            $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $request->idHelpDesk)->where("isQuery", $isQuery)->where("deleted", false)->where("status",$request->status)->orderByDesc("updated_at")->get();
-        } else {
-            $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $request->idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status",$request->status)->orderByDesc("updated_at")->get();
-        }
+        $isQuery = $request->has("isQuery") ? ($request->get("isQuery") == "true") : false;
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+        $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
+
+        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status",$request->status)->orderByDesc("updated_at")->get();
 
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
@@ -241,14 +240,15 @@ class ChatController extends Controller
         $fromDate1 = (int)$from;
         $to = $request->has("toDate") ? $request->get("toDate") : "";
         $fromTo1 = (int)$to;
-        $isQuery = $request->isQuery == "true" ? true : false;
-        
+
+        $isQuery = $request->has("isQuery") ? ($request->get("isQuery") == "true") : false;
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+        $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
 
         $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
         $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
 
-        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idCompany)->where("deleted", false)->where("isQuery", $isQuery)->where("status", ["Finalizado", "Cancelado"])->whereBetween('finalizeDate', [$fromDate1 ,$to])->orderByDesc("updated_at")->get();
+        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("deleted", false)->where("isQuery", $isQuery)->where("status", ["Finalizado", "Cancelado"])->whereBetween('finalizeDate', [$fromDate1 ,$to])->orderByDesc("updated_at")->get();
 
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
