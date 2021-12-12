@@ -47,16 +47,6 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list', 'App\Http\Controllers\RoleController@list');
     });
 
-    Route::prefix('organizations')->group(function () {
-        Route::post('/register', 'App\Http\Controllers\OrganizationController@register');
-        Route::post('/update/{id}', 'App\Http\Controllers\OrganizationController@update');
-        Route::get('/find/{id}', 'App\Http\Controllers\OrganizationController@find');
-        Route::get('/list', 'App\Http\Controllers\OrganizationController@list');
-        Route::get('/list/count/users', 'App\Http\Controllers\OrganizationController@listWithUsersCount');
-        Route::delete('/delete/{id}', 'App\Http\Controllers\OrganizationController@delete');
-        Route::post('/deleteImage', 'App\Http\Controllers\OrganizationController@deleteImage');
-    });
-
     Route::prefix('companies')->group(function () {
         Route::post('/register', 'App\Http\Controllers\CompanyController@register');
         Route::post('/update/{id}', 'App\Http\Controllers\CompanyController@update');
