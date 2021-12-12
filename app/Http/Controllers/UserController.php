@@ -54,16 +54,21 @@ class UserController extends Controller
                     }
                     $role->sections = $sections->get();
                 }else {
-                    $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
-                    if(!$company->helpDesks || count(json_decode($company->helpDesks, true)) < 1){
-                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(2, 3, 4, 19)));
-                    }else{
-                        $sections = $sections->whereIn("id", $role->sectionIds);
+                    if($user->idRole == 4){
+                        return response()->json(['error' => 'El RUT no pertenece a una Mesa de Ayuda.'], 400);
+                    } else {
+                        $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
+                        if(!$company->helpDesks || count(json_decode($company->helpDesks, true)) < 1){
+                            $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(2, 3, 4, 19)));
+                        }else{
+                            $sections = $sections->whereIn("id", $role->sectionIds);
+                        }
+                        if($user->idRole == 3 || $user->idRole == 4){
+                            $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(5)));
+                        }
+                        $role->sections = $sections->get();
                     }
-                    if($user->idRole == 3 || $user->idRole == 4){
-                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(5)));
-                    }
-                    $role->sections = $sections->get();
+
                 }
 
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
