@@ -46,9 +46,21 @@ class UserController extends Controller
 
                 if($company->isHelpDesk){
                     //es mesa de ayuda
-                    $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('3','4')))->where("active", true)->where("deleted", false)->orderBy("order")->get();
+                    $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
+                    if($user->idRole == 5){
+                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array('2', '3', '4')));
+                    }else{
+                        $sections = $sections->whereIn("id", $role->sectionIds);
+                    }
+                    $role->sections = $sections->get();
                 }else {
-                      $role->sections = Section::whereIn("id", array_diff($role->sectionIds, array('2','3')))->where("active", true)->where("deleted", false)->orderBy("order")->get();
+                    $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
+                    if(!$company->helpDesks || count(json_decode($company->helpDesks, true)) < 1){
+                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array('2','3', '4')));
+                    }else{
+                        $sections = $sections->whereIn("id", $role->sectionIds);
+                    }
+                    $role->sections = $sections->get();
                 }
 
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
