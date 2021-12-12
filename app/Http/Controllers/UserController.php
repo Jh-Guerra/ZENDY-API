@@ -48,7 +48,7 @@ class UserController extends Controller
                     //es mesa de ayuda
                     $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
                     if($user->idRole == 5){
-                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array('2', '3', '4')));
+                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(2, 3, 4, 19)));
                     }else{
                         $sections = $sections->whereIn("id", $role->sectionIds);
                     }
@@ -56,7 +56,7 @@ class UserController extends Controller
                 }else {
                     $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
                     if(!$company->helpDesks || count(json_decode($company->helpDesks, true)) < 1){
-                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array('2','3', '4')));
+                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(2, 3, 4, 19)));
                     }else{
                         $sections = $sections->whereIn("id", $role->sectionIds);
                     }
