@@ -60,6 +60,9 @@ class UserController extends Controller
                     }else{
                         $sections = $sections->whereIn("id", $role->sectionIds);
                     }
+                    if($user->idRole == 3 || $user->idRole == 4){
+                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(5)));
+                    }
                     $role->sections = $sections->get();
                 }
 
