@@ -608,7 +608,7 @@ class UserController extends Controller
         $role = Role::find($user->idRole);
         $role->permissions = json_decode($role->permissions, true);
         $role->sectionIds = json_decode($role->sectionIds, true);
-        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy()->get();
+        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy("order")->get();
         $token = JWTAuth::fromUser($user);
         if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
