@@ -140,8 +140,15 @@ class CompanyController extends Controller
         return Company::where('deleted', '!=', true)->where('isHelpDesk', false)->orderBy("name")->get();
     }
 
-    public function listHelpdesk(){
-        return Company::where('deleted', '!=', true)->where('isHelpDesk', true)->orderBy("name")->get();
+    public function listHelpdesk(Request $request){
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
+        $company = Company::find($idCompany);
+        if(!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
+
+        $company->helpDesks = (array) json_decode($company->helpDesks, true);
+
+        return Company::whereIn("id", $company->helpDesks)->where('deleted', '!=', true)->where('isHelpDesk', true)->orderBy("name")->get();
     }
 
     public function listWithUsersCount(Request $request){
@@ -164,10 +171,7 @@ class CompanyController extends Controller
 
     public function delete($id){
         $company = Company::find($id);
-
-        if(!$company){
-            return response()->json(['error' => 'Empresa no encontrada'], 400);
-        }
+        if(!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
 
         $company->deleted = true;
         $company->save();

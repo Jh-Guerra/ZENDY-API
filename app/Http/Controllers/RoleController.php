@@ -12,9 +12,9 @@ class RoleController extends Controller
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
         $company = Company::where("id", $idCompany)->where("deleted", false)->first();
         if($company->isHelpDesk){
-            return Role::where("status", true)->where("id","!=", "4")->get();
+            return Role::where("status", true)->get();
         } else {
-            return Role::where("status", true)->get();            
+            return Role::where("status", true)->where("id","!=", "4")->get();
         }
     }
 }
