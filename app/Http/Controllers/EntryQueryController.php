@@ -113,7 +113,7 @@ class EntryQueryController extends Controller
         $idHelpdesk = $request->has("idHelpdesk") ? $request->get("idHelpdesk") : null;
 
         if(!$idHelpdesk){
-            $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("entry_queries.idHelpdesk", $idCompany)
+            $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("entry_queries.idCompany", $idCompany)
                 ->where("status", "Pendiente")->where("entry_queries.deleted", false);
         } else {
             $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')
