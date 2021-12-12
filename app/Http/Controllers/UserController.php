@@ -609,32 +609,17 @@ class UserController extends Controller
         return $user;
     }
 
-    public function changeHelpDesk(Request $request, $id){
-
+    public function changeHelpDesk($id, Request $request){
         $user = User::find($id);
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
-        if (!$user) {
-            return response()->json(['error' => 'Usuario no encontrado'], 400);
-        }
-
-        $role = Role::find($user->idRole);
-        $role->permissions = json_decode($role->permissions, true);
-        $role->sectionIds = json_decode($role->sectionIds, true);
-        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy("order")->get();
         $token = JWTAuth::fromUser($user);
         if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
-        //$firstUser = User::where("id", $id)->where("deleted", false)->first();
-        $user->companies = json_decode($user->companies, true);
-        $companies = $user->companies;
-        $company = Company::where("id", $companies[0])->where("deleted", false)->first();
-        $company->helpDesks = json_decode($company->helpDesks, true);
-        $user->company = $company;
-        $user->companies = $companies;
         $user->helpDesk = Company::where("isHelpDesk", true)->where("id", $request->id)->where("deleted", false)->first();
         $user->idHelpDesk = $user->helpDesk->id;
 
-        return response()->json(compact('token', 'user', 'role'));
+        return response()->json(compact('token', 'user'));
     }
 }
 
