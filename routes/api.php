@@ -40,6 +40,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/list-company-notify', 'App\Http\Controllers\UserController@listCompanyNotify');
         Route::post('/import-erp', 'App\Http\Controllers\UserController@importERPUsers');
         Route::post('/update-password/{id}', 'App\Http\Controllers\UserController@updatePassword');
+        Route::post('/changeHelpDesk/{id}', 'App\Http\Controllers\UserController@changeHelpDesk');
     });
 
     Route::prefix('roles')->group(function () {
@@ -50,8 +51,11 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/register', 'App\Http\Controllers\CompanyController@register');
         Route::post('/update/{id}', 'App\Http\Controllers\CompanyController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\CompanyController@find');
+        Route::get('/updateHelpDeskCompany/{id}', 'App\Http\Controllers\CompanyController@updateHelpDeskCompany');
         Route::get('/list', 'App\Http\Controllers\CompanyController@list');
         Route::get('/list/count/users', 'App\Http\Controllers\CompanyController@listWithUsersCount');
+        Route::get('/list-client', 'App\Http\Controllers\CompanyController@listClient');
+        Route::get('/list-helpdesk', 'App\Http\Controllers\CompanyController@listHelpdesk');
         Route::delete('/delete/{id}', 'App\Http\Controllers\CompanyController@delete');
         Route::post('/deleteImage', 'App\Http\Controllers\CompanyController@deleteImage');
         Route::post('/import-erp', 'App\Http\Controllers\CompanyController@importERPCompanies');
@@ -86,7 +90,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update/{id}', 'App\Http\Controllers\EntryQueryController@update');
         Route::get('/list', 'App\Http\Controllers\EntryQueryController@list');
         Route::get('/list-pendings', 'App\Http\Controllers\EntryQueryController@listPendings');
-        Route::get('/list-query/{status}', 'App\Http\Controllers\EntryQueryController@listQuery');
+        Route::get('/list-query/{status}/{idHelpdesk}', 'App\Http\Controllers\EntryQueryController@listQuery');
         Route::delete('/delete/{id}', 'App\Http\Controllers\EntryQueryController@delete');
         Route::post('/accept/{id}', 'App\Http\Controllers\EntryQueryController@accept');
         Route::post('/{id}/recommend', 'App\Http\Controllers\EntryQueryController@recommendUser');

@@ -28,6 +28,7 @@ class ChatInternalController extends Controller
         $chat->idUser = $user->id;
         $chat->messages = 0;
         $chat->scope = count($users) > 1 ? "Grupal" : "Personal";
+        $chat->isQuery = false;
 
         if(count($users) == 1){
             $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");

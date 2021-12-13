@@ -71,8 +71,6 @@ class CompanyController extends Controller
             'adminName' => 'required|string|max:150',
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:20',
-            'currentBytes' => 'required|int',
-            'maxBytes' => 'required|int'
         ]);
 
         $errorMessage = null;
@@ -99,17 +97,22 @@ class CompanyController extends Controller
         $company->ruc = $request->ruc;
         $company->email = $request->email;
         $company->phone = $request->phone;
-        $company->currentBytes = $request->currentBytes;
-        $company->maxBytes = $request->maxBytes;
         if($request->avatar){
             $company->avatar = $request->avatar;
         }
         $company->description = $request->description;
+        $company->isHelpDesk = filter_var($request->isHelpDesk, FILTER_VALIDATE_BOOLEAN);
+        $company->helpDesks = $request->helpDesks ? json_encode($request->helpDesks, true) : null;
     }
 
     public function find($id){
         $company = Company::find($id);
 
+        $company->helpDesks = $company->helpDesks ? json_decode($company->helpDesks, true) : [];
+        if(count($company->helpDesks) > 0){
+            $companies = Company::whereIn("id", $company->helpDesks)->where("deleted", false)->get();
+            $company->mappedCompanies = $companies;
+        }
         if(!$company){
             return response()->json(['error' => 'Empresa no encontrada'], 400);
         }
@@ -117,8 +120,41 @@ class CompanyController extends Controller
         return $company;
     }
 
+    public function updateHelpDeskCompany($id){
+        $companies = Company::where('deleted', '!=', true)->where('isHelpDesk', false)->where('helpDesks', 'LIKE', '%' ."\"$id\"". '%')->get();
+
+        foreach ($companies as $company){
+            $companyHelpDenk = $company->helpDesks ? json_decode($company->helpDesks, true) : [];
+            $newCompanyHelpDenk =  array_diff($companyHelpDenk, array("$id"));
+            $company->helpDesks = count($newCompanyHelpDenk)>0 ?  "[\"".implode('","', $newCompanyHelpDenk)."\"]" : "";
+            $company->save();
+        }
+        return response()->json("Actualizacion correcta",201);
+    }
+
     public function list(){
         return Company::where('deleted', '!=', true)->orderBy("name")->get();
+    }
+
+    public function listClient(){
+        return Company::where('deleted', '!=', true)->where('isHelpDesk', false)->orderBy("name")->get();
+    }
+
+    public function listHelpdesk(Request $request){
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+
+        if($idCompany){
+            $company = Company::find($idCompany);
+            if(!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
+
+            $company->helpDesks = (array) json_decode($company->helpDesks, true);
+
+            return Company::whereIn("id", $company->helpDesks)->where('deleted', '!=', true)->where('isHelpDesk', true)->orderBy("name")->get();
+        }else{
+            return Company::where('deleted', '!=', true)->where('isHelpDesk', true)->orderBy("name")->get();
+        }
+
+
     }
 
     public function listWithUsersCount(Request $request){
@@ -141,10 +177,7 @@ class CompanyController extends Controller
 
     public function delete($id){
         $company = Company::find($id);
-
-        if(!$company){
-            return response()->json(['error' => 'Empresa no encontrada'], 400);
-        }
+        if(!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
 
         $company->deleted = true;
         $company->save();
@@ -196,8 +229,6 @@ class CompanyController extends Controller
                         'phone' => $erpCompany["telefono"],
                         'ruc' => $erpCompany["rut_empresa"],
                         'adminName' => $erpCompany["nombre_representante1"],
-                        'currentBytes' => 0,
-                        'maxBytes' => 0,
                         'avatar' => null,
                         'description' => $erpCompany["giro1"].". ".$erpCompany["giro2"],
                         'deleted' => 0,

@@ -36,6 +36,7 @@ class ChatCompanyController extends Controller
         $chat->messages = 0;
         $chat->scope = count($users) > 1 ? "Grupal" : "Personal";
         $chat->name = $allChecked ? $company["name"] : null;
+        $chat->isQuery = false;
 
         if($allChecked){
             $activeChat = Chat::where("idUser", $user->id)->where("idCompany", $company["id"])

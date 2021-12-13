@@ -43,8 +43,43 @@ class UserController extends Controller
                 $role = Role::find($user->idRole);
                 $role->permissions = json_decode($role->permissions, true);
                 $role->sectionIds = json_decode($role->sectionIds, true);
-                $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+
+                if($company->isHelpDesk){
+                    //es mesa de ayuda
+                    $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
+                    if($user->idRole == 5){
+                        $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(2, 3, 4, 19)));
+                    }else{
+                        $sections = $sections->whereIn("id", $role->sectionIds);
+                    }
+                    $role->sections = $sections->get();
+                }else {
+                    if($user->idRole == 4){
+                        return response()->json(['error' => 'El RUT no pertenece a una Mesa de Ayuda.'], 400);
+                    } else {
+                        $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
+                        if(!$company->helpDesks || count(json_decode($company->helpDesks, true)) < 1){
+                            $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(2, 3, 4, 19)));
+                        }else{
+                            $sections = $sections->whereIn("id", $role->sectionIds);
+                        }
+                        if($user->idRole == 3 || $user->idRole == 4){
+                            $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(5)));
+                        }
+                        $role->sections = $sections->get();
+                    }
+
+                }
+
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
+
+                $company->helpDesks = json_decode($company->helpDesks, true);
+                $helpDesks = $company->helpDesks;
+                if($helpDesks && count($helpDesks) > 0){
+                    $firstHelpDesk = Company::where("id", $helpDesks[0])->where("deleted", false)->first();
+                    $user->helpDesk = $firstHelpDesk;
+                    $user->idHelpDesk = $firstHelpDesk->id;
+                }
 
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
@@ -58,9 +93,8 @@ class UserController extends Controller
                 $role = Role::find($user->idRole);
                 $role->permissions = json_decode($role->permissions, true);
                 $role->sectionIds = json_decode($role->sectionIds, true);
-                $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+                $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy("order")->get();
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
-
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
@@ -101,7 +135,7 @@ class UserController extends Controller
         $role = Role::find($user->idRole);
         $role->permissions = json_decode($role->permissions, true);
         $role->sectionIds = json_decode($role->sectionIds, true);
-        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->get();
+        $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy("order")->get();
 
         try {
             $token = JWTAuth::fromUser($user);
@@ -335,7 +369,7 @@ class UserController extends Controller
 
         $users = User::join('roles', 'roles.id', '=', 'users.idRole')->where('users.deleted', false)
             ->where('users.id', '!=', $user->id)
-            ->where('roles.name', "Admin");
+            ->where('roles.name', "SuperAdmin");
 
         $term = $request->has("term") ? $request->get("term") : "";
         if($term){
@@ -519,7 +553,7 @@ class UserController extends Controller
                         'dob' => null,
                         'phone' => null,
                         'sex' => "O",
-                        'idRole' => $erpUser["usuario"] == "admin" ? 1 : 4,
+                        'idRole' => $erpUser["usuario"] == "admin" ? 1 : 5,
                         'idCompany' => null,
                         'companies' => null,
                         'avatar' => null,
@@ -581,6 +615,19 @@ class UserController extends Controller
         }
 
         return $user;
+    }
+
+    public function changeHelpDesk($id, Request $request){
+        $user = User::find($id);
+        if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
+
+        $token = JWTAuth::fromUser($user);
+        if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
+
+        $user->helpDesk = Company::where("isHelpDesk", true)->where("id", $request->id)->where("deleted", false)->first();
+        $user->idHelpDesk = $user->helpDesk->id;
+
+        return response()->json(compact('token', 'user'));
     }
 }
 

@@ -39,6 +39,7 @@ class EntryQueryController extends Controller
         $entryQuery->file = $request["file"];
         $entryQuery->idModule = $request["idModule"];
         $entryQuery->isFrequent = $request->isFrequent == true;
+        $entryQuery->idHelpdesk = $request["idHelpdesk"];
 
         $entryQuery->save();
 
@@ -67,6 +68,7 @@ class EntryQueryController extends Controller
         $validator = Validator::make($request->all(), [
             'reason' => 'required',
             'description' => 'required',
+            'idHelpdesk' => 'required|int',
         ]);
 
 
@@ -108,9 +110,16 @@ class EntryQueryController extends Controller
 
     public function listPendings(Request $request){
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+        $idHelpdesk = $request->has("idHelpdesk") ? $request->get("idHelpdesk") : null;
 
-        $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("entry_queries.idCompany", $idCompany)
-            ->where("status", "Pendiente")->where("entry_queries.deleted", false);
+        if(!$idHelpdesk){
+            $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("entry_queries.idHelpdesk", $idCompany)
+                ->where("status", "Pendiente")->where("entry_queries.deleted", false);
+        } else {
+            $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')
+            ->where("status", "Pendiente")->where("entry_queries.idHelpdesk", $idHelpdesk)->where("entry_queries.deleted", false);
+        }
+
         $term = $request->has("term") ? $request->get("term") : "";
         if($term)
             $this->search($entryQueries, $term);
@@ -139,7 +148,7 @@ class EntryQueryController extends Controller
         return response()->json(compact('entryQuery'),201);
     }
 
-    public function listQuery(Request $request, $status){
+    public function listQuery(Request $request, $status, $idHelpdesk){
         $user = Auth::user();
         if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
@@ -149,7 +158,11 @@ class EntryQueryController extends Controller
 
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
-        $entryQueries = EntryQuery::where("deleted", false)->where("idCompany", $idCompany)->where("createdBy", $user->id)->where("status",'=',$status);
+        if(!$idHelpdesk){
+            $entryQueries = EntryQuery::where("deleted", false)->where("idCompany", $idCompany)->where("createdBy", $user->id)->where("status",'=',$status);
+        } else {
+            $entryQueries = EntryQuery::where("deleted", false)->where("idCompany", $idCompany)->where("idHelpdesk", $idHelpdesk)->where("createdBy", $user->id)->where("status",'=',$status);
+        }
 
         $term = $request->has("term") ? $request->get("term") : "";
         if($term)
@@ -230,20 +243,13 @@ class EntryQueryController extends Controller
         if(!$entryQuery) return response()->json(['error' => 'Consulta no encontrada.'], 400);
 
         $queryUser = User::find($entryQuery->createdBy);
-        if(!$user) return response()->json(['error' => 'No se encontró al usuario que realizó la consulta.'], 400);
+        if(!$queryUser) return response()->json(['error' => 'No se encontró al usuario que realizó la consulta.'], 400);
 
-        $userParticipations = Participant::join('chats', 'chats.id', 'participants.idChat')->where("participants.idUser", $user->id)->where("participants.deleted", false)
-            ->get(['participants.*', 'chats.scope AS chatScope']);
-        $queryUserParticipations = Participant::where("idUser", $queryUser->id)->where("deleted", false)->pluck("idChat")->toArray();
+        $queryUserParticipations = Participant::join('chats', 'chats.id', 'participants.idChat')->where("participants.idUser", $queryUser->id)
+            ->where("chats.isQuery", true)->where("chats.status", "Vigente")->where("participants.deleted", false)
+            ->get();
 
-        $thereVigentChat = false;
-        foreach ($userParticipations as $userParticipation) {
-            if(in_array($userParticipation->chatId, $queryUserParticipations) && $userParticipation->chatScope == "Personal"){
-                $thereVigentChat = true;
-            }
-        }
-
-        if($thereVigentChat) return response()->json(['error' => 'Este usuario ya cuenta con una consulta activa.'], 400);
+        if($queryUserParticipations && count($queryUserParticipations) > 0) return response()->json(['error' => 'Este usuario ya cuenta con una consulta activa.'], 400);
 
         $entryQuery->acceptDate = Carbon::now()->timestamp;
         $entryQuery->status = "Aceptado";
@@ -271,6 +277,7 @@ class EntryQueryController extends Controller
         $chat->idUser = $user->id;
         $chat->allUsers = 0;
         $chat->messages = 0;
+        $chat->isQuery = true;
         $chat->idEntryQuery = $entryQuery->id;
         $chat->byRecommend = $request["byRecommend"];
         $chat->save();
