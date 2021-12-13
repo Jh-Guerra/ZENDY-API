@@ -243,19 +243,13 @@ class EntryQueryController extends Controller
         if(!$entryQuery) return response()->json(['error' => 'Consulta no encontrada.'], 400);
 
         $queryUser = User::find($entryQuery->createdBy);
-        if(!$user) return response()->json(['error' => 'No se encontró al usuario que realizó la consulta.'], 400);
+        if(!$queryUser) return response()->json(['error' => 'No se encontró al usuario que realizó la consulta.'], 400);
 
-        $userParticipations = Participant::join('chats', 'chats.id', 'participants.idChat')->where("participants.idUser", $user->id)->where("participants.deleted", false)
-            ->get(['participants.*', 'chats.scope AS chatScope']);
-        $queryUserParticipations = Participant::where("idUser", $queryUser->id)->where("deleted", false)->pluck("idChat")->toArray();
+        $queryUserParticipations = Participant::join('chats', 'chats.id', 'participants.idChat')->where("participants.idUser", $queryUser->id)
+            ->where("chats.isQuery", true)->where("chats.status", "Vigente")->where("participants.deleted", false)
+            ->get();
 
-        $thereVigentChat = false;
-        foreach ($userParticipations as $userParticipation) {
-            if(in_array($userParticipation->idChat, $queryUserParticipations) && $userParticipation->chatScope == "Personal"){
-                $thereVigentChat = true;
-            }
-        }
-        if($thereVigentChat) return response()->json(['error' => 'Este usuario ya cuenta con una consulta activa.'], 400);
+        if($queryUserParticipations && count($queryUserParticipations) > 0) return response()->json(['error' => 'Este usuario ya cuenta con una consulta activa.'], 400);
 
         $entryQuery->acceptDate = Carbon::now()->timestamp;
         $entryQuery->status = "Aceptado";
