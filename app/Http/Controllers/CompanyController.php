@@ -71,6 +71,7 @@ class CompanyController extends Controller
             'adminName' => 'required|string|max:150',
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:20',
+            'ruc' => 'required|string|max:150'
         ]);
 
         $errorMessage = null;
@@ -79,8 +80,16 @@ class CompanyController extends Controller
             if($company && $company->id != $request->id){
                 $errorMessage = new \stdClass();
                 $errorMessage->email = [
-                    "La empresa ya está registrada."
+                    "Ya existe una empresa con el mismo nombre."
                 ];
+            } else {
+                $rutCompany = Company::where('ruc', $request->ruc)->where('deleted', false)->first();
+                if($rutCompany && $rutCompany->ruc == $request->ruc){
+                    $errorMessage = new \stdClass();
+                    $errorMessage->email = [
+                        "Ya existe una empresa con el mismo número de RUT."
+                    ];
+                }
             }
         }else{
             $errorMessage = $validator->errors()->toJson();
