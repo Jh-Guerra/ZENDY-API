@@ -34,17 +34,28 @@ class CompanyController extends Controller
 
     public function update(Request $request, $id){
         $company = Company::find($id);
+        if(!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
 
         $error = $this->validateFields($request);
-        if($error){
-            return response()->json($error, 400);
+        if($error) return response()->json($error, 400);
+
+        $company->name = $request->name;
+        $company->address = $request->address;
+        $company->adminName = $request->adminName;
+
+        if(strcmp($company->ruc, $request->ruc) !== 0){
+            UserCompany::where("rutCompany", $company->ruc)->update(['rutCompany' => $request->ruc]);
+            $company->ruc = $request->ruc;
         }
 
-        if(!$company){
-            return response()->json(['error' => 'Empresa no encontrada'], 400);
+        $company->email = $request->email;
+        $company->phone = $request->phone;
+        if($request->avatar){
+            $company->avatar = $request->avatar;
         }
-
-        $this->updateCompanyValues($company, $request);
+        $company->description = $request->description;
+        $company->isHelpDesk = filter_var($request->isHelpDesk, FILTER_VALIDATE_BOOLEAN);
+        $company->helpDesks = $request->helpDesks ? json_encode($request->helpDesks, true) : null;
         $company->save();
 
         if($request->oldImage){
