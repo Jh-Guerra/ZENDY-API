@@ -325,6 +325,55 @@ class EntryQueryController extends Controller
 
         $message->save();
 
+        $messageReason = new Message();
+
+        $messageReason->createdBy = $entryQuery->createdBy;
+        $messageReason->idChat = $chat->id;
+        $messageReason->message = $entryQuery->reason;
+        $messageReason->resend = false;
+        $messageReason->originalUserId = $entryQuery->createdBy;
+        $messageReason->createdDate= Carbon::now()->timestamp;
+
+        $messageReason->save();
+
+        $messageDescription = new Message();
+
+        $messageDescription->createdBy = $entryQuery->createdBy;
+        $messageDescription->idChat = $chat->id;
+        $messageDescription->message = $entryQuery->description;
+        $messageDescription->resend = false;
+        $messageDescription->originalUserId = $entryQuery->createdBy;
+        $messageDescription->createdDate= Carbon::now()->timestamp;
+
+        $messageDescription->save();
+
+        if($entryQuery->image != ""){
+            $messageImage = new Message();
+
+            $messageImage->createdBy = $entryQuery->createdBy;
+            $messageImage->idChat = $chat->id;
+            $messageImage->message = "";
+            $messageImage->resend = false;
+            $messageImage->originalUserId = $entryQuery->createdBy;
+            $messageImage->image = $entryQuery->image;
+            $messageImage->createdDate= Carbon::now()->timestamp;
+    
+            $messageImage->save();
+        }
+
+        if($entryQuery->file != ""){
+            $messageFile = new Message();
+
+            $messageFile->createdBy = $entryQuery->createdBy;
+            $messageFile->idChat = $chat->id;
+            $messageFile->message = "";
+            $messageFile->resend = false;
+            $messageFile->originalUserId = $entryQuery->createdBy;
+            $messageFile->file = $entryQuery->file;
+            $messageFile->createdDate= Carbon::now()->timestamp;
+    
+            $messageFile->save();
+        }
 
         return response()->json(compact('chat'),201);
     }
