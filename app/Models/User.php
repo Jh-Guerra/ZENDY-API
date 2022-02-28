@@ -27,6 +27,11 @@ class User extends Authenticatable implements JWTSubject
         'remember_token',
     ];
 
+    protected $fillable = [
+        'device_token',
+    ];
+
+
     /**
      * The attributes that should be cast to native types.
      *

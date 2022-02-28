@@ -12,6 +12,8 @@ use App\Models\Chat;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
@@ -64,9 +66,61 @@ class MessageController extends Controller
 
         event(new sendMessage($message, $request["idChat"], $user));
 
+        $this->sendNotification($user, $participants, $message);
+
         return response()->json(compact('message'), 201);
 
     }
+
+    public function sendNotification($user, $participants, $message)
+        {
+            $firebaseToken= [];
+            for ($i=0; $i <count($participants); $i++) {
+
+                $firebaseToken[$i] = User::where('id','=',$participants[$i]->idUser)
+                                        ->select('device_token')
+                                        ->first()
+                                        ->device_token;
+
+            }
+
+            // $firebaseToken = User::where('id', $request->usuario)
+            //                 ->pluck('device_token')
+            //                 ->all();
+            // $firebaseToken = User::whereNotNull('device_token')->pluck('device_token')->all();
+
+            $SERVER_API_KEY = 'AAAAIRNx9HA:APA91bFmqjiXmsV4kTGSiTcy2qC-ShtiGFJK9M2MupnYV_Cci4QWrc1Y7R6KA8DhSIO_-a49OaFNo1CCN1EbpB_ClerGdxAAqgJtTrTULuAYof42LYaI_JmVKbl54x1hKgXfZooYWxt4';
+
+            $data = [
+                "registration_ids" => $firebaseToken,
+                "notification" => [
+                    "title" => $user->firstName." te envió un mensaje",
+                    "body" => $message->message,
+                    "icon" => "https://www.test.zendy.cl/static/media/logo.30d6b517.png", //Link de la carpeta publica donde esta el logo
+                    "content_available" => true,
+                    "priority" => "high",
+                ]
+            ];
+            $dataString = json_encode($data);
+
+            $headers = [
+                'Authorization: key=' . $SERVER_API_KEY,
+                'Content-Type: application/json',
+            ];
+
+            $ch = curl_init();
+
+            curl_setopt($ch, CURLOPT_URL, 'https://fcm.googleapis.com/fcm/send');
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
+
+            $response = curl_exec($ch);
+
+            return $response;
+        }
 
     public function find($id){
         $message = Message::find($id);

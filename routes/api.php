@@ -41,6 +41,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/import-erp', 'App\Http\Controllers\UserController@importERPUsers');
         Route::post('/update-password/{id}', 'App\Http\Controllers\UserController@updatePassword');
         Route::post('/changeHelpDesk/{id}', 'App\Http\Controllers\UserController@changeHelpDesk');
+        Route::post('/device-token', 'App\Http\Controllers\UpdateDeviceTokenController@saveToken');
     });
 
     Route::prefix('roles')->group(function () {
