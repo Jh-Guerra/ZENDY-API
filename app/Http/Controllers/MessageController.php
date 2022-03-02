@@ -21,7 +21,7 @@ class MessageController extends Controller
     public function register(Request $request)
     {
         $user = Auth::user();
-        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesi贸n.'], 400);
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $message = new Message();
 
@@ -95,7 +95,7 @@ class MessageController extends Controller
             $data = [
                 "registration_ids" => $firebaseToken,
                 "notification" => [
-                    "title" => $user->firstName." te envi贸 un mensaje",
+                    "title" => $user->firstName." te envió un mensaje",
                     "body" => $message->message,
                     "icon" => "https://www.test.zendy.cl/static/media/logo.30d6b517.png",
                     "click_action" => $linkus,
