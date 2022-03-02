@@ -21,7 +21,7 @@ class MessageController extends Controller
     public function register(Request $request)
     {
         $user = Auth::user();
-        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesi贸n.'], 400);
 
         $message = new Message();
 
@@ -66,13 +66,13 @@ class MessageController extends Controller
 
         event(new sendMessage($message, $request["idChat"], $user));
 
-        $this->sendNotification($user, $participants, $message);
+        $this->sendNotification($user, $participants, $message,$request["idChat"]);
 
         return response()->json(compact('message'), 201);
 
     }
 
-    public function sendNotification($user, $participants, $message)
+    public function sendNotification($user, $participants, $message, $chat)
         {
             $firebaseToken= [];
             for ($i=0; $i <count($participants); $i++) {
@@ -83,6 +83,7 @@ class MessageController extends Controller
                                         ->device_token;
 
             }
+            $linkus = "/chats/".$chat;
 
             // $firebaseToken = User::where('id', $request->usuario)
             //                 ->pluck('device_token')
@@ -94,9 +95,10 @@ class MessageController extends Controller
             $data = [
                 "registration_ids" => $firebaseToken,
                 "notification" => [
-                    "title" => $user->firstName." te envió un mensaje",
+                    "title" => $user->firstName." te envi贸 un mensaje",
                     "body" => $message->message,
-                    "icon" => "https://www.test.zendy.cl/static/media/logo.30d6b517.png", //Link de la carpeta publica donde esta el logo
+                    "icon" => "https://www.test.zendy.cl/static/media/logo.30d6b517.png",
+                    "click_action" => $linkus,
                     "content_available" => true,
                     "priority" => "high",
                 ]
