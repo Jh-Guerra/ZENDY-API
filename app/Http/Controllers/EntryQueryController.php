@@ -400,7 +400,7 @@ class EntryQueryController extends Controller
 
         if ($entryQuery->externo == '1') {
             try {
-                $credenciales = 'rut='.base64_encode($userChat->username).'&username='.base64_encode($rut->rutCompany).'&password='.base64_encode($userChat->password);
+                $credenciales = 'rut_empresa='.base64_encode($rut->rutCompany).'&usuario='.base64_encode($userChat->username).'&password='.$userChat->password;
                 $url = 'https://www.zendy.cl/login?'.$credenciales.'&chat='.$chat->id;
                 dd($url);
                 Mail::to($userChat->email)->send(new chatMail($userChat->firstName, $url));

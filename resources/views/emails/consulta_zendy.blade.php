@@ -355,7 +355,6 @@
     </div>
 
   </div>
-  <script src="{{ asset('js/redireccion.js') }}"></script>
 </body>
 
 </html>
