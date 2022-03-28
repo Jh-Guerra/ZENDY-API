@@ -19,6 +19,7 @@ use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Crypt;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class UserController extends Controller
 {
@@ -104,6 +105,91 @@ class UserController extends Controller
 
         return response()->json(compact('token', 'user', 'role'));
     }
+
+    // public function authenticateAllSoft(Request $request)
+    // {
+    //     // $correo = $request->correo;
+    //     // $ruc = $request->ruc;
+    //     try {
+    //         $username = User::where('email',$request->correo)->first();
+    //         $ruc = UserCompany::where('rutCompany', $request->rut)->first();
+    //         $companies = '["'.(json_encode($ruc->idCompany)).'"]';
+
+    //         $password = User::where('email', $request->correo)
+    //                     ->where('companies', $companies)
+    //                     ->select('encrypted_password')->first()->encrypted_password;
+
+    //         $password2 = Crypt::decryptString($password);
+
+    //         $credentials = [
+    //             'email' =>$request->correo,
+    //             'companies' => $companies,
+    //             'password' => $password2
+    //         ];
+
+    //             $token = Auth::attempt($credentials);
+    //             $tokenF = $this->respondWithToken($token);
+    //             $mensaje = array('acceso' => true,
+    //                 'descripcion' => 'acceso permitido',
+    //                 'token' => $tokenF);
+
+
+    //     return response()->json(compact('token'));
+
+    //     } catch (\Throwable $th) {
+    //         throw $th;
+    //         return response()->json(['error' => 'could_not_create_token'], 500);
+    //     }
+
+    // }
+
+    public function authenticateAllSoft(Request $request)
+    {
+
+        try {
+            $userCompany = UserCompany::select('users_companies.*')
+                ->join('users', 'users_companies.idUser', '=', 'users.id')
+                ->where('users.email', $request->correo)
+                ->where('users_companies.rutCompany', $request->rut)
+                ->first();
+
+            if(is_null($userCompany)){
+                return response()->json(['error' => 'Credenciales inválidas'], 400);
+            }
+
+            $user = User::where('id', $userCompany->idUser)->first();
+
+            // $token = JWTAuth::fromUser($user);
+
+            // return response()->json(['token' => $token], 200);
+
+            // dd($token);
+            $credenciales['username'] = $user->username;
+            $credenciales['password'] = Crypt::decryptString($user->encrypted_password);
+            $credenciales['rut'] = $request->rut;
+
+            $request = new Request($credenciales);
+            $respuesta = $this->authenticate($request);
+
+            return response()->json([$respuesta], 200);
+
+
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+
+    }
+
+    protected function respondWithToken($token)
+    {
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer'
+           // 'expires_in' => auth()->factory()->getTTL() * 60
+        ]);
+    }
+
 
     public function authenticateErp(Request $request){
         $credentials = $request->only('username', 'password', 'rut');

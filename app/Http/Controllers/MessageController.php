@@ -97,7 +97,7 @@ class MessageController extends Controller
                 "notification" => [
                     "title" => $user->firstName." te envió un mensaje",
                     "body" => $message->message,
-                    "icon" => "https://www.test.zendy.cl/static/media/logo.30d6b517.png",
+                    "icon" => "https://www.zendy.cl/static/media/logo.30d6b517.png",
                     "click_action" => $linkus,
                     "content_available" => true,
                     "priority" => "high",
