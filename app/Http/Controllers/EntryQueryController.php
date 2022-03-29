@@ -280,8 +280,8 @@ class EntryQueryController extends Controller
         $entryQuery->acceptDate = Carbon::now()->timestamp;
         $entryQuery->status = "Aceptado";
         $entryQuery->acceptedBy = $user->id;
-        $entryQuery->byRecommend = 0;
-        //$entryQuery->byRecommend = $request["byRecommend"];
+        //$entryQuery->byRecommend = 0; para pruebas en local
+        $entryQuery->byRecommend = $request["byRecommend"];
         $entryQuery->save();
 
         if ($entryQuery->byRecommend) {
@@ -306,8 +306,8 @@ class EntryQueryController extends Controller
         $chat->messages = 0;
         $chat->isQuery = true;
         $chat->idEntryQuery = $entryQuery->id;
-        $chat->byRecommend = 0;
-        //$chat->byRecommend = $request["byRecommend"];
+        //$chat->byRecommend = 0; Para pruebas en local
+        $chat->byRecommend = $request["byRecommend"];
         $chat->save();
 
         $participantController = new ParticipantController();
@@ -400,8 +400,10 @@ class EntryQueryController extends Controller
 
         if ($entryQuery->externo == '1') {
             try {
+                $date = Carbon::now();
+                $date = $date->format('Y-m-d');
                 $credenciales = 'rut_empresa='.base64_encode($rut->rutCompany).'&usuario='.base64_encode($userChat->username).'&password='.$userChat->password;
-                $url = 'https://www.zendy.cl/login?'.$credenciales.'&chat='.$chat->id;
+                $url = 'https://www.zendy.cl/login?'.$credenciales.'&chat='.$chat->id.'&fecha='.base64_encode($date);
                 dd($url);
                 Mail::to($userChat->email)->send(new chatMail($userChat->firstName, $url));
             } catch (\Throwable $th) {

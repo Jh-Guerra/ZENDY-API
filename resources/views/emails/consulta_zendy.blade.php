@@ -338,6 +338,14 @@
                         </tr>
                       </table>
                     </td>
+                    <tr>
+                        <td align="left" style="font-size:0px;padding:0px 25px 0px 25px;padding-top:0px;padding-right:50px;padding-bottom:0px;padding-left:50px;word-break:break-word;">
+                          <div style="font-family:Open Sans, Helvetica, Arial, sans-serif;font-size:10px;line-height:10px;text-align:left;color:#020202;">
+                            <p style="margin: 0px 0; text-align: center;">&nbsp;</p>
+                            <p style="text-align: center; margin: 0px 0;">Nota: El acceso directo desde el botón solo esta permitido hasta media noche, por favor ingrese inmediatamente al recibir este mensaje, en caso haber leído el mensaje un día posterior o más será necesario su validación mediante sus credenciales </p>
+                          </div>
+                        </td>
+                      </tr>
                   </tr>
                 </table>
               </div>
