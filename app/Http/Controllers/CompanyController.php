@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\uploadImageController;
 use App\Models\Company;
+use App\Models\CompanyHorario;
 use App\Models\UserCompany;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -19,8 +20,18 @@ class CompanyController extends Controller
             return response()->json($error, 400);
         }
 
+        // dd($request->horarioEntradaLV);
+        $horario = new CompanyHorario();
+        $horario->Dias = $request->Dias;
+        $horario->MedioDia = $request->MedioDia;
+        $horario->HorarioIngreso = $request->HorarioIngreso;
+        $horario->HorarioSalida = $request->HorarioSalida;
+        $horario->HorarioIngresoMD = $request->HorarioIngresoMD;
+        $horario->HorarioSalidaMD = $request->HorarioSalidaMD;
+        $horario->save();
+
         $company = new Company();
-        $this->updateCompanyValues($company, $request);
+        $this->updateCompanyValues($company, $request, $horario->id);
         $company->save();
 
         if($request->hasFile('image')){
@@ -33,6 +44,7 @@ class CompanyController extends Controller
     }
 
     public function update(Request $request, $id){
+
         $company = Company::find($id);
         if(!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
 
@@ -54,9 +66,20 @@ class CompanyController extends Controller
             $company->avatar = $request->avatar;
         }
         $company->description = $request->description;
+        $company->horarioEntrada = $request->horarioEntrada ? $request->horarioEntrada : null;
+        $company->horarioSalida = $request->horarioSalida ? $request->horarioSalida : null;
         $company->isHelpDesk = filter_var($request->isHelpDesk, FILTER_VALIDATE_BOOLEAN);
         $company->helpDesks = $request->helpDesks ? json_encode($request->helpDesks, true) : null;
         $company->save();
+
+        $horario = CompanyHorario::find($company->idHorario);
+        $horario->Dias = $request->Dias;
+        $horario->MedioDia = $request->MedioDia;
+        $horario->HorarioIngreso = $request->HorarioIngreso;
+        $horario->HorarioSalida = $request->HorarioSalida;
+        $horario->HorarioIngresoMD = $request->HorarioIngresoMD;
+        $horario->HorarioSalidaMD = $request->HorarioSalidaMD;
+        $horario->save();
 
         if($request->oldImage){
             $newImage = substr($request->oldImage, 8);
@@ -82,6 +105,12 @@ class CompanyController extends Controller
             'adminName' => 'required|string|max:150',
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:20',
+            'Dias' => 'required|string|max:255',
+            'MedioDia' => 'string',
+            'HorarioIngreso' => 'required|string',
+            'HorarioSalida' => 'required|string',
+            'HorarioIngresoMD' => 'string',
+            'HorarioSalidaMD' => 'string',
         ]);
 
         $errorMessage = null;
@@ -101,23 +130,26 @@ class CompanyController extends Controller
     }
 
 
-    private function updateCompanyValues($company, $request){
+    private function updateCompanyValues($company, $request,$idhorario){
         $company->name = $request->name;
         $company->address = $request->address;
         $company->adminName = $request->adminName;
         $company->ruc = $request->ruc;
         $company->email = $request->email;
         $company->phone = $request->phone;
+
         if($request->avatar){
             $company->avatar = $request->avatar;
         }
         $company->description = $request->description;
+        $company->idHorario = $idhorario;
         $company->isHelpDesk = filter_var($request->isHelpDesk, FILTER_VALIDATE_BOOLEAN);
         $company->helpDesks = $request->helpDesks ? json_encode($request->helpDesks, true) : null;
     }
 
     public function find($id){
-        $company = Company::find($id);
+        $company = Company::join("companies_horarios","companies_horarios.id", "=", "companies.idHorario")
+        ->select("companies.*", "companies_horarios.*")->where('companies.id', $id)->first();
 
         $company->helpDesks = $company->helpDesks ? json_decode($company->helpDesks, true) : [];
         if(count($company->helpDesks) > 0){
