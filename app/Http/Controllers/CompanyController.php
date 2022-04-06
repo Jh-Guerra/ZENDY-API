@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\uploadImageController;
 use App\Models\Company;
 use App\Models\CompanyHorario;
+use App\Models\User;
 use App\Models\UserCompany;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -14,9 +15,10 @@ use Illuminate\Support\Facades\Http;
 
 class CompanyController extends Controller
 {
-    public function register(Request $request){
+    public function register(Request $request)
+    {
         $error = $this->validateFields($request);
-        if($error){
+        if ($error) {
             return response()->json($error, 400);
         }
 
@@ -34,95 +36,97 @@ class CompanyController extends Controller
         $this->updateCompanyValues($company, $request, $horario->id);
         $company->save();
 
-        if($request->hasFile('image')){
+        if ($request->hasFile('image')) {
             $tasks_controller = new uploadImageController();
-            $company->avatar = $tasks_controller->updateFile($request->file('image'), "companies/avatar", $company->id."_".Carbon::now()->timestamp);
+            $company->avatar = $tasks_controller->updateFile($request->file('image'), "companies/avatar", $company->id . "_" . Carbon::now()->timestamp);
             $company->save();
         }
 
-        return response()->json($company,201);
+        return response()->json($company, 201);
     }
 
-    public function update(Request $request, $id){
+    public function update(Request $request, $id)
+    {
 
         $company = Company::find($id);
-        if(!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
+        if (!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
 
         $error = $this->validateFields($request);
-        if($error) return response()->json($error, 400);
+        if ($error) return response()->json($error, 400);
 
         $company->name = $request->name;
         $company->address = $request->address;
         $company->adminName = $request->adminName;
 
-        if(strcmp($company->ruc, $request->ruc) !== 0){
+        if (strcmp($company->ruc, $request->ruc) !== 0) {
             UserCompany::where("rutCompany", $company->ruc)->update(['rutCompany' => $request->ruc]);
             $company->ruc = $request->ruc;
         }
 
         $company->email = $request->email;
         $company->phone = $request->phone;
-        if($request->avatar){
+        if ($request->avatar) {
             $company->avatar = $request->avatar;
         }
         $company->description = $request->description;
-        $company->horarioEntrada = $request->horarioEntrada ? $request->horarioEntrada : null;
-        $company->horarioSalida = $request->horarioSalida ? $request->horarioSalida : null;
+        /* $company->horarioEntrada = $request->horarioEntrada ? $request->horarioEntrada : null;
+        $company->horarioSalida = $request->horarioSalida ? $request->horarioSalida : null; */
         $company->isHelpDesk = filter_var($request->isHelpDesk, FILTER_VALIDATE_BOOLEAN);
         $company->helpDesks = $request->helpDesks ? json_encode($request->helpDesks, true) : null;
         $company->save();
 
-        $horario = CompanyHorario::find($company->idHorario);
+        /* $horario = CompanyHorario::find($company->idHorario);
         $horario->Dias = $request->Dias;
         $horario->MedioDia = $request->MedioDia;
         $horario->HorarioIngreso = $request->HorarioIngreso;
         $horario->HorarioSalida = $request->HorarioSalida;
         $horario->HorarioIngresoMD = $request->HorarioIngresoMD;
         $horario->HorarioSalidaMD = $request->HorarioSalidaMD;
-        $horario->save();
+        $horario->save(); */
 
-        if($request->oldImage){
+        if ($request->oldImage) {
             $newImage = substr($request->oldImage, 8);
-            $image_path = storage_path().'/app/public/'."".$newImage;
-            if (@getimagesize($image_path)){
+            $image_path = storage_path() . '/app/public/' . "" . $newImage;
+            if (@getimagesize($image_path)) {
                 unlink($image_path);
             }
         }
 
-        if($request->hasFile('image')){
+        if ($request->hasFile('image')) {
             $tasks_controller = new uploadImageController();
-            $company->avatar = $tasks_controller->updateFile($request->file('image'), "companies/avatar", $company->id."_".Carbon::now()->timestamp);
+            $company->avatar = $tasks_controller->updateFile($request->file('image'), "companies/avatar", $company->id . "_" . Carbon::now()->timestamp);
             $company->save();
         }
 
         return response()->json($company);
     }
 
-    private function validateFields($request){
+    private function validateFields($request)
+    {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:150',
             'address' => 'required|string|max:150',
             'adminName' => 'required|string|max:150',
             'email' => 'required|string|email|max:255',
             'phone' => 'string|max:20',
-            'Dias' => 'required|string|max:255',
+            /* 'Dias' => 'required|string|max:255',
             'MedioDia' => 'string',
             'HorarioIngreso' => 'required|string',
             'HorarioSalida' => 'required|string',
             'HorarioIngresoMD' => 'string',
-            'HorarioSalidaMD' => 'string',
+            'HorarioSalidaMD' => 'string', */
         ]);
 
         $errorMessage = null;
-        if(!$validator->fails()){
+        if (!$validator->fails()) {
             $company = Company::where('name', $request->name)->where('deleted', false)->first();
-            if($company && $company->id != $request->id){
+            if ($company && $company->id != $request->id) {
                 $errorMessage = new \stdClass();
                 $errorMessage->email = [
                     "La empresa ya está registrada."
                 ];
             }
-        }else{
+        } else {
             $errorMessage = $validator->errors()->toJson();
         }
 
@@ -130,7 +134,8 @@ class CompanyController extends Controller
     }
 
 
-    private function updateCompanyValues($company, $request,$idhorario){
+    private function updateCompanyValues($company, $request, $idhorario)
+    {
         $company->name = $request->name;
         $company->address = $request->address;
         $company->adminName = $request->adminName;
@@ -138,7 +143,7 @@ class CompanyController extends Controller
         $company->email = $request->email;
         $company->phone = $request->phone;
 
-        if($request->avatar){
+        if ($request->avatar) {
             $company->avatar = $request->avatar;
         }
         $company->description = $request->description;
@@ -147,69 +152,146 @@ class CompanyController extends Controller
         $company->helpDesks = $request->helpDesks ? json_encode($request->helpDesks, true) : null;
     }
 
-    public function find($id){
-        $company = Company::join("companies_horarios","companies_horarios.id", "=", "companies.idHorario")
-        ->select("companies.*", "companies_horarios.*")->where('companies.id', $id)->first();
+    public function find($id)
+    {
+        // $company = Company::join("companies_horarios", "companies_horarios.id", "=", "companies.idHorario")
+        //     ->select("companies.*", "companies_horarios.*")->where('companies.id', $id)->first();
+        $company = Company::where('id', $id)->first();
 
         $company->helpDesks = $company->helpDesks ? json_decode($company->helpDesks, true) : [];
-        if(count($company->helpDesks) > 0){
+        if (count($company->helpDesks) > 0) {
             $companies = Company::whereIn("id", $company->helpDesks)->where("deleted", false)->get();
             $company->mappedCompanies = $companies;
         }
-        if(!$company){
+        if (!$company) {
             return response()->json(['error' => 'Empresa no encontrada'], 400);
-        }
 
+        }
         return $company;
     }
 
-    public function updateHelpDeskCompany($id){
-        $companies = Company::where('deleted', '!=', true)->where('isHelpDesk', false)->where('helpDesks', 'LIKE', '%' ."\"$id\"". '%')->get();
 
-        foreach ($companies as $company){
-            $companyHelpDenk = $company->helpDesks ? json_decode($company->helpDesks, true) : [];
-            $newCompanyHelpDenk =  array_diff($companyHelpDenk, array("$id"));
-            $company->helpDesks = count($newCompanyHelpDenk)>0 ?  "[\"".implode('","', $newCompanyHelpDenk)."\"]" : "";
-            $company->save();
+        //LO COMENTADO
+        /* $dias = json_decode($company->Dias);
+        for ($i=0; $i < count($dias); $i++) {
+            $dia[$i]['id'] = $dias[$i];
+            $dia[$i]['name'] = $this->getDia($dias[$i]);
         }
-        return response()->json("Actualizacion correcta",201);
+        $mediodia = json_decode($company->MedioDia);
+        $mediodias = [];
+        for ($i=0; $i < count($mediodia); $i++) {
+            $mediodias[$i]['id'] = $mediodia[$i];
+            $mediodias[$i]['name'] = $this->getDia($mediodia[$i]);
+        }
+        $compania = [
+                "id" => $company->id,
+                "name" => $company->name,
+                "address" => $company->address,
+                "email" => $company->email,
+                "phone" => $company->phone,
+                "ruc" => $company->ruc,
+                "adminName" => $company->adminName,
+                "avatar" => $company->avatar,
+                "description" => $company->description,
+                "idHorario" => $company->idHorario,
+                "isHelpDesk" => $company->isHelpDesk,
+                "helpDesks" => $company->helpDesks,
+                "deleted" => $company->deleted,
+                "created_at" => $company->created_at,
+                "updated_at" => $company->updated_at,
+                "Dias" => $dia,
+                "MedioDia" => $mediodias,
+                "HorarioIngreso" => $company->HorarioIngreso,
+                "HorarioSalida" => $company->HorarioSalida,
+                "HorarioIngresoMD" => $company->HorarioIngresoMD,
+                "HorarioSalidaMD" => $company->HorarioSalidaMD,
+                "mappedCompanies" => $company->mappedCompanies,
+        ];
+
+        return $compania;
     }
 
-    public function list(){
+    public function getDia($id)
+    {
+        switch ($id) {
+            case '0':
+                return 'Domingo';
+                break;
+            case '1':
+                return 'Lunes';
+                break;
+            case '2':
+                return 'Martes';
+                break;
+            case '3':
+                return 'Miercoles';
+                break;
+            case '4':
+                return 'Jueves';
+                break;
+            case '5':
+                return 'Viernes';
+                break;
+            case '6':
+                return 'Sabado';
+                break;
+
+            default:
+                return 'dia no válido';
+                break;
+        }
+    } */
+
+    public function updateHelpDeskCompany($id)
+    {
+        $companies = Company::where('deleted', '!=', true)->where('isHelpDesk', false)->where('helpDesks', 'LIKE', '%' . "\"$id\"" . '%')->get();
+
+        foreach ($companies as $company) {
+            $companyHelpDenk = $company->helpDesks ? json_decode($company->helpDesks, true) : [];
+            $newCompanyHelpDenk =  array_diff($companyHelpDenk, array("$id"));
+            $company->helpDesks = count($newCompanyHelpDenk) > 0 ?  "[\"" . implode('","', $newCompanyHelpDenk) . "\"]" : "";
+            $company->save();
+        }
+        return response()->json("Actualizacion correcta", 201);
+    }
+
+    public function list()
+    {
         return Company::where('deleted', '!=', true)->orderBy("name")->get();
     }
 
-    public function listClient(){
+    public function listClient()
+    {
         return Company::where('deleted', '!=', true)->where('isHelpDesk', false)->orderBy("name")->get();
     }
 
-    public function listHelpdesk(Request $request){
+    public function listHelpdesk(Request $request)
+    {
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
-        if($idCompany){
+        if ($idCompany) {
             $company = Company::find($idCompany);
-            if(!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
+            if (!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
 
             $company->helpDesks = (array) json_decode($company->helpDesks, true);
 
             return Company::whereIn("id", $company->helpDesks)->where('deleted', '!=', true)->where('isHelpDesk', true)->orderBy("name")->get();
-        }else{
+        } else {
             return Company::where('deleted', '!=', true)->where('isHelpDesk', true)->orderBy("name")->get();
         }
-
-
     }
 
-    public function listWithUsersCount(Request $request){
+    public function listWithUsersCount(Request $request)
+    {
         $term = $request->has("term") ? $request->get("term") : "";
 
         $companies = Company::where('companies.deleted', '!=', true)->groupBy('companies.id')->get();
 
-        foreach ($companies as $company){
+        foreach ($companies as $company) {
             $company->usersCount = count(UserCompany::where("idCompany", $company->id)->where("deleted", false)->get());
         }
 
-        if($term){
+        if ($term) {
             $companies = $companies->filter(function ($company) use ($term) {
                 return str_contains(strtolower($company->name), strtolower($term)) !== false;
             })->values()->all();
@@ -218,9 +300,10 @@ class CompanyController extends Controller
         return $companies;
     }
 
-    public function delete($id){
+    public function delete($id)
+    {
         $company = Company::find($id);
-        if(!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
+        if (!$company) return response()->json(['error' => 'Empresa no encontrada'], 400);
 
         $company->deleted = true;
         $company->save();
@@ -228,29 +311,31 @@ class CompanyController extends Controller
         return response()->json(['success' => 'Empresa Eliminada'], 201);
     }
 
-    public function deleteImage(Request $request){
+    public function deleteImage(Request $request)
+    {
         $imageLink = $request->imageLink;
         $companyId = $request->id;
 
         $company = Company::find($companyId);
-        $image_path = storage_path().'/app/public/'."".$imageLink;
-        if (@getimagesize($image_path) && $company){
+        $image_path = storage_path() . '/app/public/' . "" . $imageLink;
+        if (@getimagesize($image_path) && $company) {
             unlink($image_path);
             $company->avatar = null;
             $company->save();
 
-            return response()->json(compact('company'),201);
-        }else{
+            return response()->json(compact('company'), 201);
+        } else {
             return response()->json(['error' => 'Empresa no encontrada / Archivo no encontrado'], 400);
         }
     }
 
-    public function importERPCompanies(){
+    public function importERPCompanies()
+    {
         try {
             $res1 = Http::post('http://apitest.softnet.cl/login', [
                 "username" => "usuario",
                 "password" => "demo",
-                "rut"=> "22222222-2",
+                "rut" => "22222222-2",
             ]);
             $res1 = $res1->json();
             $erpToken = $res1["token"];
@@ -263,17 +348,17 @@ class CompanyController extends Controller
             $newCompanies = [];
             $companies = Company::where("deleted", false)->get()->keyBy("ruc");
             foreach ($res2 as $erpCompany) {
-                if(!array_key_exists($erpCompany["rut_empresa"], $companies->toArray())){
+                if (!array_key_exists($erpCompany["rut_empresa"], $companies->toArray())) {
 
                     $new = [
                         'name' => $erpCompany["razon"],
-                        'address' => $erpCompany["direccion"].", ".$erpCompany["comuna"].", ".$erpCompany["ciudad"],
+                        'address' => $erpCompany["direccion"] . ", " . $erpCompany["comuna"] . ", " . $erpCompany["ciudad"],
                         'email' => $erpCompany["web"],
                         'phone' => $erpCompany["telefono"],
                         'ruc' => $erpCompany["rut_empresa"],
                         'adminName' => $erpCompany["nombre_representante1"],
                         'avatar' => null,
-                        'description' => $erpCompany["giro1"].". ".$erpCompany["giro2"],
+                        'description' => $erpCompany["giro1"] . ". " . $erpCompany["giro2"],
                         'deleted' => 0,
                         'created_at' => Carbon::now(),
                         'updated_at' => Carbon::now(),
@@ -284,10 +369,49 @@ class CompanyController extends Controller
             }
 
             Company::insert($newCompanies);
-            return response()->json("Import exitoso, ".count($newCompanies)." empresas registradas",201);
-
+            return response()->json("Import exitoso, " . count($newCompanies) . " empresas registradas", 201);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
+    }
+
+    public function cargaHorarios()
+    {
+        $companies = Company::All();
+
+        for ($i = 0; $i < count($companies); $i++) {
+            $horario = new CompanyHorario();
+            $horario->Dias = '["1", "2", "3", "4", "5"';
+            $horario->MedioDia = '[]';
+            $horario->HorarioIngreso = "09:00";
+            $horario->HorarioSalida = "18:00";
+            $horario->HorarioIngresoMD = null;
+            $horario->HorarioSalidaMD = null;
+            $horario->save();
+
+            $empresa = Company::find($companies[$i]['id']);
+            $empresa->idHorario = $horario->id;
+            $empresa->save();
+        }
+    }
+
+    public function prueba()
+    {
+        $Companies = User::where('companies','LIKE','%-%')->get();
+
+       //dd($Companies);
+        foreach($Companies as $companies)
+        {
+
+            $nu = json_decode($companies['companies']);
+            $nul = Company::where('ruc',$nu)->get();
+
+            $user = User::find($companies->id);
+            $user->companies = '["'.$nul[0]['id'].'"]';
+            $user->save();
+
+
+        }
+            return $user;
     }
 }

@@ -18,10 +18,12 @@ class ConsultaPendienteMail extends Mailable
      */
 
     public $user;
+    public $urlConsulta;
 
-    public function __construct($username)
+    public function __construct($username, $urlConsulta)
     {
         $this->username = $username;
+        $this->urlConsulta = $urlConsulta;
     }
 
     /**
@@ -32,10 +34,11 @@ class ConsultaPendienteMail extends Mailable
     public function build()
     {
         return $this->from(env('MAIL_USERNAME'), 'ZENDY TEAM')
-            ->view('emails.consulta.pendiente')
+            ->view('emails.consulta_pendiente')
             ->subject('Nueva consulta ingresada')
             ->with([
                 'username'         => $this->username,
+                'urlConsulta'      => $this->urlConsulta,
             ]);
     }
 }

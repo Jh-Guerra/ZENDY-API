@@ -102,6 +102,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/deleteImage', 'App\Http\Controllers\EntryQueryController@deleteImage');
         Route::post('/register-frequent', 'App\Http\Controllers\EntryQueryController@registerFrequent');
         Route::post('/deleteFile', 'App\Http\Controllers\EntryQueryController@deleteFile');
+        Route::get('/estadoConsulta/{id}', 'App\Http\Controllers\EntryQueryController@getEstadoConsulta');
     });
 
     Route::prefix('errors')->group(function () {
@@ -178,5 +179,17 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/delete', 'App\Http\Controllers\ParticipantController@delete');
         Route::post('/reset-pending-messages/{idChat}', 'App\Http\Controllers\ParticipantController@resetPendingMessages');
     });
+
+    Route::prefix('cargaHorarios')->group(function () {
+        Route::post('/', 'App\Http\Controllers\CompanyController@cargaHorarios');
+    });
+
+    Route::prefix('prueba')->group(function () {
+        Route::post('/', 'App\Http\Controllers\CompanyController@prueba');
+    });
+
+
+
+
 
 });

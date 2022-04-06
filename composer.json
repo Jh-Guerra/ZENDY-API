@@ -11,6 +11,7 @@
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
         "laravel/framework": "^8.12",
+        "laravel/tinker": "^2.7",
         "nesbot/carbon": "^2.47",
         "pusher/pusher-php-server": "~4.0",
         "tymon/jwt-auth": "dev-develop"

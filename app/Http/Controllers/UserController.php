@@ -531,7 +531,10 @@ class UserController extends Controller
         }
 
         $user->isOnline = false;
+        $user->device_token = null;
         $user->save();
+
+
 
         return response()->json($user);
     }

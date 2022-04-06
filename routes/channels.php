@@ -14,6 +14,9 @@ use \App\Models\Participant;
 | used to check if an authenticated user can listen to the channel.
 |
 */
+Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
+    return (int)$user->id === (int)$id;
+});
 
 Broadcast::channel('chats.{id}', function ($user, $id) {
     $participant = Participant::where("idChat", $id)->where("idUser", $user->id)->where("deleted", false)->first();
@@ -23,4 +26,8 @@ Broadcast::channel('chats.{id}', function ($user, $id) {
 Broadcast::channel('user.{id}', function ($user, $id) {
     $User = User::where("id", $id)->where("deleted", false)->first();
     return $User != null;
+});
+
+Broadcast::channel('consulta.{id}', function ($user, $id) {
+    return (int)$user->id === (int)$id;
 });
