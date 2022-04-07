@@ -503,6 +503,17 @@ class UserController extends Controller
             });
         }
     }
+    
+    public function searchOnlyUser(Request $request){
+
+            $term = $request->term;
+            $users = User::where('deleted', '!=', true)
+                        ->where('firstName', 'LIKE', '%' . $term . '%')
+                        ->orWhere('lastName', 'LIKE', '%' . $term . '%')
+                        ->get();
+            return $users;
+        
+    }
 
     public function delete($id){
         $user = User::find($id);

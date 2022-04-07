@@ -21,6 +21,7 @@ Route::post('login-erp', 'App\Http\Controllers\UserController@authenticateErp');
 Route::get('findUser/{username}', 'App\Http\Controllers\UserController@findUserByUserName');
 Route::post('/sendEmail/{username}', 'App\Http\Controllers\EmailController@contact')->name('contact');
 Route::post('device-token', 'App\Http\Controllers\UpdateDeviceTokenController@saveToken');
+Route::post('/listUsers', 'App\Http\Controllers\UserSoftnetController@getUsers');
 
 Route::group(['middleware' => ['jwt.verify']], function() {
 
@@ -43,6 +44,9 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/import-erp', 'App\Http\Controllers\UserController@importERPUsers');
         Route::post('/update-password/{id}', 'App\Http\Controllers\UserController@updatePassword');
         Route::post('/changeHelpDesk/{id}', 'App\Http\Controllers\UserController@changeHelpDesk');
+        Route::post('/searchUsers', 'App\Http\Controllers\UserController@searchOnlyUser');
+        
+
 
     });
 
@@ -62,6 +66,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::delete('/delete/{id}', 'App\Http\Controllers\CompanyController@delete');
         Route::post('/deleteImage', 'App\Http\Controllers\CompanyController@deleteImage');
         Route::post('/import-erp', 'App\Http\Controllers\CompanyController@importERPCompanies');
+        Route::post('/searchCompany', 'App\Http\Controllers\CompanyController@searchCompany');
     });
 
     Route::prefix('chats')->group(function () {
@@ -188,8 +193,10 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/', 'App\Http\Controllers\CompanyController@prueba');
     });
 
-
-
+    Route::prefix('syncUsers')->group(function () {
+         Route::post('/', 'App\Http\Controllers\UserSoftnetController@insertUsers');
+         Route::post('/updateToken', 'App\Http\Controllers\UserSoftnetController@getTokenSofnet');
+     });
 
 
 });

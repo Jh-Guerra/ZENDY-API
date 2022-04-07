@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ConsultaNotification;
 use App\Mail\chatMail;
 use App\Mail\ConsultaPendienteMail;
 use App\Models\Chat;
@@ -12,6 +13,7 @@ use App\Models\EntryQuery;
 use App\Models\Participant;
 use App\Models\User;
 use App\Models\Message;
+use App\Models\Module;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -69,20 +71,166 @@ class EntryQueryController extends Controller
             $entryQuery->save();
         }
 
-        // if(!is_null($request['idchat_externo']) && !is_null($request['idususario_externo']) && !is_null($request['endpoint'])){
+        -$HD = '["' . $request["idHelpdesk"] . '"]';
+        $users = User::where('companies', $HD)->where('idRole', 4)->get();
+        $contenido = [
+            'modulo'     => Module::where('id', $request["idModule"])->first()->name,
+            'idConsulta' => $entryQuery->id,
+            'idUser'     => $user->id,
+            'usuario'    => $user->firstName,
+            'avatar'     => !!isset($user->avatar) ? $user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg',
+            'mensaje'    => "Se ha presentado una nueva consulta, haz clic aquí para redirigirte hacia ella",
+        ];
 
-        //     Chat_externo::create([
-        //         'idusuario_interno' => $user->id,
-        //         'identryquery' => $entryQuery->id,
-        //         'idusuario_externo' => $request['idususario_externo'],
-        //         'idchat_externo' => $request['idchat_externo'],
-        //         'endpoint' => $request['endpoint']
-        //     ]);
+        $i = 0;
+        while ($i < count($users)) {
+            event(new ConsultaNotification($users[$i]['id'], $contenido));
+            $i++;
+        }
 
-        // }
+        //LO COMENTADO
+        /* $rut = UserCompany::where('idCompany', $idCompany)->first();
+               $companyHD = Company::where('id', $rut->idCompany)->first();
+        
+                $users = User::where('companies', $companyHD->helpDesks)->where('idRole', 4)->get();
+                $horario = CompanyHorario::where('id', $companyHD->idHorario)->get();
+                $horaActual = Carbon::now()->toTimeString();
+                $diaActual = intval(date("w"));
+                $horaActual2 = "09:29:59";
+                $diaActual2 = 0;
+        
+                //dd($horario);
+        
+                $date = Carbon::now();
+                $date = $date->add(2, 'day');
+                $date = $date->format('Y-m-d');
+    
+                $dias = [0, 1, 2, 3, 4, 5, 6];
+                $diasHabituales = json_decode($horario[0]['Dias']);
+        
+                for ($i = 0; $i < count(json_decode($horario[0]['MedioDia'])); $i++) {
+                    $MD = json_decode($horario[0]['MedioDia']);
+                    array_push($diasHabituales, (int)$MD[$i]);
+                }
+        
+                $diaNoPuesto = array_diff($dias, $diasHabituales);
+    
+                for ($i = 0; $i < count($diaNoPuesto); $i++) {
+                    if ($diaActual2 == $diaNoPuesto[$i]) {
+                        try {
+                            for ($i = 0; $i < count($users); $i++) {
+                                $credenciales = 'rut_empresa=' . base64_encode($companyHD->ruc) . '&usuario=' . base64_encode($users[$i]['username']) . '&password=' . $users[$i]['password'];
+                                $url = 'https://www.zendy.cl/login?' . $credenciales . '&consulta=' . $entryQuery->id . '&fecha=' . base64_encode($date);
+                                Mail::to($users[$i]['email'])->send(new ConsultaPendienteMail($users[$i]['firstName'], $url));
+                            }
+                        } catch (\Throwable $th) {
+                            $error = $th;
+                        }
+        
+                        return 'Correo enviado a usuarios HD - un dia que no se trabajo :D';
+                    }
+                }
+        
+                $medioDia = json_decode($horario[0]['MedioDia']);
+        
+                if (!is_null($horario[0]['MedioDia'])) {
+                    for ($i = 0; $i < count($medioDia); $i++) {
+        
+                        if ($diaActual2 == $medioDia[$i]) {
+                            if (strtotime($horaActual2) >= strtotime($horario[0]['HorarioIngresoMD']) && strtotime($horaActual2) < strtotime($horario[0]['HorarioSalidaMD'])) {
+                                return response()->json(compact('chat'), 201);
+                            } else {
+                                try {
+                                    for ($i = 0; $i < count($users); $i++) {
+                                        $credenciales = 'rut_empresa=' . base64_encode($companyHD->ruc) . '&usuario=' . base64_encode($users[$i]['username']) . '&password=' . $users[$i]['password'];
+                                        $url = 'https://www.zendy.cl/login?' . $credenciales . '&consulta=' . $entryQuery->id . '&fecha=' . base64_encode($date);
+                                        Mail::to($users[$i]['email'])->send(new ConsultaPendienteMail($users[$i]['firstName']), $url);
+                                    }
+                                } catch (\Throwable $th) {
+                                   $error = $th;
+                                }
+                                return 'Correo enviado a usuarios HD un medio dia :D';
+                            }
+                        }
+                    }
+                }
+        
+                for ($i = 0; $i < count(json_decode($horario[0]['Dias'])); $i++) {
+                    if ($diaActual2 == json_decode($horario[0]['Dias'][$i])) {
+                        if (strtotime($horaActual2) >= strtotime($horario[0]['HorarioIngreso']) && strtotime($horaActual2) < strtotime($horario[0]['HorarioSalida'])) {
+                            return response()->json(compact('chat'), 201);
+                        } else {
+                            try {
+                                for ($i = 0; $i < count($users); $i++) {
+                                    $credenciales = 'rut_empresa=' . base64_encode($companyHD->ruc) . '&usuario=' . base64_encode($users[$i]['username']) . '&password=' . $users[$i]['password'];
+                                    $url = 'https://www.zendy.cl/login?' . $credenciales . '&consulta=' . $entryQuery->id . '&fecha=' . base64_encode($date);
+                                    Mail::to($users[$i]['email'])->send(new ConsultaPendienteMail($users[$i]['firstName'], $url));
+                                }
+                           } catch (\Throwable $th) {
+                                $error = $th;
+                           }
+                            return 'Correo enviado a usuarios HD un dia de la semana D:';
+                        }
+                    }
+                } */
 
         return response()->json(compact('entryQuery'), 201);
     }
+
+    // public function sendNotification($user, $participants, $message, $consulta)
+    //     {
+
+    //         $firebaseToken= [];
+    //         for ($i=0; $i <count($participants); $i++) {
+
+    //             $firebaseToken[$i] = User::where('id','=',$participants[$i]->id)
+    //                                     ->select('device_token')
+    //                                     ->first()
+    //                                     ->device_token;
+
+    //         }
+
+
+    //         $linkus = "/consultas/".$consulta;
+
+    //         // $firebaseToken = User::where('id', $request->usuario)
+    //         //                 ->pluck('device_token')
+    //         //                 ->all();
+    //         // $firebaseToken = User::whereNotNull('device_token')->pluck('device_token')->all();
+
+    //         $SERVER_API_KEY = 'AAAAIRNx9HA:APA91bFmqjiXmsV4kTGSiTcy2qC-ShtiGFJK9M2MupnYV_Cci4QWrc1Y7R6KA8DhSIO_-a49OaFNo1CCN1EbpB_ClerGdxAAqgJtTrTULuAYof42LYaI_JmVKbl54x1hKgXfZooYWxt4';
+
+    //         $data = [
+    //             "registration_ids" => $firebaseToken,
+    //             "notification" => [
+    //                 "title" => $user->firstName." te envió un mensaje",
+    //                 "body" => $message->message,
+    //                 "icon" => "https://www.zendy.cl/static/media/logo.30d6b517.png",
+    //                 "click_action" => $linkus,
+    //                 "content_available" => true,
+    //                 "priority" => "high",
+    //             ]
+    //         ];
+    //         $dataString = json_encode($data);
+
+    //         $headers = [
+    //             'Authorization: key=' . $SERVER_API_KEY,
+    //             'Content-Type: application/json',
+    //         ];
+
+    //         $ch = curl_init();
+
+    //         curl_setopt($ch, CURLOPT_URL, 'https://fcm.googleapis.com/fcm/send');
+    //         curl_setopt($ch, CURLOPT_POST, true);
+    //         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    //         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    //         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    //         curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
+
+    //         $response = curl_exec($ch);
+
+    // return $response;
+    //}
 
     private function validateFields($request)
     {
@@ -398,100 +546,95 @@ class EntryQueryController extends Controller
         $message->save();
 
 
-        $userChat = User::where('id', $entryQuery->createdBy)->first();
-        $rut = UserCompany::where('idCompany', $idCompany)->first();
+        // $userChat = User::where('id', $entryQuery->createdBy)->first();
+        // $rut = UserCompany::where('idCompany', $idCompany)->first();
 
-        if ($entryQuery->externo == '1') {
-            try {
-                $date = Carbon::now();
-                $date = $date->format('Y-m-d');
-                $credenciales = 'rut_empresa=' . base64_encode($rut->rutCompany) . '&usuario=' . base64_encode($userChat->username) . '&password=' . $userChat->password;
-                $url = 'https://www.zendy.cl/login?' . $credenciales . '&chat=' . $chat->id . '&fecha=' . base64_encode($date);
-                Mail::to($userChat->email)->send(new chatMail($userChat->firstName, $url));
-            } catch (\Throwable $th) {
-                $error = $th;
-            }
-        }
-        $companyHD = Company::where('id', $rut->idCompany)->get();
-        $users = User::where('companies', $companyHD[0]['helpDesks'])->where('idRole', 4)->get();
-        $horario = CompanyHorario::where('id', $companyHD[0]['idHorario'])->get();
-        $horaActual = Carbon::now()->toTimeString();
-        $diaActual = intval(date("w"));
-        $horaActual2 = "09:29:59";
-        $diaActual2 = 1;
+        // if ($entryQuery->externo == '1') {
+        //     try {
+        //         $date = Carbon::now();
+        //         $date = $date->format('Y-m-d');
+        //         $credenciales = 'rut_empresa=' . base64_encode($rut->rutCompany) . '&usuario=' . base64_encode($userChat->username) . '&password=' . $userChat->password;
+        //         $url = 'https://www.zendy.cl/login?' . $credenciales . '&chat=' . $chat->id . '&fecha=' . base64_encode($date);
+        //         Mail::to($userChat->email)->send(new chatMail($userChat->firstName, $url));
+        //     } catch (\Throwable $th) {
+        //         $error = $th;
+        //     }
+        // }
+        // $companyHD = Company::where('id', $rut->idCompany)->get();
+        // $users = User::where('companies', $companyHD[0]['helpDesks'])->where('idRole', 4)->get();
+        // $horario = CompanyHorario::where('id', $companyHD[0]['idHorario'])->get();
+        // $horaActual = Carbon::now()->toTimeString();
+        // $diaActual = intval(date("w"));
+        // $horaActual2 = "09:29:59";
+        // $diaActual2 = 1;
 
-        //dd(count($users));
+        // //dd(count($users));
 
-        $dias = [0, 1, 2, 3, 4, 5, 6];
-        $diasHabituales = json_decode($horario[0]['Dias']);
+        // $dias = [0, 1, 2, 3, 4, 5, 6];
+        // $diasHabituales = json_decode($horario[0]['Dias']);
 
-        for ($i = 0; $i < count(json_decode($horario[0]['MedioDia'])); $i++) {
-            $MD = json_decode($horario[0]['MedioDia']);
-            array_push($diasHabituales, (int)$MD[$i]);
-        }
+        // for ($i = 0; $i < count(json_decode($horario[0]['MedioDia'])); $i++) {
+        //     $MD = json_decode($horario[0]['MedioDia']);
+        //     array_push($diasHabituales, (int)$MD[$i]);
+        // }
 
-        $diaNoPuesto = array_diff($dias, $diasHabituales);
+        // $diaNoPuesto = array_diff($dias, $diasHabituales);
 
-        for ($i = 0; $i < count($diaNoPuesto); $i++) {
-            if ($diaActual2 == $diaNoPuesto[$i]) {
-                try {
-                    for ($i=0; $i <count($users) ; $i++) {
-                        Mail::to($users[$i]['email'])->send(new ConsultaPendienteMail($users[$i]['firstName']));
-                    }
-                } catch (\Throwable $th) {
-                        $error = $th;
-                }
+        // for ($i = 0; $i < count($diaNoPuesto); $i++) {
+        //     if ($diaActual2 == $diaNoPuesto[$i]) {
+        //         try {
+        //             for ($i=0; $i <count($users) ; $i++) {
+        //                 Mail::to($users[$i]['email'])->send(new ConsultaPendienteMail($users[$i]['firstName']));
+        //             }
+        //         } catch (\Throwable $th) {
+        //                 $error = $th;
+        //         }
 
-                return 'Correo enviado a usuarios HD - un dia que no se trabajo :D';
-            }
-        }
+        //         return 'Correo enviado a usuarios HD - un dia que no se trabajo :D';
+        //     }
+        // }
 
-        $medioDia = json_decode($horario[0]['MedioDia']);
+        // $medioDia = json_decode($horario[0]['MedioDia']);
 
-        if (!is_null($horario[0]['MedioDia'])) {
-            for ($i = 0; $i < count($medioDia); $i++) {
+        // if (!is_null($horario[0]['MedioDia'])) {
+        //     for ($i = 0; $i < count($medioDia); $i++) {
 
-                if ($diaActual2 == $medioDia[$i]) {
-                    if (strtotime($horaActual2) >= strtotime($horario[0]['HorarioIngresoMD']) && strtotime($horaActual2) < strtotime($horario[0]['HorarioSalidaMD'])) {
-                        return response()->json(compact('chat'), 201);
+        //         if ($diaActual2 == $medioDia[$i]) {
+        //             if (strtotime($horaActual2) >= strtotime($horario[0]['HorarioIngresoMD']) && strtotime($horaActual2) < strtotime($horario[0]['HorarioSalidaMD'])) {
+        //                 return response()->json(compact('chat'), 201);
 
-                    } else {
-                        try {
-                            for ($i=0; $i <count($users) ; $i++) {
-                                Mail::to($users[$i]['email'])->send(new ConsultaPendienteMail($users[$i]['firstName']));
-                            }
-                        } catch (\Throwable $th) {
-                                $error = $th;
-                        }
-                        return 'Correo enviado a usuarios HD un medio dia :D';
-                    }
-                }
-            }
-        }
+        //             } else {
+        //                 try {
+        //                     for ($i=0; $i <count($users) ; $i++) {
+        //                         Mail::to($users[$i]['email'])->send(new ConsultaPendienteMail($users[$i]['firstName']));
+        //                     }
+        //                 } catch (\Throwable $th) {
+        //                         $error = $th;
+        //                 }
+        //                 return 'Correo enviado a usuarios HD un medio dia :D';
+        //             }
+        //         }
+        //     }
+        // }
 
-        for ($i = 0; $i < count(json_decode($horario[0]['Dias'])); $i++) {
-            if ($diaActual2 == json_decode($horario[0]['Dias'][$i])) {
-                if (strtotime($horaActual2) >= strtotime($horario[0]['HorarioIngreso']) && strtotime($horaActual2) < strtotime($horario[0]['HorarioSalida'])) {
-                    return response()->json(compact('chat'), 201);
+        // for ($i = 0; $i < count(json_decode($horario[0]['Dias'])); $i++) {
+        //     if ($diaActual2 == json_decode($horario[0]['Dias'][$i])) {
+        //         if (strtotime($horaActual2) >= strtotime($horario[0]['HorarioIngreso']) && strtotime($horaActual2) < strtotime($horario[0]['HorarioSalida'])) {
+        //             return response()->json(compact('chat'), 201);
 
-                } else {
-                    try {
-                        for ($i=0; $i <count($users) ; $i++) {
-                            Mail::to($users[$i]['email'])->send(new ConsultaPendienteMail($users[$i]['firstName']));
-                        }
-                    } catch (\Throwable $th) {
-                            $error = $th;
-                    }
-                    return 'Correo enviado a usuarios HD un dia de la semana D:';
-                }
-            }
-        }
-
-
-
+        //         } else {
+        //             try {
+        //                 for ($i=0; $i <count($users) ; $i++) {
+        //                     Mail::to($users[$i]['email'])->send(new ConsultaPendienteMail($users[$i]['firstName']));
+        //                 }
+        //             } catch (\Throwable $th) {
+        //                     $error = $th;
+        //             }
+        //             return 'Correo enviado a usuarios HD un dia de la semana D:';
+        //         }
+        //     }
+        // }
         return response()->json(compact('chat'), 201);
-
-
     }
 
 
@@ -623,5 +766,15 @@ class EntryQueryController extends Controller
         $entryQuery->save();
 
         return response()->json(compact('entryQuery'), 201);
+    }
+
+    public function getEstadoConsulta($id)
+    {
+        try {
+            $entryQuery = EntryQuery::find($id);
+            return $entryQuery->status;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 }

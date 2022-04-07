@@ -170,78 +170,6 @@ class CompanyController extends Controller
         return $company;
     }
 
-
-        //LO COMENTADO
-        /* $dias = json_decode($company->Dias);
-        for ($i=0; $i < count($dias); $i++) {
-            $dia[$i]['id'] = $dias[$i];
-            $dia[$i]['name'] = $this->getDia($dias[$i]);
-        }
-        $mediodia = json_decode($company->MedioDia);
-        $mediodias = [];
-        for ($i=0; $i < count($mediodia); $i++) {
-            $mediodias[$i]['id'] = $mediodia[$i];
-            $mediodias[$i]['name'] = $this->getDia($mediodia[$i]);
-        }
-        $compania = [
-                "id" => $company->id,
-                "name" => $company->name,
-                "address" => $company->address,
-                "email" => $company->email,
-                "phone" => $company->phone,
-                "ruc" => $company->ruc,
-                "adminName" => $company->adminName,
-                "avatar" => $company->avatar,
-                "description" => $company->description,
-                "idHorario" => $company->idHorario,
-                "isHelpDesk" => $company->isHelpDesk,
-                "helpDesks" => $company->helpDesks,
-                "deleted" => $company->deleted,
-                "created_at" => $company->created_at,
-                "updated_at" => $company->updated_at,
-                "Dias" => $dia,
-                "MedioDia" => $mediodias,
-                "HorarioIngreso" => $company->HorarioIngreso,
-                "HorarioSalida" => $company->HorarioSalida,
-                "HorarioIngresoMD" => $company->HorarioIngresoMD,
-                "HorarioSalidaMD" => $company->HorarioSalidaMD,
-                "mappedCompanies" => $company->mappedCompanies,
-        ];
-
-        return $compania;
-    }
-
-    public function getDia($id)
-    {
-        switch ($id) {
-            case '0':
-                return 'Domingo';
-                break;
-            case '1':
-                return 'Lunes';
-                break;
-            case '2':
-                return 'Martes';
-                break;
-            case '3':
-                return 'Miercoles';
-                break;
-            case '4':
-                return 'Jueves';
-                break;
-            case '5':
-                return 'Viernes';
-                break;
-            case '6':
-                return 'Sabado';
-                break;
-
-            default:
-                return 'dia no válido';
-                break;
-        }
-    } */
-
     public function updateHelpDeskCompany($id)
     {
         $companies = Company::where('deleted', '!=', true)->where('isHelpDesk', false)->where('helpDesks', 'LIKE', '%' . "\"$id\"" . '%')->get();
@@ -253,6 +181,12 @@ class CompanyController extends Controller
             $company->save();
         }
         return response()->json("Actualizacion correcta", 201);
+    }
+
+    public function searchCompany(Request $request)
+    {
+        $value = $request['name'];
+        return Company::where('name', "LIKE", "%$value%")->orWhere('ruc', "LIKE", "%$value%")->where('deleted', '!=', true)->orderBy("name")->get();
     }
 
     public function list()
