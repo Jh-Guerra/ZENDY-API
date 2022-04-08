@@ -64,12 +64,13 @@ class MessageController extends Controller
                 $participant->save();
             }
         }
+        $avatar = !!isset($user->avatar) ? "api/".$user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg';
 
         event(new sendMessage($message, $request["idChat"], $user));
 
-        $this->sendNotification($user, $participants, $message,$request["idChat"]);
+        $this->sendNotification($user, $participants, $message,$request["idChat"], $avatar);
 
-        $avatar = !!isset($user->avatar) ? $user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg';
+        
         $contenido = [
             'idChat'     => $request["idChat"],
             'idUser'     => $user->id,
@@ -85,7 +86,7 @@ class MessageController extends Controller
 
     }
 
-    public function sendNotification($user, $participants, $message, $chat)
+    public function sendNotification($user, $participants, $message, $chat, $avatar)
         {
             $firebaseToken= [];
             for ($i=0; $i <count($participants); $i++) {
@@ -110,7 +111,7 @@ class MessageController extends Controller
                 "notification" => [
                     "title" => $user->firstName." te envió un mensaje",
                     "body" => $message->message,
-                    "icon" => "https://www.zendy.cl/static/media/logo.30d6b517.png",
+                    "icon" => "https://www.zendy.cl/". $avatar,
                     "click_action" => $linkus,
                     "content_available" => true,
                     "priority" => "high",

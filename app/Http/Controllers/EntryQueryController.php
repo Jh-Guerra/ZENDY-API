@@ -71,10 +71,10 @@ class EntryQueryController extends Controller
             $entryQuery->save();
         }
 
-        -$HD = '["' . $request["idHelpdesk"] . '"]';
+        $HD = '["' . $request["idHelpdesk"] . '"]';
         $users = User::where('companies', $HD)->where('idRole', 4)->get();
         $mensaje = "Se ha presentado una nueva consulta, haz clic aquí para redirigirte hacia ella";
-        $avatar = !!isset($user->avatar) ? $user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg';
+        $avatar = !!isset($user->avatar) ? "api/".$user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg';
         $contenido = [
             'modulo'     => Module::where('id', $request["idModule"])->first()->name,
             'idConsulta' => $entryQuery->id,
@@ -85,9 +85,10 @@ class EntryQueryController extends Controller
         ];
 
         $i = 0;
+        $this->sendNotification($user, $users, $mensaje, $entryQuery->id, $avatar);
         while ($i < count($users)) {
             event(new ConsultaNotification($users[$i]['id'], $contenido));
-            $this->sendNotification($user->id, $users[$i]['id'], $mensaje, $entryQuery->id, $avatar);
+            
             $i++;
         }
 
@@ -184,6 +185,7 @@ class EntryQueryController extends Controller
         {
 
             $firebaseToken= [];
+            // dd($participants);
             for ($i=0; $i <count($participants); $i++) {
 
                 $firebaseToken[$i] = User::where('id','=',$participants[$i]->id)
@@ -207,8 +209,8 @@ class EntryQueryController extends Controller
                 "registration_ids" => $firebaseToken,
                 "notification" => [
                     "title" => $user->firstName." te envió un mensaje",
-                    "body" => $message->message,
-                    "icon" => "https://www.zendy.cl/static/media/logo.30d6b517.png",
+                    "body" => $message,
+                    "icon" => "https://www.zendy.cl/" . $avatar,
                     "click_action" => $linkus,
                     "content_available" => true,
                     "priority" => "high",

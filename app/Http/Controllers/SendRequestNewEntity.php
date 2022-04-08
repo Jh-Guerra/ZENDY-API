@@ -10,9 +10,19 @@ use Illuminate\Support\Facades\Mail;
 class SendRequestNewEntity extends Controller
 {
     public function SendRequest(Request $request){
-        //sgrado@softnet.cl
-        Mail::to('aldair1999.26@gmail.com')->send(new MailSendRequestNewEntity($request->username, $request->rut_empresa));
-
-        return 'Mensaje de solicitud enviada';
+        
+        try {
+            $superadmins = json_decode(User::where('idRole',1)->where('activo',1)->get());
+           
+            for ($i=0; $i <count($superadmins) ; $i++) { 
+                Mail::to($superadmins[$i]->email)->send(new MailSendRequestNewEntity($request->username, $request->rut_empresa));
+            }
+            
+            return 'Mensaje de solicitud enviada';
+            
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+        
     }
 }

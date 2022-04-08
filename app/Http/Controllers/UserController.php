@@ -19,6 +19,7 @@ use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Swift;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -753,9 +754,16 @@ class UserController extends Controller
         if (isset($user)) {
             $user = User::where('id', $user->idUser)->first();
             if ($user->activo == 0) {
-                return "Contraseña no cambiada";
+                return array(
+                    'estado'=> 'Contraseña no cambiada',
+                     'data' => $user
+                    );
+              
             } else {
-                return "Contraseña cambiada";
+                return  array(
+                    'estado'=> 'Contraseña cambiada',
+                     'data' => $user
+                    );
             }
         } else {
             return "Usuario no encontrado";
@@ -768,15 +776,32 @@ class UserController extends Controller
             $users = User::find($id);
 
             if (\Hash::check($request['password'], $users->password)) {
-                $users->password = bcrypt($request['newPassword']);
-                $users->encrypted_password = Crypt::encryptString($request['newPassword']);
-                $users->activo = 1;
-                $users->save();
-                return response()->json(['success' => 'Cambio de contraseña exitosa.'], 201);
+                if(\Hash::check($request['newPassword'], $request['encryptPassword'])) {
+                    $users->password = $request['encryptPassword'];
+                    $users->encrypted_password = Crypt::encryptString($request['newPassword']);
+                    $users->activo = 1;
+                    $users->save();
+
+                    DB::commit();
+                    return array(
+                        'estado'=> true,
+                        'descripcion' => 'Contraseña cambiada correctamente'
+                        );
+                } else {
+                    return array(
+                        'estado'=> false,
+                        'descripcion' => 'Escribar correctamente su contraseña por favor'
+                        );
+                }
+                
             } else {
-                return response()->json(['error' => 'Contraseña actual incorrecta.'], 400);
+                return array(
+                    'estado'=> false,
+                    'descripcion' => 'Contraseña incorrecta'
+                    );
             }
         } catch (\Throwable $th) {
+            DB::rollBack();
             throw $th;
         }
     }
