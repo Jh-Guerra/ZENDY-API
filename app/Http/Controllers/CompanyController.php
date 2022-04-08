@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\uploadImageController;
 use App\Models\Company;
 use App\Models\CompanyHorario;
+use App\Models\rutCompanies;
 use App\Models\User;
 use App\Models\UserCompany;
 use Carbon\Carbon;
@@ -328,7 +329,7 @@ class CompanyController extends Controller
             $empresa->save();
         }
     }
-
+    //QUITAR RUC DE COLUMNA COMPANIES EN USERS
     public function prueba()
     {
         $Companies = User::where('companies','LIKE','%-%')->get();
@@ -348,4 +349,67 @@ class CompanyController extends Controller
         }
             return $user;
     }
+
+    public function rut_companies(){
+
+        try {
+
+        $companies = Company::where('helpDesks','<>', null)->whereNotIn('ruc', ['76017114-k', '22222222-2','20608358243'])->get();
+
+        for ($i=0; $i <count($companies) ; $i++) {
+                $newRut = new rutCompanies;
+                $newRut->id_companies = $companies[$i]['id'];
+                $newRut->ruc = $companies[$i]['ruc'];
+                $newRut->estado = 0;
+                $newRut->save();
+            }
+
+        return 'Tabla completada';
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function searchRuc(Request $request){
+
+        try {
+            $companie = Company::where('ruc',$request->ruc)->first();
+            if (isset($companie)) {
+                return array('status' => true,
+                            'url' => null,
+                            'empresa' => $companie);
+            }else{
+                return array('status' => false,
+                            'url' => 'Link de redireccion a vista de carga para enviar solicitud de agregar empresa a Zendy',
+                            'empresa' => false);
+            }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function usernameRuc(Request $request)
+    {
+       $companies = Company::where('ruc',$request->ruc)->first(); 
+       if(isset($companies)){
+            $username = User::where('username',$request->username)->where('companies','["'.$companies->id.'"]')->first();
+            if (isset($username)) {
+                $datos[] = $username;
+                $datos[] = $companies;
+                return array('status' => true,
+                        'descripcion' => 'Datos correctos',
+                        'datos' => $datos);
+            }else{
+                return array('status' => false,
+                        'descripcion' => 'Nombre de usuario inválido',
+                        'datos'=> null);
+            }
+       }else{
+           return array('status' => false,
+                        'descripcion' => 'Ruc inválido',
+                        'datos'=> null);
+       }
+    }
+
+
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\messageNotification;
 use App\Events\notificationMessage;
 use App\Events\sendMessage;
 use App\Models\Participant;
@@ -67,6 +68,18 @@ class MessageController extends Controller
         event(new sendMessage($message, $request["idChat"], $user));
 
         $this->sendNotification($user, $participants, $message,$request["idChat"]);
+
+        $avatar = !!isset($user->avatar) ? $user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg';
+        $contenido = [
+            'idChat'     => $request["idChat"],
+            'idUser'     => $user->id,
+            'usuario'    => $user->firstName,
+            'avatar'     => $avatar,
+            'mensaje'    => $request["message"],
+        ];
+        foreach ($participants as $participant) {
+            event(new messageNotification($participant["idUser"], $contenido));
+        }
 
         return response()->json(compact('message'), 201);
 

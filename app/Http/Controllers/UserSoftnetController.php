@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\datosUsuarios;
+use App\Models\rutCompanies;
 use App\Models\TokenSoftnet;
 use App\Models\User;
+use App\Models\UserCompany;
+use App\Models\usuariosZendy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +23,6 @@ class UserSoftnetController extends Controller
         try {
 
             // $token = $this->getTokenSofnet();
-            $token = '4d1fa790461dd28750d26c82c63359a4a8f2f55b103e6b72f837d2ac0c470c517a5425153de539337ec506b67df98939b4af70339400d8d9c88c00124584980e';
 
             $token = TokenSoftnet::all();
 
@@ -76,66 +79,114 @@ class UserSoftnetController extends Controller
     {
 
         try {
-            $data = $this->getUsers();
-            // return count($data);
+            $data = usuariosZendy::all();
             $count = 0;
-            // return $data[0];
-            for ($i = 0; $i < count($data); $i++) {
-                foreach ($data[$i] as $array_data) {
-                    $rut_empresa            = $array_data['rut_empresa'];
-                    $rut_usuario            = $array_data['rut_usuario'];
-                    $nombre                 = $array_data['nombre'];
-                    $usuario                = $array_data['usuario'];
-                    $email                  = $array_data['email'];
 
-                    $company = Company::where('ruc', $rut_empresa)->first();
-                    $user = User::where('username', $usuario)->where('companies', '["'.$company->id.'"]')->first();
-                    if (isset($company)) {
-                        if (!isset($user)) {
-                            $userCreate = new User;
-                            $userCreate->username = $usuario;
-                            $userCreate->firstName = $nombre;
-                            $userCreate->lastName = '';
-                            $userCreate->email = $email;
-                            $userCreate->password = bcrypt('zendy2022');
-                            $userCreate->encrypted_password = Crypt::encryptString('zendy2022');
-                            $userCreate->dob = date("Y-m-d");
-                            $userCreate->phone = '';
-                            $userCreate->sex = '';
-                            $userCreate->idRole = 5;
-                            $userCreate->companies = '["' . $company->id . '"]';
-                            $userCreate->avatar = null;
-                            $userCreate->isOnline = 0;
-                            $userCreate->deleted = 0;
-                            $userCreate->email_verified_at = null;
-                            $userCreate->remember_token = null;
-                            $userCreate->device_token = null;
-                            $userCreate->created_at = now();
-                            $userCreate->updated_at = now();
-                            $userCreate->activo = 0;
-                            $userCreate->save();
+            foreach ($data as $value) {
 
-                            $count++;
-                        }
-                    } else {
+                $company = Company::where('ruc', $value['ruc'])->first();
+                $user = User::where('username', $value['username'])->where('companies', '["' . $company->id . '"]')->first();
+                if (isset($company)) {
+                    if (!isset($user)) {
+                        $userCreate = new User;
+                        $userCreate->username = $value['username'];
+                        $userCreate->firstName = $value['nombre'];
+                        $userCreate->lastName = '';
+                        $userCreate->email = $value['email'];
+                        $userCreate->password = bcrypt('zendy2022');
+                        $userCreate->encrypted_password = null;
+                        $userCreate->dob = date("Y-m-d");
+                        $userCreate->phone = '';
+                        $userCreate->sex = '';
+                        $userCreate->idRole = 5;
+                        $userCreate->companies = '["' . $company->id . '"]';
+                        $userCreate->avatar = null;
+                        $userCreate->isOnline = 0;
+                        $userCreate->deleted = 0;
+                        $userCreate->email_verified_at = null;
+                        $userCreate->remember_token = null;
+                        $userCreate->device_token = null;
+                        $userCreate->created_at = now();
+                        $userCreate->updated_at = now();
+                        $userCreate->activo = 0;
+                        $userCreate->save();
+
+                        $relaCompany = new UserCompany;
+                        $relaCompany->idUser = $userCreate->id;
+                        $relaCompany->username = $value['username'];
+                        $relaCompany->idCompany = $company->id;
+                        $relaCompany->rutCompany = $value['ruc'];
+                        $relaCompany->deleted = 0;
+                        $relaCompany->created_at = now();
+                        $relaCompany->updated_at = now();
+                        $relaCompany->save();
+
+                        $count++;
                     }
                 }
-                if ($count == 0) {
-                    return array(
-                        'status' => false,
-                        'descripcion' => 'No hay datos que sincronizar',
-                        'cantidad' => $count
-                    );
+            }
+            if ($count == 0) {
+                return array(
+                    'status' => false,
+                    'descripcion' => 'No hay datos que sincronizar',
+                    'cantidad' => $count
+                );
+           } 
+
+            DB::commit();
+            return array(
+                'status' => true,
+                'descripcion' => 'Data sincronizada',
+                'cantidad' => $count
+            );
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw $th;
+        }
+    }
+
+    public function usersERP()
+    {
+        try {
+            $company = rutCompanies::All();
+
+            $count = 0;
+            if (isset($company)) {
+                foreach ($company as $value) {
+
+                    $users = datosUsuarios::where('rut', $value->ruc)->get();
+
+                    if (isset($users)) {
+
+                        for ($i = 0; $i < count($users); $i++) {
+                            $userZendy = new usuariosZendy;
+                            $userZendy->ruc      = $users[$i]['rut'];
+                            $userZendy->username = $users[$i]['user'];
+                            $userZendy->email    = $users[$i]['nombre_e'];
+                            $userZendy->nombre   = $users[$i]['nombre_p'];
+                            $userZendy->estado   = 0;
+                            $userZendy->save();
+                            $count++;
+                        }
+
+                        $updateCompanies = Company::findOrFail($value->id_companies);
+                        $updateCompanies->estadoSync = 1;
+                        $updateCompanies->save();
+                    }
                 }
-                DB::commit();
                 return array(
                     'status' => true,
-                    'descripcion' => 'Data sincronizada',
-                    'cantidad' => $count
+                    'descripcion' => 'Todos los usuarios han sido sincronizados',
+                    'cantidadUsers' => $count
+                );
+            } else {
+                return array(
+                    'status' => false,
+                    'descripcion' => 'No hay nuevos usuarios que sincronizar',
+                    'cantidadUsers' => $count
                 );
             }
         } catch (\Throwable $th) {
-            DB::rollBack();
             throw $th;
         }
     }

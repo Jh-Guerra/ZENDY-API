@@ -31,3 +31,7 @@ Broadcast::channel('user.{id}', function ($user, $id) {
 Broadcast::channel('consulta.{id}', function ($user, $id) {
     return (int)$user->id === (int)$id;
 });
+
+Broadcast::channel('mensaje.{id}', function ($user, $id) {
+    return (int)$user->id === (int)$id;
+});

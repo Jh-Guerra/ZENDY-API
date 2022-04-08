@@ -19,23 +19,25 @@ use JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Crypt;
+use Swift;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class UserController extends Controller
 {
 
-    public function authenticate(Request $request){
+    public function authenticate(Request $request)
+    {
         $credentials = $request->only('username', 'password', 'rut');
 
         try {
-            if($credentials["rut"]){
+            if ($credentials["rut"]) {
                 $userCompany = UserCompany::where("username", $credentials["username"])->where("rutCompany", $credentials["rut"])->where("deleted", false)->first();
-                if(!$userCompany) return response()->json(['error' => 'Credenciales inválidas'], 400);
+                if (!$userCompany) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
                 $user = User::where("id", $userCompany->idUser)->where("deleted", false)->first();
-                if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
+                if (!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
-                if(!\Hash::check($request->password, $user->password)) return response()->json(['error' => 'Credenciales inválidas'], 400);
+                if (!\Hash::check($request->password, $user->password)) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
                 $company = Company::where("ruc", $credentials["rut"])->where("deleted", false)->first();
                 $user->idCompany = $company->id;
@@ -45,38 +47,37 @@ class UserController extends Controller
                 $role->permissions = json_decode($role->permissions, true);
                 $role->sectionIds = json_decode($role->sectionIds, true);
 
-                if($company->isHelpDesk){
+                if ($company->isHelpDesk) {
                     //es mesa de ayuda
                     $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
-                    if($user->idRole == 5){
+                    if ($user->idRole == 5) {
                         $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(2, 3, 4, 19)));
-                    }else{
+                    } else {
                         $sections = $sections->whereIn("id", $role->sectionIds);
                     }
                     $role->sections = $sections->get();
-                }else {
-                    if($user->idRole == 4){
+                } else {
+                    if ($user->idRole == 4) {
                         return response()->json(['error' => 'El RUT no pertenece a una Mesa de Ayuda.'], 400);
                     } else {
                         $sections = Section::where("active", true)->where("deleted", false)->orderBy("order");
-                        if(!$company->helpDesks || count(json_decode($company->helpDesks, true)) < 1){
+                        if (!$company->helpDesks || count(json_decode($company->helpDesks, true)) < 1) {
                             $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(2, 3, 4, 19)));
-                        }else{
+                        } else {
                             $sections = $sections->whereIn("id", $role->sectionIds);
                         }
-                        if($user->idRole == 3 || $user->idRole == 4){
+                        if ($user->idRole == 3 || $user->idRole == 4) {
                             $sections = $sections->whereIn("id", array_diff($role->sectionIds, array(5)));
                         }
                         $role->sections = $sections->get();
                     }
-
                 }
 
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
 
                 $company->helpDesks = json_decode($company->helpDesks, true);
                 $helpDesks = $company->helpDesks;
-                if($helpDesks && count($helpDesks) > 0){
+                if ($helpDesks && count($helpDesks) > 0) {
                     $firstHelpDesk = Company::where("id", $helpDesks[0])->where("deleted", false)->first();
                     $user->helpDesk = $firstHelpDesk;
                     $user->idHelpDesk = $firstHelpDesk->id;
@@ -84,11 +85,11 @@ class UserController extends Controller
 
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
-            }else{
+            } else {
                 $user = User::where("username", $credentials["username"])->where("deleted", false)->first();
-                if(!$user || $user->idRole!=1) return response()->json(['error' => 'Credenciales inválidas'], 400);
+                if (!$user || $user->idRole != 1) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
-                if(!\Hash::check($request->password, $user->password)) return response()->json(['error' => 'Credenciales inválidas'], 400);
+                if (!\Hash::check($request->password, $user->password)) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
                 $user->idCompany = null;
                 $role = Role::find($user->idRole);
@@ -153,7 +154,7 @@ class UserController extends Controller
                 ->where('users_companies.rutCompany', $request->rut)
                 ->first();
 
-            if(is_null($userCompany)){
+            if (is_null($userCompany)) {
                 return response()->json(['error' => 'Credenciales inválidas'], 400);
             }
 
@@ -172,13 +173,9 @@ class UserController extends Controller
             $respuesta = $this->authenticate($request);
 
             return response()->json([$respuesta], 200);
-
-
         } catch (\Throwable $th) {
             throw $th;
         }
-
-
     }
 
     protected function respondWithToken($token)
@@ -186,36 +183,37 @@ class UserController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer'
-           // 'expires_in' => auth()->factory()->getTTL() * 60
+            // 'expires_in' => auth()->factory()->getTTL() * 60
         ]);
     }
 
 
-    public function authenticateErp(Request $request){
+    public function authenticateErp(Request $request)
+    {
         $credentials = $request->only('username', 'password', 'rut');
 
-        if($credentials["rut"]){
+        if ($credentials["rut"]) {
             $userCompany = UserCompany::where("username", $credentials["username"])->where("rutCompany", $credentials["rut"])
                 ->where("deleted", false)->first();
-            if(!$userCompany) return response()->json(['error' => 'Credenciales inválidas'], 400);
+            if (!$userCompany) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
             $user = User::where("id", $userCompany->idUser)->where("deleted", false)->first();
-            if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
+            if (!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
             $hashedPassword = $credentials["password"];
             $decryptedPassword = Crypt::decryptString($user->encrypted_password);
-            if(!\Hash::check($decryptedPassword, $hashedPassword)) return response()->json(['error' => 'Credenciales inválidas'], 400);
+            if (!\Hash::check($decryptedPassword, $hashedPassword)) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
             $company = Company::where("id", $userCompany->idCompany)->where("deleted", false)->first();
             $user->idCompany = $company->id;
             $user->company = $company;
-        }else{
+        } else {
             $user = User::where("username", $credentials["username"])->where("idRole", 1)->where("deleted", false)->first();
-            if(!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
+            if (!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
             $hashedPassword = $credentials["password"];
             $decryptedPassword = Crypt::decryptString($user->encrypted_password);
-            if(!\Hash::check($decryptedPassword, $hashedPassword)) return response()->json(['error' => 'Credenciales inválidas'], 400);
+            if (!\Hash::check($decryptedPassword, $hashedPassword)) return response()->json(['error' => 'Credenciales inválidas'], 400);
         }
 
         $role = Role::find($user->idRole);
@@ -226,7 +224,6 @@ class UserController extends Controller
         try {
             $token = JWTAuth::fromUser($user);
             if (!$token) return response()->json(['error' => 'Credenciales inválidas3'], 400);
-
         } catch (JWTException $e) {
             return response()->json(['error' => 'could_not_create_token'], 500);
         }
@@ -234,7 +231,8 @@ class UserController extends Controller
         return response()->json(compact('token', 'user', 'role'));
     }
 
-    public function getAuthenticatedUser(){
+    public function getAuthenticatedUser()
+    {
         try {
             if (!$user = JWTAuth::parseToken()->authenticate()) {
                 return response()->json(['user_not_found'], 404);
@@ -251,7 +249,8 @@ class UserController extends Controller
     }
 
 
-    public function register(Request $request){
+    public function register(Request $request)
+    {
         $error = $this->validateFields($request);
         if ($error) return response()->json($error, 400);
 
@@ -261,22 +260,23 @@ class UserController extends Controller
         $user->encrypted_password = Crypt::encryptString($request->password);
         $user->save();
 
-        if($request->hasFile('image')){
+        if ($request->hasFile('image')) {
             $tasks_controller = new uploadImageController;
-            $user->avatar = $tasks_controller->updateFile($request->file('image'), "users/avatar", $user->id."_".Carbon::now()->timestamp);
+            $user->avatar = $tasks_controller->updateFile($request->file('image'), "users/avatar", $user->id . "_" . Carbon::now()->timestamp);
             $user->save();
         }
 
-        if($user->idRole != 1){
+        if ($user->idRole != 1) {
             $this->updateUserCompanies($user, $request);
         }
 
         $token = JWTAuth::fromUser($user); // ??
 
         return response()->json(compact('user', 'token'), 201);
-    }//
+    } //
 
-    public function update(Request $request, $id){
+    public function update(Request $request, $id)
+    {
         $user = User::find($id);
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
@@ -286,28 +286,29 @@ class UserController extends Controller
         $this->updateUserValues($user, $request);
         $user->save();
 
-        if($request->oldImage){
+        if ($request->oldImage) {
             $newImage = substr($request->oldImage, 8);
-            $image_path = storage_path().'/app/public/'."".$newImage;
-            if (@getimagesize($image_path)){
+            $image_path = storage_path() . '/app/public/' . "" . $newImage;
+            if (@getimagesize($image_path)) {
                 unlink($image_path);
             }
         }
 
-        if($request->hasFile('image')){
+        if ($request->hasFile('image')) {
             $tasks_controller = new uploadImageController;
-            $user->avatar = $tasks_controller->updateFile($request->file('image'), "users/avatar", $user->id."_".Carbon::now()->timestamp);
+            $user->avatar = $tasks_controller->updateFile($request->file('image'), "users/avatar", $user->id . "_" . Carbon::now()->timestamp);
             $user->save();
         }
 
-        if($user->idRole != 1){
+        if ($user->idRole != 1) {
             $this->updateUserCompanies($user, $request);
         }
 
         return response()->json($user);
     }
 
-    private function validateFields($request){
+    private function validateFields($request)
+    {
         $validator = Validator::make($request->all(), [
             'firstName' => 'required|string|max:80',
             'lastName' => 'required|string|max:80',
@@ -320,21 +321,21 @@ class UserController extends Controller
 
         $errorMessage = null;
         if (!$validator->fails()) {
-            if($request->idRole != 1){
+            if ($request->idRole != 1) {
                 $userCompany = UserCompany::where("username", $request->username)->whereIn("idCompany", $request->companies ? $request->companies : [])
                     ->where("deleted", false)->first();
-                if($userCompany){
+                if ($userCompany) {
                     if (!$request->id || ($userCompany->idUser != $request->id)) {
                         $company = Company::find($userCompany->idCompany);
                         $errorMessage = new \stdClass();
                         $errorMessage->email = [
-                            "El nombre de usuario ya existe en la empresa ".$company->name
+                            "El nombre de usuario ya existe en la empresa " . $company->name
                         ];
                     }
                 }
-            }else{
+            } else {
                 $user = User::where("username", $request->username)->where("idRole", 1)->where("deleted", false)->first();
-                if($user){
+                if ($user) {
                     if (!$request->id || ($user->id != $request->id)) {
                         $errorMessage = new \stdClass();
                         $errorMessage->email = [
@@ -343,7 +344,6 @@ class UserController extends Controller
                     }
                 }
             }
-
         } else {
             $errorMessage = $validator->errors()->toJson();
         }
@@ -351,7 +351,8 @@ class UserController extends Controller
         return $errorMessage;
     }
 
-    private function updateUserValues($user, $request){
+    private function updateUserValues($user, $request)
+    {
         $user->firstName = $request->firstName;
         $user->lastName = $request->lastName;
         $user->username = $request->username;
@@ -361,12 +362,13 @@ class UserController extends Controller
         $user->dob = date('Y-m-d', strtotime($request->dob));
         $user->idRole = $request->idRole;
         $user->companies = $request->companies ? json_encode($request->companies, true) : null;
-        if($request->avatar){
+        if ($request->avatar) {
             $user->avatar = $request->avatar;
         }
     }
 
-    public function updateUserCompanies($user, $request){
+    public function updateUserCompanies($user, $request)
+    {
         $userCompanies = UserCompany::where("idUser", $user->id)->where("deleted", false)->pluck("id");
         UserCompany::destroy($userCompanies);
 
@@ -387,12 +389,13 @@ class UserController extends Controller
         UserCompany::insert($newUserCompanies);
     }
 
-    public function find($id){
+    public function find($id)
+    {
         $user = User::find($id);
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
         $user->companies = $user->companies ? json_decode($user->companies, true) : [];
-        if(count($user->companies) > 0){
+        if (count($user->companies) > 0) {
             $companies = Company::whereIn("id", $user->companies)->where("deleted", false)->get();
             $user->mappedCompanies = $companies;
         }
@@ -400,7 +403,8 @@ class UserController extends Controller
         return $user;
     }
 
-    public function list(Request $request){
+    public function list(Request $request)
+    {
         $term = $request->has("term") ? $request->get("term") : "";
 
         $users = User::join('roles', 'users.idRole', '=', 'roles.id')
@@ -412,17 +416,19 @@ class UserController extends Controller
         return $users;
     }
 
-    public function addObjectValues($users, $idCompany){
+    public function addObjectValues($users, $idCompany)
+    {
         $company = Company::find($idCompany);
 
-        if($company){
+        if ($company) {
             foreach ($users as $user) {
                 $user->company = $company;
             }
         }
     }
 
-    public function listAvailable(Request $request){
+    public function listAvailable(Request $request)
+    {
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
@@ -431,12 +437,12 @@ class UserController extends Controller
         $roles = $request->has("roles") ? $request->get("roles") : [];
         $users = User::join('roles', 'roles.id', '=', 'users.idRole')
             ->where('users.deleted', false)
-            ->where('users.companies', 'LIKE', '%' . "\"".$idCompany."\"" . '%')
+            ->where('users.companies', 'LIKE', '%' . "\"" . $idCompany . "\"" . '%')
             ->where('users.id', '!=', $user->id)
             ->whereIn('roles.name', $roles);
 
         $term = $request->has("term") ? $request->get("term") : "";
-        if($term){
+        if ($term) {
             $users->where(function ($query) use ($term) {
                 $query->where('firstName', 'LIKE', '%' . $term . '%')
                     ->orWhere('lastName', 'LIKE', '%' . $term . '%');
@@ -449,7 +455,8 @@ class UserController extends Controller
         return $users;
     }
 
-    public function listAdmins(Request $request){
+    public function listAdmins(Request $request)
+    {
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
@@ -458,7 +465,7 @@ class UserController extends Controller
             ->where('roles.name', "SuperAdmin");
 
         $term = $request->has("term") ? $request->get("term") : "";
-        if($term){
+        if ($term) {
             $users->where(function ($query) use ($term) {
                 $query->where('firstName', 'LIKE', '%' . $term . '%')
                     ->orWhere('lastName', 'LIKE', '%' . $term . '%');
@@ -470,7 +477,8 @@ class UserController extends Controller
         return $users;
     }
 
-    public function listByCompany($idCompany, Request $request){
+    public function listByCompany($idCompany, Request $request)
+    {
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
@@ -480,10 +488,10 @@ class UserController extends Controller
 
         $users = User::join('roles', 'roles.id', '=', 'users.idRole')
             ->where('users.deleted', false)
-            ->where('users.companies', 'LIKE', '%' . "\"".$idCompany."\"" . '%')
+            ->where('users.companies', 'LIKE', '%' . "\"" . $idCompany . "\"" . '%')
             ->where("users.id", "!=", $user->id);
 
-        if($term){
+        if ($term) {
             $users->where(function ($query) use ($term) {
                 $query->where('users.firstName', 'LIKE', '%' . $term . '%')
                     ->orWhere('users.lastName', 'LIKE', '%' . $term . '%');
@@ -495,7 +503,8 @@ class UserController extends Controller
         return $users;
     }
 
-    public function searchUser($users, $term){
+    public function searchUser($users, $term)
+    {
         if ($term) {
             $users->where(function ($query) use ($term) {
                 $query->where('firstName', 'LIKE', '%' . $term . '%')
@@ -503,19 +512,20 @@ class UserController extends Controller
             });
         }
     }
-    
-    public function searchOnlyUser(Request $request){
 
-            $term = $request->term;
-            $users = User::where('deleted', '!=', true)
-                        ->where('firstName', 'LIKE', '%' . $term . '%')
-                        ->orWhere('lastName', 'LIKE', '%' . $term . '%')
-                        ->get();
-            return $users;
-        
+    public function searchOnlyUser(Request $request)
+    {
+
+        $term = $request->term;
+        $users = User::where('deleted', '!=', true)
+            ->where('firstName', 'LIKE', '%' . $term . '%')
+            ->orWhere('lastName', 'LIKE', '%' . $term . '%')
+            ->get();
+        return $users;
     }
 
-    public function delete($id){
+    public function delete($id)
+    {
         $user = User::find($id);
 
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
@@ -528,12 +538,14 @@ class UserController extends Controller
         return response()->json(['success' => 'Usuario Eliminado'], 201);
     }
 
-    public function listUserOnline(){
+    public function listUserOnline()
+    {
         return User::where('isOnline', '!=', false)->orderBy("LastName")->get();
     }
 
 
-    public function updateUserOffLine(Request $request, $id){
+    public function updateUserOffLine(Request $request, $id)
+    {
 
         $user = User::find($id);
 
@@ -550,7 +562,8 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    public function updateUserOnLine(Request $request, $id){
+    public function updateUserOnLine(Request $request, $id)
+    {
 
         $user = User::find($id);
 
@@ -564,24 +577,26 @@ class UserController extends Controller
         return response()->json($user);
     }
 
-    public function deleteImage(Request $request){
+    public function deleteImage(Request $request)
+    {
         $imageLink = $request->imageLink;
         $userId = $request->id;
 
         $user = User::find($userId);
-        $image_path = storage_path().'/app/public/'."".$imageLink;
-        if (@getimagesize($image_path) && $user){
+        $image_path = storage_path() . '/app/public/' . "" . $imageLink;
+        if (@getimagesize($image_path) && $user) {
             unlink($image_path);
             $user->avatar = null;
             $user->save();
 
-            return response()->json(compact('user'),201);
-        }else{
+            return response()->json(compact('user'), 201);
+        } else {
             return response()->json(['error' => 'Usuario no encontrada / Archivo no encontrado'], 400);
         }
     }
 
-    public function listSameCompany(Request $request){
+    public function listSameCompany(Request $request)
+    {
         $start = 0;
         $limit = 50;
         $user = Auth::user();
@@ -589,7 +604,7 @@ class UserController extends Controller
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
 
         $users = User::join('roles', 'users.idRole', '=', 'roles.id')
-            ->where('users.companies', 'LIKE', '%' . "\"".$idCompany."\"" . '%')
+            ->where('users.companies', 'LIKE', '%' . "\"" . $idCompany . "\"" . '%')
             ->where('users.deleted', '!=', true);
         $this->searchUser($users, $term);
 
@@ -601,7 +616,8 @@ class UserController extends Controller
         return $users;
     }
 
-    public function listCompanyNotify(Request $request){
+    public function listCompanyNotify(Request $request)
+    {
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
@@ -609,7 +625,7 @@ class UserController extends Controller
 
         $users = Company::where('companies.deleted', false);
 
-        if($term){
+        if ($term) {
             $users->where(function ($query) use ($term) {
                 $query->where('companies.name', 'LIKE', '%' . $term . '%');
             });
@@ -668,7 +684,6 @@ class UserController extends Controller
 
             User::insert($newUsers);
             return response()->json("Import exitoso, " . count($newUsers) . " usuarios registrados", 201);
-
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -700,16 +715,17 @@ class UserController extends Controller
         }
     }
 
-    public function findUserByUserName($userName, Request $request){
+    public function findUserByUserName($userName, Request $request)
+    {
         $rut = $request->has("rut") ? $request->get("rut") : "";
 
-        if($rut){
+        if ($rut) {
             $userCompany = UserCompany::where("username", $userName)->where("rutCompany", $rut)->where("deleted", false)->first();
             if (!$userCompany) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
             $user = User::where("id", $userCompany->idUser)->where("deleted", false)->first();
             if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
-        }else{
+        } else {
             $user = User::where('username', $userName)->where("idRole", 1)->where('deleted', false)->first();
             if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
@@ -717,7 +733,8 @@ class UserController extends Controller
         return $user;
     }
 
-    public function changeHelpDesk($id, Request $request){
+    public function changeHelpDesk($id, Request $request)
+    {
         $user = User::find($id);
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
@@ -729,5 +746,38 @@ class UserController extends Controller
 
         return response()->json(compact('token', 'user'));
     }
-}
 
+    public function existsUser(Request $request)
+    {
+        $user = UserCompany::where('username', $request['username'])->where('rutCompany', $request['rut'])->first();
+        if (isset($user)) {
+            $user = User::where('id', $user->idUser)->first();
+            if ($user->activo == 0) {
+                return "Contraseña no cambiada";
+            } else {
+                return "Contraseña cambiada";
+            }
+        } else {
+            return "Usuario no encontrado";
+        }
+    }
+
+    public function changePassword(Request $request, $id)
+    {
+        try {
+            $users = User::find($id);
+
+            if (\Hash::check($request['password'], $users->password)) {
+                $users->password = bcrypt($request['newPassword']);
+                $users->encrypted_password = Crypt::encryptString($request['newPassword']);
+                $users->activo = 1;
+                $users->save();
+                return response()->json(['success' => 'Cambio de contraseña exitosa.'], 201);
+            } else {
+                return response()->json(['error' => 'Contraseña actual incorrecta.'], 400);
+            }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+}

@@ -73,18 +73,21 @@ class EntryQueryController extends Controller
 
         -$HD = '["' . $request["idHelpdesk"] . '"]';
         $users = User::where('companies', $HD)->where('idRole', 4)->get();
+        $mensaje = "Se ha presentado una nueva consulta, haz clic aquí para redirigirte hacia ella";
+        $avatar = !!isset($user->avatar) ? $user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg';
         $contenido = [
             'modulo'     => Module::where('id', $request["idModule"])->first()->name,
             'idConsulta' => $entryQuery->id,
             'idUser'     => $user->id,
             'usuario'    => $user->firstName,
-            'avatar'     => !!isset($user->avatar) ? $user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg',
-            'mensaje'    => "Se ha presentado una nueva consulta, haz clic aquí para redirigirte hacia ella",
+            'avatar'     => $avatar,
+            'mensaje'    => $mensaje,
         ];
 
         $i = 0;
         while ($i < count($users)) {
             event(new ConsultaNotification($users[$i]['id'], $contenido));
+            $this->sendNotification($user->id, $users[$i]['id'], $mensaje, $entryQuery->id, $avatar);
             $i++;
         }
 
@@ -177,60 +180,60 @@ class EntryQueryController extends Controller
         return response()->json(compact('entryQuery'), 201);
     }
 
-    // public function sendNotification($user, $participants, $message, $consulta)
-    //     {
+    public function sendNotification($user, $participants, $message, $consulta, $avatar)
+        {
 
-    //         $firebaseToken= [];
-    //         for ($i=0; $i <count($participants); $i++) {
+            $firebaseToken= [];
+            for ($i=0; $i <count($participants); $i++) {
 
-    //             $firebaseToken[$i] = User::where('id','=',$participants[$i]->id)
-    //                                     ->select('device_token')
-    //                                     ->first()
-    //                                     ->device_token;
+                $firebaseToken[$i] = User::where('id','=',$participants[$i]->id)
+                                        ->select('device_token')
+                                        ->first()
+                                        ->device_token;
 
-    //         }
+            }
 
 
-    //         $linkus = "/consultas/".$consulta;
+            $linkus = "/consultas/".$consulta;
 
-    //         // $firebaseToken = User::where('id', $request->usuario)
-    //         //                 ->pluck('device_token')
-    //         //                 ->all();
-    //         // $firebaseToken = User::whereNotNull('device_token')->pluck('device_token')->all();
+            // $firebaseToken = User::where('id', $request->usuario)
+            //                 ->pluck('device_token')
+            //                 ->all();
+            // $firebaseToken = User::whereNotNull('device_token')->pluck('device_token')->all();
 
-    //         $SERVER_API_KEY = 'AAAAIRNx9HA:APA91bFmqjiXmsV4kTGSiTcy2qC-ShtiGFJK9M2MupnYV_Cci4QWrc1Y7R6KA8DhSIO_-a49OaFNo1CCN1EbpB_ClerGdxAAqgJtTrTULuAYof42LYaI_JmVKbl54x1hKgXfZooYWxt4';
+            $SERVER_API_KEY = 'AAAAIRNx9HA:APA91bFmqjiXmsV4kTGSiTcy2qC-ShtiGFJK9M2MupnYV_Cci4QWrc1Y7R6KA8DhSIO_-a49OaFNo1CCN1EbpB_ClerGdxAAqgJtTrTULuAYof42LYaI_JmVKbl54x1hKgXfZooYWxt4';
 
-    //         $data = [
-    //             "registration_ids" => $firebaseToken,
-    //             "notification" => [
-    //                 "title" => $user->firstName." te envió un mensaje",
-    //                 "body" => $message->message,
-    //                 "icon" => "https://www.zendy.cl/static/media/logo.30d6b517.png",
-    //                 "click_action" => $linkus,
-    //                 "content_available" => true,
-    //                 "priority" => "high",
-    //             ]
-    //         ];
-    //         $dataString = json_encode($data);
+            $data = [
+                "registration_ids" => $firebaseToken,
+                "notification" => [
+                    "title" => $user->firstName." te envió un mensaje",
+                    "body" => $message->message,
+                    "icon" => "https://www.zendy.cl/static/media/logo.30d6b517.png",
+                    "click_action" => $linkus,
+                    "content_available" => true,
+                    "priority" => "high",
+                ]
+            ];
+            $dataString = json_encode($data);
 
-    //         $headers = [
-    //             'Authorization: key=' . $SERVER_API_KEY,
-    //             'Content-Type: application/json',
-    //         ];
+            $headers = [
+                'Authorization: key=' . $SERVER_API_KEY,
+                'Content-Type: application/json',
+            ];
 
-    //         $ch = curl_init();
+            $ch = curl_init();
 
-    //         curl_setopt($ch, CURLOPT_URL, 'https://fcm.googleapis.com/fcm/send');
-    //         curl_setopt($ch, CURLOPT_POST, true);
-    //         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    //         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    //         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    //         curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
+            curl_setopt($ch, CURLOPT_URL, 'https://fcm.googleapis.com/fcm/send');
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
 
-    //         $response = curl_exec($ch);
+            $response = curl_exec($ch);
 
-    // return $response;
-    //}
+    return $response;
+    }
 
     private function validateFields($request)
     {

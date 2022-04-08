@@ -45,9 +45,9 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update-password/{id}', 'App\Http\Controllers\UserController@updatePassword');
         Route::post('/changeHelpDesk/{id}', 'App\Http\Controllers\UserController@changeHelpDesk');
         Route::post('/searchUsers', 'App\Http\Controllers\UserController@searchOnlyUser');
+        Route::post('/existsUser', 'App\Http\Controllers\UserController@existsUser');
+        Route::post('/changePassword/{id}', 'App\Http\Controllers\UserController@changePassword');
         
-
-
     });
 
     Route::prefix('roles')->group(function () {
@@ -67,6 +67,10 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/deleteImage', 'App\Http\Controllers\CompanyController@deleteImage');
         Route::post('/import-erp', 'App\Http\Controllers\CompanyController@importERPCompanies');
         Route::post('/searchCompany', 'App\Http\Controllers\CompanyController@searchCompany');
+        Route::post('/searchRuc', 'App\Http\Controllers\CompanyController@searchRuc');
+        Route::post('/usernameRuc', 'App\Http\Controllers\CompanyController@usernameRuc');
+        Route::post('/sendRequestEntity', 'App\Http\Controllers\SendRequestNewEntity@SendRequest');
+        
     });
 
     Route::prefix('chats')->group(function () {
@@ -191,12 +195,14 @@ Route::group(['middleware' => ['jwt.verify']], function() {
 
     Route::prefix('prueba')->group(function () {
         Route::post('/', 'App\Http\Controllers\CompanyController@prueba');
+        Route::post('/syncEntity', 'App\Http\Controllers\CompanyController@rut_companies');//1. Crear datos con companies -3 ruts y -helpDesks nulos
     });
 
     Route::prefix('syncUsers')->group(function () {
-         Route::post('/', 'App\Http\Controllers\UserSoftnetController@insertUsers');
+         Route::post('/', 'App\Http\Controllers\UserSoftnetController@insertUsers');//3. Pasa registros de tabla usuarios_zendy hacia users y general relaciones en users_companies
          Route::post('/updateToken', 'App\Http\Controllers\UserSoftnetController@getTokenSofnet');
+         Route::post('/usersERP', 'App\Http\Controllers\UserSoftnetController@usersERP');//2. Pasa registros de datos_usuarios hacie usuarios_zendy solo cuando su ruc es igual a companies
      });
-
+    
 
 });
