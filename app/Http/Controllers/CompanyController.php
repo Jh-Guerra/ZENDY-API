@@ -24,17 +24,17 @@ class CompanyController extends Controller
         }
 
         // dd($request->horarioEntradaLV);
-        $horario = new CompanyHorario();
-        $horario->Dias = $request->Dias;
-        $horario->MedioDia = $request->MedioDia;
-        $horario->HorarioIngreso = $request->HorarioIngreso;
-        $horario->HorarioSalida = $request->HorarioSalida;
-        $horario->HorarioIngresoMD = $request->HorarioIngresoMD;
-        $horario->HorarioSalidaMD = $request->HorarioSalidaMD;
-        $horario->save();
+        // $horario = new CompanyHorario();
+        // $horario->Dias = $request->Dias;
+        // $horario->MedioDia = $request->MedioDia;
+        // $horario->HorarioIngreso = $request->HorarioIngreso;
+        // $horario->HorarioSalida = $request->HorarioSalida;
+        // $horario->HorarioIngresoMD = $request->HorarioIngresoMD;
+        // $horario->HorarioSalidaMD = $request->HorarioSalidaMD;
+        // $horario->save();
 
         $company = new Company();
-        $this->updateCompanyValues($company, $request, $horario->id);
+        $this->updateCompanyValues($company, $request);
         $company->save();
 
         if ($request->hasFile('image')) {
@@ -135,7 +135,7 @@ class CompanyController extends Controller
     }
 
 
-    private function updateCompanyValues($company, $request, $idhorario)
+    private function updateCompanyValues($company, $request)
     {
         $company->name = $request->name;
         $company->address = $request->address;
@@ -148,7 +148,7 @@ class CompanyController extends Controller
             $company->avatar = $request->avatar;
         }
         $company->description = $request->description;
-        $company->idHorario = $idhorario;
+        // $company->idHorario = $idhorario;
         $company->isHelpDesk = filter_var($request->isHelpDesk, FILTER_VALIDATE_BOOLEAN);
         $company->helpDesks = $request->helpDesks ? json_encode($request->helpDesks, true) : null;
     }
@@ -390,7 +390,7 @@ class CompanyController extends Controller
 
     public function usernameRuc(Request $request)
     {
-       $companies = Company::where('ruc',$request->ruc)->first(); 
+       $companies = Company::where('ruc',$request->ruc)->first();
        if(isset($companies)){
             $username = User::where('username',$request->username)->where('companies','["'.$companies->id.'"]')->first();
             if (isset($username)) {

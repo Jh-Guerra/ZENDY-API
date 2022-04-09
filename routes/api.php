@@ -25,6 +25,7 @@ Route::post('/listUsers', 'App\Http\Controllers\UserSoftnetController@getUsers')
 Route::post('/companies/searchRuc', 'App\Http\Controllers\CompanyController@searchRuc');
 Route::post('/users/existsUser', 'App\Http\Controllers\UserController@existsUser');
 Route::post('/users/changePassword/{id}', 'App\Http\Controllers\UserController@changePassword');
+Route::post('/solicitudesAcceso', 'App\Http\Controllers\solicitudesAcceso@store');
 
 Route::group(['middleware' => ['jwt.verify']], function() {
 
@@ -48,7 +49,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update-password/{id}', 'App\Http\Controllers\UserController@updatePassword');
         Route::post('/changeHelpDesk/{id}', 'App\Http\Controllers\UserController@changeHelpDesk');
         Route::post('/searchUsers', 'App\Http\Controllers\UserController@searchOnlyUser');
-        
+
     });
 
     Route::prefix('roles')->group(function () {
@@ -70,7 +71,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/searchCompany', 'App\Http\Controllers\CompanyController@searchCompany');
         Route::post('/usernameRuc', 'App\Http\Controllers\CompanyController@usernameRuc');
         Route::post('/sendRequestEntity', 'App\Http\Controllers\SendRequestNewEntity@SendRequest');
-        
+
     });
 
     Route::prefix('chats')->group(function () {
@@ -205,10 +206,13 @@ Route::group(['middleware' => ['jwt.verify']], function() {
      });
 
      Route::prefix('solicitudesAcceso')->group(function () {
-        Route::post('/', 'App\Http\Controllers\solicitudesAcceso@store');
+        Route::get('/', 'App\Http\Controllers\solicitudesAcceso@listCeros');
+        Route::get('/listSincronizados', 'App\Http\Controllers\solicitudesAcceso@listSincronizados');
         Route::post('/changeState/{id}', 'App\Http\Controllers\solicitudesAcceso@changeState');
-        
+        Route::post('/solicitudesCero', 'App\Http\Controllers\solicitudesAcceso@SolicitudesCero');
+        Route::post('/seleccionSolicitudes', 'App\Http\Controllers\solicitudesAcceso@SeleccionSolicitudes');
+
     });
-    
+
 
 });
