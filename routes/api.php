@@ -83,6 +83,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/name/{id}', 'App\Http\Controllers\ChatController@nameChat');
         Route::post('/available-by-company', 'App\Http\Controllers\ChatController@listAvailableUsersByCompany');
         Route::get('/finalize-list', 'App\Http\Controllers\ChatController@listFinalize');
+        Route::get('/usersHD', 'App\Http\Controllers\ChatController@UsersHD');
+        Route::post('/searchNameConsulta', 'App\Http\Controllers\ChatController@searchNameConsulta');
     });
 
     Route::prefix('chats-client')->group(function () {
@@ -200,10 +202,12 @@ Route::group(['middleware' => ['jwt.verify']], function() {
     });
 
     Route::prefix('syncUsers')->group(function () {
-         Route::post('/', 'App\Http\Controllers\UserSoftnetController@insertUsers');//3. Pasa registros de tabla usuarios_zendy hacia users y general relaciones en users_companies
-         Route::post('/updateToken', 'App\Http\Controllers\UserSoftnetController@getTokenSofnet');
-         Route::post('/usersERP', 'App\Http\Controllers\UserSoftnetController@usersERP');//2. Pasa registros de datos_usuarios hacie usuarios_zendy solo cuando su ruc es igual a companies
-     });
+        Route::post('/', 'App\Http\Controllers\UserSoftnetController@insertUsers');//3. Pasa registros de tabla usuarios_zendy hacia users y general relaciones en users_companies
+        Route::post('/updateToken', 'App\Http\Controllers\UserSoftnetController@getTokenSofnet');
+        Route::post('/usersERP', 'App\Http\Controllers\UserSoftnetController@usersERP');//2. Pasa registros de datos_usuarios hacie usuarios_zendy solo cuando su ruc es igual a companies
+        Route::post('/limpiarDatos', 'App\Http\Controllers\UserSoftnetController@limpiarDatos');//Usado para limpieza de datos
+        Route::post('/sincronizarUsuarios', 'App\Http\Controllers\solicitudesAcceso@sincronizarUsuarios');
+    });
 
      Route::prefix('solicitudesAcceso')->group(function () {
         Route::get('/', 'App\Http\Controllers\solicitudesAcceso@listCeros');

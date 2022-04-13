@@ -35,3 +35,12 @@ Broadcast::channel('consulta.{id}', function ($user, $id) {
 Broadcast::channel('mensaje.{id}', function ($user, $id) {
     return (int)$user->id === (int)$id;
 });
+
+Broadcast::channel('aceptarConsulta.{id}', function ($user, $id) {
+    return (int)$user->id === (int)$id;
+});
+
+Broadcast::channel('cierreConsulta.{id}', function ($user, $id) {
+    return (int)$user->id === (int)$id;
+});
+

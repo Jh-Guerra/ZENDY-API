@@ -7,6 +7,7 @@ use App\Models\datosUsuarios;
 use App\Models\rutCompanies;
 use App\Models\TokenSoftnet;
 use App\Models\User;
+use App\Models\User2;
 use App\Models\UserCompany;
 use App\Models\usuariosZendy;
 use Illuminate\Http\Request;
@@ -85,9 +86,10 @@ class UserSoftnetController extends Controller
             foreach ($data as $value) {
 
                 $company = Company::where('ruc', $value['ruc'])->first();
-                $user = User::where('username', $value['username'])->where('companies', '["' . $company->id . '"]')->first();
+                // $company = Company::where('ruc', $value['ruc'])->first();
                 if (isset($company)) {
-                    if (!isset($user)) {
+                    $userCompany = UserCompany::where('username', $value['username'])->where('rutCompany', $value['ruc'])->first();
+                    if (!isset($userCompany)) {
                         $userCreate = new User;
                         $userCreate->username = $value['username'];
                         $userCreate->firstName = $value['nombre'];
@@ -186,6 +188,48 @@ class UserSoftnetController extends Controller
                     'cantidadUsers' => $count
                 );
             }
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+    
+    public function limpiarDatos()
+    {
+        try {
+        
+        $user3 = User::select('username')->where('idRole', '3')->get();
+        
+        $users = User::where('idRole', '<>', '3')->where('deleted', 0)->whereIn('username', $user3)->get();
+        // dd($users);
+        // return $users;
+        $cont = 0;
+        $rpta = [];
+        // foreach ($users as $user) {
+        for ($h=0; $h < count($users); $h++) {
+            $companies = json_decode($users[$h]['companies']);
+            for ($i=0; $i < count($companies); $i++) { 
+                $userAdmin = User::where('idRole', '3')->where('username', $users[$h]['username'])->get();
+                foreach($userAdmin as $value2){
+                    $companies3 = json_decode($value2['companies']);
+                    for ($j=0; $j < count($companies3); $j++) { 
+                        if($companies3[$j] == $companies[$i]){
+                            $usuario = User::find($users[$h]['id']);
+                            $usuario->deleted = 1;
+                            $usuario->save();
+
+                            $userCompany = UserCompany::find(UserCompany::where('idUser', $usuario->id)->first()->id) ;
+                            $userCompany->deleted = 1;
+                            $userCompany->save();
+                            
+                            $rpta['cantidad'] = $cont++;
+                            $rpta[$h] = $usuario;
+                        }
+                    }
+                }
+                
+            }
+        }
+        return $rpta;
         } catch (\Throwable $th) {
             throw $th;
         }

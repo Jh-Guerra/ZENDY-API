@@ -222,6 +222,16 @@ class UserController extends Controller
         $role->sectionIds = json_decode($role->sectionIds, true);
         $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy("order")->get();
 
+        $user->companies = $user->companies ? json_decode($user->companies, true) : [];
+
+        $company->helpDesks = json_decode($company->helpDesks, true);
+        $helpDesks = $company->helpDesks;
+        if ($helpDesks && count($helpDesks) > 0) {
+            $firstHelpDesk = Company::where("id", $helpDesks[0])->where("deleted", false)->first();
+            $user->helpDesk = $firstHelpDesk;
+            $user->idHelpDesk = $firstHelpDesk->id;
+        }
+
         try {
             $token = JWTAuth::fromUser($user);
             if (!$token) return response()->json(['error' => 'Credenciales inválidas3'], 400);
@@ -394,7 +404,6 @@ class UserController extends Controller
     {
         $user = User::find($id);
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
-
         $user->companies = $user->companies ? json_decode($user->companies, true) : [];
         if (count($user->companies) > 0) {
             $companies = Company::whereIn("id", $user->companies)->where("deleted", false)->get();
@@ -555,7 +564,6 @@ class UserController extends Controller
         }
 
         $user->isOnline = false;
-        $user->device_token = null;
         $user->save();
 
 
@@ -750,10 +758,10 @@ class UserController extends Controller
 
     public function existsUser(Request $request)
     {
-        $user = UserCompany::where('username', $request['username'])->where('rutCompany', $request['rut'])->first();
+        $user = UserCompany::where('username', $request['username'])->where('rutCompany', $request['rut'])->where('deleted',0)->first();
         if (isset($user)) {
-            $user = User::where('id', $user->idUser)->first();
-            if ($user->activo == 0) {
+            $user = User::where('id', $user->idUser)->where('deleted',0)->first();
+            if ($user->encrypted_password == null) {
                 return array(
                     'estado'=> 'Contraseña no cambiada',
                      'data' => $user

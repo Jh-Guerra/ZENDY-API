@@ -17,7 +17,7 @@ class UpdateDeviceTokenController extends Controller
             $d_token =$d_tokenA['token'];
 
             $passNull = DB::table('users')
-                        ->where('device_token','=',$d_user)
+                        ->where('device_token','=',$d_token)
                         ->update(['device_token'=>null]);
 
             $usuario = DB::table('users')

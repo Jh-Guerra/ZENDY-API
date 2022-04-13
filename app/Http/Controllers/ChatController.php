@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\CierreConsulta;
 use App\Events\notificationMessage;
 use App\Models\Chat;
 use App\Models\Company;
+use App\Models\EntryQuery;
 use App\Models\Message;
 use App\Models\Participant;
+use App\Models\UserCompany;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -16,64 +19,81 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 class ChatController extends Controller
 {
 
-    public function find($id){
+    public function find($id)
+    {
         $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
-
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        // dd($user->id);
         $chat = Chat::find($id);
-        if(!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
+        if (!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
 
         $chat->user = User::find($chat->idUser);
-        if($chat->idCompany)
-            $chat->company = Company::find($chat->idCompany);
+        $ValidatorUserParticipations = Participant::where('idUser', $user->id)->where('idChat', $id)->first();
+        // dd($ValidatorUserParticipations);
+        $UserParticipations = Participant::where('idChat', $id)->get();
+        // dd($UserParticipations[1]);
+        $dataUser = User::where('id', $UserParticipations[1]['idUser'])->first();
+        // dd($dataUser);
+        if ($chat->idCompany)
+            if ($ValidatorUserParticipations->type == 'Admin') {
+                //  dd('shdhd');
+                $chat->company = Company::find($chat->idCompany)->where('id', json_decode($dataUser->companies))->first();
+                //dd(Company::find($chat->idCompany)->where('id', json_decode($dataUser->companies))->first());
+            } else {
+                $chat->company = Company::find($chat->idCompany);
+            }
+        // // if()
+        //     $chat->company = Company::find($chat->idCompany)->where('id',json_decode($user->companies))->first();
 
         $participants =  Participant::join("users", "users.id", "participants.idUser")->where("participants.idChat", $chat->id)->where("participants.deleted", false)
             ->orderBy("users.firstName")->orderBy("users.lastName")->get(["participants.*"]);
-        foreach($participants as $participant){
+        foreach ($participants as $participant) {
             $userData = User::find($participant->idUser);
             $participant->user = $userData;
         }
 
-        if(!$chat->name){
+        if (!$chat->name) {
             $chatName = "";
-            if($chat->scope == "Personal"){
-                foreach($participants as $participant){
-                    if($participant->idUser != $user->id && $participant->user){
-                        $chatName = $chatName.$participant->user->firstName. ' ' .$participant->user->lastName;
+            if ($chat->scope == "Personal") {
+                foreach ($participants as $participant) {
+                    if ($participant->idUser != $user->id && $participant->user) {
+                        $chatName = $chatName . $participant->user->firstName . ' ' . $participant->user->lastName;
                     }
                 }
             }
 
-            if($chat->scope == "Grupal"){
-                foreach($participants as $participant){
-                    if($participant->idUser != $user->id && $participant->user){
-                        $chatName = $chatName.$participant->user->firstName. ' ' .$participant->user->lastName.", ";
+            if ($chat->scope == "Grupal") {
+                foreach ($participants as $participant) {
+                    if ($participant->idUser != $user->id && $participant->user) {
+                        $chatName = $chatName . $participant->user->firstName . ' ' . $participant->user->lastName . ", ";
                     }
                 }
-                $chatName = $chatName."Tú";
+                $chatName = $chatName . "Tú";
             }
             $chat->name = $chatName;
         }
 
         $chat->participants = $participants;
 
-        return response()->json(compact('chat'),201);
+        return response()->json(compact('chat'), 201);
     }
 
-    public function findImages($id){
+    public function findImages($id)
+    {
         $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $images = Message::where("idChat", $id)->where("image", "!=", "")->where("deleted", false)->pluck("image");
-        if(!$images) return response()->json(['error' => 'El chat no cuenta con imagenes'], 400);
+        if (!$images) return response()->json(['error' => 'El chat no cuenta con imagenes'], 400);
 
-        return response()->json(compact('images'),201);
+        return response()->json(compact('images'), 201);
     }
 
-    public function listActive(Request $request){
+    public function listActive(Request $request)
+    {
         $user = JWTAuth::toUser($request->bearerToken());
 
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
         $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
         $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
 
@@ -81,7 +101,7 @@ class ChatController extends Controller
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
         $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
 
-        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status",$request->status)->orderByDesc("updated_at")->get();
+        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status", $request->status)->orderByDesc("updated_at")->get();
 
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
@@ -89,14 +109,14 @@ class ChatController extends Controller
         $companyIds = [];
         $lastMessageIds = [];
         $lastUserIds = [];
-        foreach ($chats as $chat){
-            if($chat->idCompany && !in_array($chat->idCompany, $companyIds))
+        foreach ($chats as $chat) {
+            if ($chat->idCompany && !in_array($chat->idCompany, $companyIds))
                 $companyIds[] = $chat->idCompany;
 
-            if($chat->lastMessageUserId && !in_array($chat->lastMessageUserId, $lastUserIds))
+            if ($chat->lastMessageUserId && !in_array($chat->lastMessageUserId, $lastUserIds))
                 $lastUserIds[] = $chat->lastMessageUserId;
 
-            if($chat->lastMessageId && !in_array($chat->lastMessageId, $lastMessageIds))
+            if ($chat->lastMessageId && !in_array($chat->lastMessageId, $lastMessageIds))
                 $lastMessageIds[] = $chat->lastMessageId;
         }
 
@@ -116,10 +136,10 @@ class ChatController extends Controller
             $participantsByChat->$idChat = $currentChatParticipants;
 
             $currentParticipantsName = property_exists($participantsByChatNames, $idChat) ? $participantsByChatNames->$idChat : "";
-            $participantsByChatNames->$idChat = $currentParticipantsName.$participant->user->firstName." ".$participant->user->lastName.", ";
+            $participantsByChatNames->$idChat = $currentParticipantsName . $participant->user->firstName . " " . $participant->user->lastName . ", ";
         }
 
-        foreach ($chats as $chat){
+        foreach ($chats as $chat) {
             $chat->user = $chat->idUser ? ($chat->idUser == $user->id ? $user : $users[$chat->idUser]) : null;
             $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
             $chat->lastMessage = $chat->lastMessageId ? $lastMessages[$chat->lastMessageId] : null;
@@ -127,27 +147,27 @@ class ChatController extends Controller
             $chat->participation = $participations[$chat->id];
             $idChat = $chat->id;
 
-            if(!$chat->name)
-                $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName." ".$user->lastName);
+            if (!$chat->name)
+                $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName . " " . $user->lastName);
 
             $chat->participants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
         }
 
         $term = $request->has("term") ? $request->get("term") : "";
-        if($term){
+        if ($term) {
             $chats = $chats->filter(function ($chat) use ($term) {
                 $filter = "";
-                if($chat->name){
+                if ($chat->name) {
                     $filter = strtolower($chat->name);
                 }
                 return str_contains(strtolower($filter), strtolower($term)) !== false;
             });
         }
-
         return $chats->values()->all();
     }
 
-    public function listAvailableUsersByCompany(Request $request){
+    public function listAvailableUsersByCompany(Request $request)
+    {
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
@@ -157,7 +177,7 @@ class ChatController extends Controller
         $company = Company::find($idCompany);
 
         $users = User::join('roles', 'roles.id', '=', 'users.idRole')
-            ->where('users.companies', 'LIKE', '%' . "\"".$idCompany."\"" . '%')
+            ->where('users.companies', 'LIKE', '%' . "\"" . $idCompany . "\"" . '%')
             ->where('users.deleted', false)
             ->where('users.id', '!=', $user->id)->whereIn('roles.name', $roles);
 
@@ -176,10 +196,11 @@ class ChatController extends Controller
         return $users;
     }
 
-    public function delete($id){
+    public function delete($id)
+    {
         $chat = Chat::find($id);
 
-        if(!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
+        if (!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
 
         $chat->deleted = true;
         $chat->save();
@@ -187,56 +208,120 @@ class ChatController extends Controller
         return response()->json(['success' => 'Chat Eliminado'], 201);
     }
 
-    public function finalize($id, Request $request){
+    public function finalize($id, Request $request)
+    {
         $request = json_decode($request->getContent(), true);
 
         $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $chat = Chat::find($id);
-        if(!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
+        if (!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
 
         $chat->status = "Finalizado";
         $chat->finalizeDate = Carbon::now()->timestamp;
-        $chat->finalizeStatus = $request["finalizeStatus"];
-        $chat->finalizeDescription = $request["finalizeDescription"];
+        $chat->finalizeStatus = 'Completado'; //$request["finalizeStatus"];
+        $chat->finalizeDescription = null; //$request["finalizeDescription"];
         $chat->finalizeUser = $user->id;
         $chat->save();
+
+        $idEntryQuery = Chat::where('id', $id)->first()->idEntryQuery;
+        $idUser = EntryQuery::where('id', $idEntryQuery)->first()->createdBy;
+        $participante = User::where('id', $idUser)->get();
+        $mensaje = "Su última consulta ha sido finalizada, tenga buen día";
+        $avatar = !!isset($user->avatar) ? "api/" . $user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg';
+        $contenido = [
+            'modulo'     => null,
+            'idConsulta' => $idEntryQuery,
+            'idUser'     => $idUser,
+            'usuario'    => $user->firstName,
+            'avatar'     => $avatar,
+            'mensaje'    => $mensaje,
+        ];
+        event(new CierreConsulta($idUser, $contenido));
+        $this->sendNotification($user->id, $participante, $mensaje, $avatar);
 
         $participants = Participant::where("idChat", $id)->where("idUser", "!=", $user->id)->where("active", true)->get();
         Participant::where('idChat', $id)->update(['active' => false, 'outputDate' => date('Y-m-d', Carbon::now()->timestamp)]);
 
         foreach ($participants as $participant) {
-            event(new notificationMessage($participant["idUser"],$id));
+            event(new notificationMessage($participant["idUser"], $id));
         }
 
-        return response()->json(compact('chat'),201);
+        return response()->json(compact('chat'), 201);
     }
 
-    public function nameChat($id, Request $request){
+    public function sendNotification($user, $participants, $message, $avatar)
+    {
+
+        $firebaseToken = [];
+        for ($i = 0; $i < count($participants); $i++) {
+
+            $firebaseToken[$i] = User::where('id', '=', $participants[$i]->id)
+                ->select('device_token')
+                ->first()
+                ->device_token;
+        }
+        $SERVER_API_KEY = 'AAAAIRNx9HA:APA91bFmqjiXmsV4kTGSiTcy2qC-ShtiGFJK9M2MupnYV_Cci4QWrc1Y7R6KA8DhSIO_-a49OaFNo1CCN1EbpB_ClerGdxAAqgJtTrTULuAYof42LYaI_JmVKbl54x1hKgXfZooYWxt4';
+
+        $data = [
+            "registration_ids" => $firebaseToken,
+            "notification" => [
+                "title" => "Consulta finalizada",
+                "body" => $message,
+                "icon" => "https://www.zendy.cl/" . $avatar,
+                "click_action" => null,
+                "content_available" => true,
+                "priority" => "high",
+            ]
+        ];
+        $dataString = json_encode($data);
+
+        $headers = [
+            'Authorization: key=' . $SERVER_API_KEY,
+            'Content-Type: application/json',
+        ];
+
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, 'https://fcm.googleapis.com/fcm/send');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $dataString);
+
+        $response = curl_exec($ch);
+
+        return $response;
+    }
+
+    public function nameChat($id, Request $request)
+    {
 
         $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
         $chat = Chat::find($id);
-        if(!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
+        if (!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
 
         $chat->name = $request->name;
         $chat->save();
 
         $participants = Participant::where("idChat", $id)->where("idUser", "!=", $user->id)->where("active", true)->get();
         foreach ($participants as $participant) {
-            event(new notificationMessage($participant["idUser"],$id));
+            event(new notificationMessage($participant["idUser"], $id));
         }
 
-        return response()->json(compact('chat'),201);
+        return response()->json(compact('chat'), 201);
     }
 
-    public function listFinalize(Request $request){
+    public function listFinalize(Request $request)
+    {
         $user = Auth::user();
-        if(!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
-        $from= $request->has("fromDate") ? $request->get("fromDate") : "";
+        $from = $request->has("fromDate") ? $request->get("fromDate") : "";
         $fromDate1 = (int)$from;
         $to = $request->has("toDate") ? $request->get("toDate") : "";
         $fromTo1 = (int)$to;
@@ -248,7 +333,7 @@ class ChatController extends Controller
         $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
         $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
 
-        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("deleted", false)->where("isQuery", $isQuery)->where("status", ["Finalizado", "Cancelado"])->whereBetween('finalizeDate', [$fromDate1 ,$to])->orderByDesc("updated_at")->get();
+        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("deleted", false)->where("isQuery", $isQuery)->where("status", ["Finalizado", "Cancelado"])->whereBetween('finalizeDate', [$fromDate1, $to])->orderByDesc("updated_at")->get();
 
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
@@ -256,14 +341,14 @@ class ChatController extends Controller
         $companyIds = [];
         $lastMessageIds = [];
         $lastUserIds = [];
-        foreach ($chats as $chat){
-            if($chat->idCompany && !in_array($chat->idCompany, $companyIds))
+        foreach ($chats as $chat) {
+            if ($chat->idCompany && !in_array($chat->idCompany, $companyIds))
                 $companyIds[] = $chat->idCompany;
 
-            if($chat->lastMessageUserId && !in_array($chat->lastMessageUserId, $lastUserIds))
+            if ($chat->lastMessageUserId && !in_array($chat->lastMessageUserId, $lastUserIds))
                 $lastUserIds[] = $chat->lastMessageUserId;
 
-            if($chat->lastMessageId && !in_array($chat->lastMessageId, $lastMessageIds))
+            if ($chat->lastMessageId && !in_array($chat->lastMessageId, $lastMessageIds))
                 $lastMessageIds[] = $chat->lastMessageId;
         }
 
@@ -283,10 +368,10 @@ class ChatController extends Controller
             $participantsByChat->$idChat = $currentChatParticipants;
 
             $currentParticipantsName = property_exists($participantsByChatNames, $idChat) ? $participantsByChatNames->$idChat : "";
-            $participantsByChatNames->$idChat = $currentParticipantsName.$participant->user->firstName." ".$participant->user->lastName.", ";
+            $participantsByChatNames->$idChat = $currentParticipantsName . $participant->user->firstName . " " . $participant->user->lastName . ", ";
         }
 
-        foreach ($chats as $chat){
+        foreach ($chats as $chat) {
             $chat->user = $chat->idUser ? ($chat->idUser == $user->id ? $user : $users[$chat->idUser]) : null;
             $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
             $chat->lastMessage = $chat->lastMessageId ? $lastMessages[$chat->lastMessageId] : null;
@@ -294,17 +379,17 @@ class ChatController extends Controller
             $chat->participation = $participations[$chat->id];
             $idChat = $chat->id;
 
-            if(!$chat->name)
-                $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName." ".$user->lastName);
+            if (!$chat->name)
+                $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName . " " . $user->lastName);
 
             $chat->participants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
         }
 
         $term = $request->has("term") ? $request->get("term") : "";
-        if($term){
+        if ($term) {
             $chats = $chats->filter(function ($chat) use ($term) {
                 $filter = "";
-                if($chat->name){
+                if ($chat->name) {
                     $filter = strtolower($chat->name);
                 }
                 return str_contains(strtolower($filter), strtolower($term)) !== false;
@@ -312,5 +397,199 @@ class ChatController extends Controller
         }
 
         return $chats->values()->all();
+    }
+
+    public function UsersHD()
+    {
+        try {
+            //Luego cambiar el id estatico por -> Auth::user()->id o para una prueba pasar a 98 -> adminzendy
+            $companies = User::where('id', Auth::user()->id)->first()->companies;
+
+            $ids       = User::where('companies', $companies)->get();
+
+            for ($i = 0; $i < count($ids); $i++) {
+                $data[] = array(
+                    'id' => $ids[$i]['id'],
+                    'username' => $ids[$i]['username']
+                );
+            }
+
+            return $data;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function searchlistFinalize(Request $request)
+    {
+        // $user = Auth::user();
+        $user = User::find($request['id']);
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $from = $request->has("fromDate") ? $request->get("fromDate") : "";
+        $fromDate1 = (int)$from;
+        $to = $request->has("toDate") ? $request->get("toDate") : "";
+        $fromTo1 = (int)$to;
+
+        $isQuery = $request->has("isQuery") ? ($request->get("isQuery") == "true") : false;
+        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+        $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
+
+        $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
+        $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
+
+        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("deleted", false)->where("isQuery", $isQuery)->where("status", ["Finalizado", "Cancelado"])->whereBetween('finalizeDate', [$fromDate1, $to])->orderByDesc("updated_at")->get();
+
+        $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
+        $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
+
+        $companyIds = [];
+        $lastMessageIds = [];
+        $lastUserIds = [];
+        foreach ($chats as $chat) {
+            if ($chat->idCompany && !in_array($chat->idCompany, $companyIds))
+                $companyIds[] = $chat->idCompany;
+
+            if ($chat->lastMessageUserId && !in_array($chat->lastMessageUserId, $lastUserIds))
+                $lastUserIds[] = $chat->lastMessageUserId;
+
+            if ($chat->lastMessageId && !in_array($chat->lastMessageId, $lastMessageIds))
+                $lastMessageIds[] = $chat->lastMessageId;
+        }
+
+        $users = User::whereIn("id", $userIds)->get()->keyBy('id');
+        $companies = Company::whereIn("id", $companyIds)->get()->keyBy('id');
+        $lastMessages = Message::whereIn("id", $lastMessageIds)->get()->keyBy('id');
+        $lastUsers = User::whereIn("id", $lastUserIds)->get()->keyBy('id');
+
+        $participantsByChat = new \stdClass();
+        $participantsByChatNames = new \stdClass();
+        foreach ($participants as $participant) {
+            $participant->user = $users[$participant->idUser];
+
+            $idChat = $participant->idChat;
+            $currentChatParticipants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
+            array_push($currentChatParticipants, $participant);
+            $participantsByChat->$idChat = $currentChatParticipants;
+
+            $currentParticipantsName = property_exists($participantsByChatNames, $idChat) ? $participantsByChatNames->$idChat : "";
+            $participantsByChatNames->$idChat = $currentParticipantsName . $participant->user->firstName . " " . $participant->user->lastName . ", ";
+        }
+
+        foreach ($chats as $chat) {
+            $chat->user = $chat->idUser ? ($chat->idUser == $user->id ? $user : $users[$chat->idUser]) : null;
+            $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
+            $chat->lastMessage = $chat->lastMessageId ? $lastMessages[$chat->lastMessageId] : null;
+            $chat->lastMessageUser = $chat->lastMessageUserId ? ($chat->lastMessageUserId == $user->id ? $user : $lastUsers[$chat->lastMessageUserId]) : null;
+            $chat->participation = $participations[$chat->id];
+            $idChat = $chat->id;
+
+            if (!$chat->name)
+                $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName . " " . $user->lastName);
+
+            $chat->participants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
+        }
+
+        $term = $request->has("term") ? $request->get("term") : "";
+        if ($term) {
+            $chats = $chats->filter(function ($chat) use ($term) {
+                $filter = "";
+                if ($chat->name) {
+                    $filter = strtolower($chat->name);
+                }
+                return str_contains(strtolower($filter), strtolower($term)) !== false;
+            });
+        }
+
+        return $chats->values()->all();
+    }
+
+    public function searchNameConsulta(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+            $from = $request->has("fromDate") ? $request->get("fromDate") : "";
+            $fromDate1 = (int)$from;
+            $to = $request->has("toDate") ? $request->get("toDate") : "";
+            $fromTo1 = (int)$to;
+
+            $isQuery = $request->has("isQuery") ? ($request->get("isQuery") == "true") : false;
+            $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+            
+            $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
+
+            $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
+            
+            $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
+
+            $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("deleted", false)->where("isQuery", $isQuery)->where("status", ["Finalizado", "Cancelado"])->whereBetween('finalizeDate', [$fromDate1, $to])->orderByDesc("updated_at")->get();
+
+            $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
+            $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
+
+            $companyIds = [];
+            $lastMessageIds = [];
+            $lastUserIds = [];
+            foreach ($chats as $chat) {
+                if ($chat->idCompany && !in_array($chat->idCompany, $companyIds))
+                    $companyIds[] = $chat->idCompany;
+
+                if ($chat->lastMessageUserId && !in_array($chat->lastMessageUserId, $lastUserIds))
+                    $lastUserIds[] = $chat->lastMessageUserId;
+
+                if ($chat->lastMessageId && !in_array($chat->lastMessageId, $lastMessageIds))
+                    $lastMessageIds[] = $chat->lastMessageId;
+            }
+
+            $users = User::whereIn("id", $userIds)->get()->keyBy('id');
+            $companies = Company::whereIn("id", $companyIds)->get()->keyBy('id');
+            $lastMessages = Message::whereIn("id", $lastMessageIds)->get()->keyBy('id');
+            $lastUsers = User::whereIn("id", $lastUserIds)->get()->keyBy('id');
+
+            $participantsByChat = new \stdClass();
+            $participantsByChatNames = new \stdClass();
+            foreach ($participants as $participant) {
+                $participant->user = $users[$participant->idUser];
+
+                $idChat = $participant->idChat;
+                $currentChatParticipants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
+                array_push($currentChatParticipants, $participant);
+                $participantsByChat->$idChat = $currentChatParticipants;
+
+                $currentParticipantsName = property_exists($participantsByChatNames, $idChat) ? $participantsByChatNames->$idChat : "";
+                $participantsByChatNames->$idChat = $currentParticipantsName . $participant->user->firstName . " " . $participant->user->lastName . ", ";
+            }
+
+            foreach ($chats as $chat) {
+                $chat->user = $chat->idUser ? ($chat->idUser == $user->id ? $user : $users[$chat->idUser]) : null;
+                $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
+                $chat->lastMessage = $chat->lastMessageId ? $lastMessages[$chat->lastMessageId] : null;
+                $chat->lastMessageUser = $chat->lastMessageUserId ? ($chat->lastMessageUserId == $user->id ? $user : $lastUsers[$chat->lastMessageUserId]) : null;
+                $chat->participation = $participations[$chat->id];
+                $idChat = $chat->id;
+
+                if (!$chat->name)
+                    $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName . " " . $user->lastName);
+
+                $chat->participants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
+            }
+
+            $term = $request->has("term") ? $request->get("term") : "";
+            if ($term) {
+                $chats = $chats->filter(function ($chat) use ($term) {
+                    $filter = "";
+                    if ($chat->name) {
+                        $filter = strtolower($chat->name);
+                    }
+                    return str_contains(strtolower($filter), strtolower($term)) !== false;
+                });
+            }
+
+            return $chats->values()->all();
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 }
