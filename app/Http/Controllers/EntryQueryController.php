@@ -96,30 +96,30 @@ class EntryQueryController extends Controller
         //LO COMENTADO
         /* $rut = UserCompany::where('idCompany', $idCompany)->first();
                $companyHD = Company::where('id', $rut->idCompany)->first();
-        
+
                 $users = User::where('companies', $companyHD->helpDesks)->where('idRole', 4)->get();
                 $horario = CompanyHorario::where('id', $companyHD->idHorario)->get();
                 $horaActual = Carbon::now()->toTimeString();
                 $diaActual = intval(date("w"));
                 $horaActual2 = "09:29:59";
                 $diaActual2 = 0;
-        
+
                 //dd($horario);
-        
+
                 $date = Carbon::now();
                 $date = $date->add(2, 'day');
                 $date = $date->format('Y-m-d');
-    
+
                 $dias = [0, 1, 2, 3, 4, 5, 6];
                 $diasHabituales = json_decode($horario[0]['Dias']);
-        
+
                 for ($i = 0; $i < count(json_decode($horario[0]['MedioDia'])); $i++) {
                     $MD = json_decode($horario[0]['MedioDia']);
                     array_push($diasHabituales, (int)$MD[$i]);
                 }
-        
+
                 $diaNoPuesto = array_diff($dias, $diasHabituales);
-    
+
                 for ($i = 0; $i < count($diaNoPuesto); $i++) {
                     if ($diaActual2 == $diaNoPuesto[$i]) {
                         try {
@@ -131,16 +131,16 @@ class EntryQueryController extends Controller
                         } catch (\Throwable $th) {
                             $error = $th;
                         }
-        
+
                         return 'Correo enviado a usuarios HD - un dia que no se trabajo :D';
                     }
                 }
-        
+
                 $medioDia = json_decode($horario[0]['MedioDia']);
-        
+
                 if (!is_null($horario[0]['MedioDia'])) {
                     for ($i = 0; $i < count($medioDia); $i++) {
-        
+
                         if ($diaActual2 == $medioDia[$i]) {
                             if (strtotime($horaActual2) >= strtotime($horario[0]['HorarioIngresoMD']) && strtotime($horaActual2) < strtotime($horario[0]['HorarioSalidaMD'])) {
                                 return response()->json(compact('chat'), 201);
@@ -159,7 +159,7 @@ class EntryQueryController extends Controller
                         }
                     }
                 }
-        
+
                 for ($i = 0; $i < count(json_decode($horario[0]['Dias'])); $i++) {
                     if ($diaActual2 == json_decode($horario[0]['Dias'][$i])) {
                         if (strtotime($horaActual2) >= strtotime($horario[0]['HorarioIngreso']) && strtotime($horaActual2) < strtotime($horario[0]['HorarioSalida'])) {
@@ -567,8 +567,6 @@ class EntryQueryController extends Controller
         return response()->json(compact('chat'), 201);
     }
 
-
-
     public function recommendUser(Request $request, $id)
     {
         $user = Auth::user();
@@ -604,8 +602,10 @@ class EntryQueryController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
        // dd($request->has("idHelpDesk"));
-        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
-        $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
+        $companies = $request->has("idCompany") ? $request->get("idCompany") : null;
+        $idCompany = Company::where('id', $companies)->first();
+        $idHelpDesk = isset($idCompany->helpDesks)? json_decode($idCompany->helpDesks):null;
+        // $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
         // dd($idHelpDesk);
         // $entryQueries = EntryQuery::where("isFrequent", true)->where("idCompany", $idCompany)->where("deleted", false);
         $entryQueries = EntryQuery::where("isFrequent", true)->where("idHelpdesk", $idHelpDesk)->where("deleted", false);
@@ -706,6 +706,26 @@ class EntryQueryController extends Controller
         try {
             $entryQuery = EntryQuery::find($id);
             return $entryQuery->status;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+    }
+
+    public function consultaPendiente()
+    {
+        try {
+            $user = EntryQuery::where('createdBy',Auth::user()->id)->where('status','Pendiente')->first();
+            if (is_null($user)) {
+                return array(
+                    'status' => true,
+                    'descripcion' => 'Puede proseguir con su consulta');
+            }else {
+                return array(
+                    'status' => false,
+                    'descripcion' => 'Usted cuenta con una consulta pendiente, por favor use las opciones de editar o elimiar de la consulta según lo requiera');
+            }
+
+
         } catch (\Throwable $th) {
             throw $th;
         }

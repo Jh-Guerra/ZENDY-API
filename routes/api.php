@@ -84,7 +84,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/available-by-company', 'App\Http\Controllers\ChatController@listAvailableUsersByCompany');
         Route::get('/finalize-list', 'App\Http\Controllers\ChatController@listFinalize');
         Route::get('/usersHD', 'App\Http\Controllers\ChatController@UsersHD');
-        Route::post('/searchNameConsulta', 'App\Http\Controllers\ChatController@searchNameConsulta');
+        Route::post('/searchlistFinalize', 'App\Http\Controllers\ChatController@searchlistFinalize');
     });
 
     Route::prefix('chats-client')->group(function () {
@@ -115,6 +115,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/register-frequent', 'App\Http\Controllers\EntryQueryController@registerFrequent');
         Route::post('/deleteFile', 'App\Http\Controllers\EntryQueryController@deleteFile');
         Route::get('/estadoConsulta/{id}', 'App\Http\Controllers\EntryQueryController@getEstadoConsulta');
+        Route::get('/consultaPendiente', 'App\Http\Controllers\EntryQueryController@consultaPendiente');
     });
 
     Route::prefix('errors')->group(function () {
@@ -207,15 +208,16 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/usersERP', 'App\Http\Controllers\UserSoftnetController@usersERP');//2. Pasa registros de datos_usuarios hacie usuarios_zendy solo cuando su ruc es igual a companies
         Route::post('/limpiarDatos', 'App\Http\Controllers\UserSoftnetController@limpiarDatos');//Usado para limpieza de datos
         Route::post('/sincronizarUsuarios', 'App\Http\Controllers\solicitudesAcceso@sincronizarUsuarios');
+        Route::post('/seleccionUsuariosSincronizar', 'App\Http\Controllers\solicitudesAcceso@seleccionUsuariosSincronizar');
     });
 
      Route::prefix('solicitudesAcceso')->group(function () {
         Route::get('/', 'App\Http\Controllers\solicitudesAcceso@listCeros');
         Route::get('/listSincronizados', 'App\Http\Controllers\solicitudesAcceso@listSincronizados');
         Route::post('/changeState/{id}', 'App\Http\Controllers\solicitudesAcceso@changeState');
-        Route::post('/solicitudesCero', 'App\Http\Controllers\solicitudesAcceso@SolicitudesCero');
-        Route::post('/seleccionSolicitudes', 'App\Http\Controllers\solicitudesAcceso@SeleccionSolicitudes');
-
+        Route::post('/solicitudesCero', 'App\Http\Controllers\solicitudesAcceso@SolicitudesEmpresa');
+        Route::post('/seleccionSolicitudes', 'App\Http\Controllers\solicitudesAcceso@SeleccionSolicitudesEmpresa');
+        Route::post('/getToken', 'App\Http\Controllers\solicitudesAcceso@getTokenSofnet');
     });
 
 
