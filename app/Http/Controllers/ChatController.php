@@ -36,7 +36,6 @@ class ChatController extends Controller
         // dd($dataUser);
         if ($chat->idCompany)
             if ($ValidatorUserParticipations->type == 'Admin') {
-                //  dd('shdhd');
                 $chat->company = Company::find($chat->idCompany)->where('id', json_decode($dataUser->companies))->first();
                 //dd(Company::find($chat->idCompany)->where('id', json_decode($dataUser->companies))->first());
             } else {
@@ -211,7 +210,7 @@ class ChatController extends Controller
     public function finalize($id, Request $request)
     {
         $request = json_decode($request->getContent(), true);
-
+        //dd($id);
         $user = Auth::user();
         if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
 
@@ -220,15 +219,17 @@ class ChatController extends Controller
 
         $chat->status = "Finalizado";
         $chat->finalizeDate = Carbon::now()->timestamp;
-        //$chat->finalizeStatus = 'Completado'; Activar para pruebas locales
+        //$chat->finalizeStatus = 'Completado';// Activar para pruebas locales
         $chat->finalizeStatus = $request["finalizeStatus"]; //Descomentarlo en produccion
-        //$chat->finalizeDescription = null; Activar para pruebas locales
+        //$chat->finalizeDescription = null; //Activar para pruebas locales
         $chat->finalizeDescription = $request["finalizeDescription"];//Descomentarlo en produccion
         $chat->finalizeUser = $user->id;
         $chat->save();
 
-        //Finalizar todas las consultas repetidas del usuario de la consulta
-        EntryQuery::where('createdBy',$user->id)->where('status','Pendiente')->update(['deleted'=> 1]);
+        //Finalizar todas las consultas repetidas del usuario
+        $idEntryQuery = Chat::where('id',$id)->first()->idEntryQuery;
+        $idCreatedBy = EntryQuery::where('id',$idEntryQuery)->first()->createdBy;
+        EntryQuery::where('createdBy',$idCreatedBy)->where('status','Pendiente')->update(['deleted'=> 1]);
 
         $idEntryQuery = Chat::where('id', $id)->first()->idEntryQuery;
         $idUser = EntryQuery::where('id', $idEntryQuery)->first()->createdBy;
@@ -433,7 +434,7 @@ class ChatController extends Controller
             $user = User::where('id', $request['id'])->get();
             if (!$user) return response()->json(['error' => 'Usuario HelpDesk no encontrado.'], 400);
         } else {
-            $user = User::where('companies', Auth::user()->companies)->where('idRole', 4)->get();
+            $user = User::where('companies', Auth::user()->companies)->whereIn('idRole', [3, 4])->get();
         }
 
         $from = $request->has("fromDate") ? $request->get("fromDate") : "";
@@ -513,7 +514,10 @@ class ChatController extends Controller
             //     });
             // }
 
-            $todo[$i] = $chats->values()->all();
+            // $todo[$i] = $chats->values()->all();
+            if(count($chats) > 0){
+                array_push($todo, $chats->values()->all());
+            }
         }
 
         return $todo;

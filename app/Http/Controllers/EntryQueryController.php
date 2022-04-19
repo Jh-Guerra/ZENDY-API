@@ -77,6 +77,8 @@ class EntryQueryController extends Controller
         $mensaje = "Se ha presentado una nueva consulta, haz clic aquí para redirigirte hacia ella";
         $avatar = !!isset($user->avatar) ? "api/".$user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg';
         $ruta = "/consultas/";
+        $cantidad = EntryQuery::where('status', 'Pendiente')->where('deleted', false)->where('idHelpdesk', $request["idHelpdesk"])->count();
+        
         $contenido = [
             'modulo'     => Module::where('id', $request["idModule"])->first()->name,
             'idConsulta' => $entryQuery->id,
@@ -84,6 +86,7 @@ class EntryQueryController extends Controller
             'usuario'    => $user->firstName,
             'avatar'     => $avatar,
             'mensaje'    => $mensaje,
+            'cantidad'   => $cantidad,
         ];
 
         $i = 0;
@@ -183,7 +186,7 @@ class EntryQueryController extends Controller
     }
 
     public function sendNotification($user, $participants, $message, $linkus, $idTipo, $avatar)
-        {
+    {
 
             $firebaseToken= [];
             // dd($participants); $participants[$i]->id
@@ -233,7 +236,7 @@ class EntryQueryController extends Controller
 
             $response = curl_exec($ch);
 
-    return $response;
+        return $response;
     }
 
     private function validateFields($request)
@@ -714,7 +717,7 @@ class EntryQueryController extends Controller
     public function consultaPendiente()
     {
         try {
-            $user = EntryQuery::where('createdBy',Auth::user()->id)->where('status','Pendiente')->first();
+            $user = EntryQuery::where('createdBy',Auth::user()->id)->where('status','Pendiente')->where('deleted',false)->first();
             if (is_null($user)) {
                 return array(
                     'status' => true,
@@ -729,5 +732,21 @@ class EntryQueryController extends Controller
         } catch (\Throwable $th) {
             throw $th;
         }
+    }
+
+    public function CountPendientes()
+    {
+        try {
+            $user = UserCompany::where('idUser',Auth::user()->id)->first()->idCompany;
+            $hd = json_decode(Company::where('id',$user)->first()->helpDesks);
+            $count = EntryQuery::where('status','Pendiente')->where('deleted',false)->where('idHelpdesk',$hd[0])->count();
+            
+            return array('status'=>true,
+                        'descripcion'=>'Consultas pendientes',
+                        'cantidad' => $count);
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+        
     }
 }

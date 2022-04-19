@@ -116,6 +116,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/deleteFile', 'App\Http\Controllers\EntryQueryController@deleteFile');
         Route::get('/estadoConsulta/{id}', 'App\Http\Controllers\EntryQueryController@getEstadoConsulta');
         Route::get('/consultaPendiente', 'App\Http\Controllers\EntryQueryController@consultaPendiente');
+        Route::get('/cantidadPendientes', 'App\Http\Controllers\EntryQueryController@CountPendientes');
     });
 
     Route::prefix('errors')->group(function () {
