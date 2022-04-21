@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\CierreConsulta;
+use App\Events\ContarConsultas;
 use App\Events\notificationMessage;
 use App\Models\Chat;
 use App\Models\Company;
@@ -248,7 +249,13 @@ class ChatController extends Controller
         $this->sendNotification($user->id, $participante, $mensaje, $avatar);
 
         $participants = Participant::where("idChat", $id)->where("idUser", "!=", $user->id)->where("active", true)->get();
-        Participant::where('idChat', $id)->update(['active' => false, 'outputDate' => date('Y-m-d', Carbon::now()->timestamp)]);
+        Participant::where('idChat', $id)->update(['active' => false, 'outputDate' => date('Y-m-d', Carbon::now()->timestamp),'pendingMessages' => 0]);
+
+        $users = User::where('companies', Auth::user()->companies)->whereIn('idRole', [4,3])->get();
+
+        for ($i=0; $i <count($users) ; $i++) {
+            event(new ContarConsultas($users[$i]['id'],$this->CountPendientes()));
+        }
 
         foreach ($participants as $participant) {
             event(new notificationMessage($participant["idUser"], $id));
@@ -437,16 +444,18 @@ class ChatController extends Controller
             $user = User::where('companies', Auth::user()->companies)->whereIn('idRole', [3, 4])->get();
         }
 
-        $from = $request->has("fromDate") ? $request->get("fromDate") : "";
-        $fromDate1 = (int)$from;
-        $to = $request->has("toDate") ? $request->get("toDate") : "";
-        $fromTo1 = (int)$to;
 
-        $isQuery = $request->has("isQuery") ? ($request->get("isQuery") == "true") : false;
-        $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
-        $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
-        $todo = [];
         for ($i = 0; $i < count($user); $i++) {
+
+            $from = $request->has("fromDate") ? $request->get("fromDate") : "ç";
+            $fromDate1 = (int)$from;
+            $to = $request->has("toDate") ? $request->get("toDate") : "";
+            $fromTo1 = (int)$to;
+
+            $isQuery = $request->has("isQuery") ? ($request->get("isQuery") == "true") : false;
+            $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+            $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
+            $todo = [];
 
             $chatIds = Participant::where("idUser", $user[$i]['id'])->where("status", "Activo")->where("deleted", false)->pluck("idChat");
             $participations = Participant::where("idUser", $user[$i]['id'])->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
@@ -521,6 +530,18 @@ class ChatController extends Controller
         }
 
         return $todo;
+    }
+
+    public function CountPendientes()
+    {
+        try {
+            $hd = json_decode(Auth::user()->companies);
+            $count = EntryQuery::where('status','Pendiente')->where('deleted',false)->where('idHelpdesk',$hd[0])->count();
+            return $count;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
     }
 
 }

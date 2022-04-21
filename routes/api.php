@@ -116,7 +116,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/deleteFile', 'App\Http\Controllers\EntryQueryController@deleteFile');
         Route::get('/estadoConsulta/{id}', 'App\Http\Controllers\EntryQueryController@getEstadoConsulta');
         Route::get('/consultaPendiente', 'App\Http\Controllers\EntryQueryController@consultaPendiente');
-        Route::get('/cantidadPendientes', 'App\Http\Controllers\EntryQueryController@CountPendientes');
+        Route::get('/cantidadPendientes', 'App\Http\Controllers\EntryQueryController@CountPendientesUser5');//Prueba luego borrar
     });
 
     Route::prefix('errors')->group(function () {
@@ -146,6 +146,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/deleteImage', 'App\Http\Controllers\NotificationController@deleteImage');
         Route::post('/deleteFile', 'App\Http\Controllers\NotificationController@deleteFile');
         Route::post('/update-companies-notified/{id}', 'App\Http\Controllers\NotificationController@updateListCompaniesNotified');
+        Route::get('/conteoChats','App\Http\Controllers\NotificationController@conteoNotificaciones');
     });
 
     Route::prefix('recommendations')->group(function () {

@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Chat;
+use App\Models\Company;
+use App\Models\EntryQuery;
 use App\Models\Notification;
 use App\Models\NotificationViewed;
+use App\Models\Participant;
 use App\Models\User;
 use App\Models\UserCompany;
 use Carbon\Carbon;
@@ -447,5 +451,49 @@ class NotificationController extends Controller
         $notification->usersNotified = json_decode($notification->usersNotified, true);
 
         return response()->json(compact('notification'),201);
+    }
+
+    public function conteoNotificaciones()
+    {
+        try {
+
+            $chats = Participant::where('idUser',Auth::user()->id)->where('status','Activo')->where('pendingMessages','>',0)->get();
+            $chatConsultaActiva = [];
+            $chatNormal = [];
+            if (isset($chats)) {
+                for ($i=0; $i <count($chats) ; $i++) {
+                    $chatNor = Chat::where('id',$chats[$i]['idChat'])->where('idEntryQuery', null)->first();
+                    if (!is_null($chatNor)) {
+                        $chatNormal[] = $chatNor;
+                    }
+                    $chatConsActive = Chat::where('id',$chats[$i]['idChat'])->where('idEntryQuery','!=', null)->first();
+                    if (!is_null($chatConsActive)) {
+                        $chatConsultaActiva[] = $chatConsActive;
+                    }
+                }
+                $hd = User::where('id',Auth::user()->id)->whereIn('idRole',[3,4])->first();
+                if (isset($hd)) {
+                    $hd = UserCompany::where('idUser',Auth::user()->id)->first()->idCompany;
+                    $consultasPendientes = EntryQuery::where('status','Pendiente')->where('deleted',false)->where('idHelpdesk',$hd)->count();
+
+                    return array('chats' => count($chatNormal),
+                         'consultasActivas' => count($chatConsultaActiva),
+                         'consultasPendientes' => $consultasPendientes);
+                }
+                    return array('chats' => count($chatNormal),
+                         'consultasActivas' => count($chatConsultaActiva),
+                         'consultasPendientes' => 0);
+
+            }
+                    return array('chats' => 0,
+                         'consultasActivas' => 0,
+                         'consultasPendientes' => 0);
+
+
+
+
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 }

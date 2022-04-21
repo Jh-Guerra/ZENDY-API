@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\messageConsulta;
 use App\Events\messageNotification;
 use App\Events\notificationMessage;
 use App\Events\sendMessage;
@@ -70,17 +71,47 @@ class MessageController extends Controller
 
         $this->sendNotification($user, $participants, $message,$request["idChat"], $avatar);
 
-        
-        $contenido = [
-            'idChat'     => $request["idChat"],
-            'idUser'     => $user->id,
-            'usuario'    => $user->firstName,
-            'avatar'     => $avatar,
-            'mensaje'    => $request["message"],
-        ];
-        foreach ($participants as $participant) {
-            event(new messageNotification($participant["idUser"], $contenido));
+
+        $chats = Participant::where('idUser',$participant["idUser"])->where('status','Activo')->where('pendingMessages','>',0)->get();
+        $chatConsultaActiva = [];
+        $chatNormal = [];
+        for ($i=0; $i <count($chats) ; $i++) {
+            $chatNor = Chat::where('id',$chats[$i]['idChat'])->where('idEntryQuery', null)->first();
+            if (!is_null($chatNor)) {
+                $chatNormal[] = $chatNor;
+            }
+            $chatConsActive = Chat::where('id',$chats[$i]['idChat'])->where('idEntryQuery','!=', null)->first();
+            if (!is_null($chatConsActive)) {
+                $chatConsultaActiva[] = $chatConsActive;
+            }
         }
+        $consultaOno = Chat::where('id',$request["idChat"])->first();
+        if (is_null($consultaOno['idEntryQuery'])) {
+            $contenido = [
+                'idChat'     => $request["idChat"],
+                'idUser'     => $user->id,
+                'usuario'    => $user->firstName,
+                'avatar'     => $avatar,
+                'mensaje'    => $request["message"],
+                'cantidadNoti' => count($chatNormal),
+            ];
+            foreach ($participants as $participant) {
+                event(new messageNotification($participant["idUser"], $contenido));
+            }
+        }else {
+            $contenido = [
+                'idChat'     => $request["idChat"],
+                'idUser'     => $user->id,
+                'usuario'    => $user->firstName,
+                'avatar'     => $avatar,
+                'mensaje'    => $request["message"],
+                'cantidadNoti' => count($chatConsultaActiva),
+            ];
+            foreach ($participants as $participant) {
+                event(new messageConsulta($participant["idUser"], $contenido));
+            }
+        }
+
 
         return response()->json(compact('message'), 201);
 

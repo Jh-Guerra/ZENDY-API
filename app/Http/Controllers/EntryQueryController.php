@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Events\AceptarConsulta;
 use App\Events\ConsultaNotification;
+use App\Events\ContarConsultas;
 use App\Mail\chatMail;
 use App\Mail\ConsultaPendienteMail;
 use App\Models\Chat;
@@ -73,20 +74,20 @@ class EntryQueryController extends Controller
         }
 
         $HD = '["' . $request["idHelpdesk"] . '"]';
-        $users = User::where('companies', $HD)->where('idRole', 4)->get();
+        $users = User::where('companies', $HD)->whereIn('idRole', [4,3])->get();
         $mensaje = "Se ha presentado una nueva consulta, haz clic aquí para redirigirte hacia ella";
         $avatar = !!isset($user->avatar) ? "api/".$user->avatar : 'static/media/defaultAvatarMale.edd5e438.jpg';
         $ruta = "/consultas/";
         $cantidad = EntryQuery::where('status', 'Pendiente')->where('deleted', false)->where('idHelpdesk', $request["idHelpdesk"])->count();
-        
+
         $contenido = [
-            'modulo'     => Module::where('id', $request["idModule"])->first()->name,
-            'idConsulta' => $entryQuery->id,
-            'idUser'     => $user->id,
-            'usuario'    => $user->firstName,
-            'avatar'     => $avatar,
-            'mensaje'    => $mensaje,
-            'cantidad'   => $cantidad,
+            'modulo'            => Module::where('id', $request["idModule"])->first()->name,
+            'idConsulta'        => $entryQuery->id,
+            'idUser'            => $user->id,
+            'usuario'           => $user->firstName,
+            'avatar'            => $avatar,
+            'mensaje'           => $mensaje,
+            'cantidadNoti'      => $cantidad,
         ];
 
         $i = 0;
@@ -322,9 +323,16 @@ class EntryQueryController extends Controller
         $entryQuery = EntryQuery::find($id);
         if (!$entryQuery)
             return response()->json(['error' => 'Consulta no encontrada.'], 400);
-
         $entryQuery->deleted = true;
         $entryQuery->save();
+
+        $empresaUserLogin = json_decode(Auth::user()->companies);
+        $empresaHD = Company::where('id',$empresaUserLogin[0])->first();
+        $users = User::where('companies', $empresaHD['helpDesks'])->whereIn('idRole', [4,3])->get();
+
+        for ($i=0; $i <count($users) ; $i++) {
+            event(new ContarConsultas($users[$i]['id'],$this->CountPendientesUser5()));
+        }
 
         return response()->json(compact('entryQuery'), 201);
     }
@@ -567,6 +575,13 @@ class EntryQueryController extends Controller
         $this->sendNotification($user, $participante, $mensaje, $ruta, $chat->id, $avatar);
         event(new AceptarConsulta($participante[0]['id'], $contenido));
 
+
+        $users = User::where('companies', Auth::user()->companies)->whereIn('idRole', [4,3])->get();
+
+        for ($i=0; $i <count($users) ; $i++) {
+            event(new ContarConsultas($users[$i]['id'],$this->CountPendientes()));
+        }
+
         return response()->json(compact('chat'), 201);
     }
 
@@ -737,16 +752,26 @@ class EntryQueryController extends Controller
     public function CountPendientes()
     {
         try {
-            $user = UserCompany::where('idUser',Auth::user()->id)->first()->idCompany;
-            $hd = json_decode(Company::where('id',$user)->first()->helpDesks);
+            $hd = json_decode(Auth::user()->companies);
             $count = EntryQuery::where('status','Pendiente')->where('deleted',false)->where('idHelpdesk',$hd[0])->count();
-            
-            return array('status'=>true,
-                        'descripcion'=>'Consultas pendientes',
-                        'cantidad' => $count);
+            return $count;
         } catch (\Throwable $th) {
             throw $th;
         }
-        
+
+    }
+
+    public function CountPendientesUser5()
+    {
+        try {
+            $empresaUserLogin = json_decode(Auth::user()->companies);
+            $empresa = Company::where('id',$empresaUserLogin[0])->first();
+            $empresaHD = json_decode($empresa['helpDesks']);
+            $count = EntryQuery::where('status','Pendiente')->where('deleted',false)->where('idHelpdesk',$empresaHD[0])->count();
+            return $count;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
     }
 }

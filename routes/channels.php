@@ -44,3 +44,11 @@ Broadcast::channel('cierreConsulta.{id}', function ($user, $id) {
     return (int)$user->id === (int)$id;
 });
 
+Broadcast::channel('mensajeActivo.{id}', function ($user, $id) {
+    return (int)$user->id === (int)$id;
+});
+
+Broadcast::channel('cantidadNoti.{id}', function ($user, $id) {
+    return (int)$user->id === (int)$id;
+});
+
