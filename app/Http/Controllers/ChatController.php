@@ -544,4 +544,42 @@ class ChatController extends Controller
 
     }
 
+    public function imageChat($id, Request $request)
+    {
+
+        $user = Auth::user();
+        if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
+
+        $chat = Chat::find($id);
+        if (!$chat) return response()->json(['error' => 'Chat no encontrado'], 400);
+
+        if ($request->hasFile('image')) {
+
+            if(!is_null($chat->imgChat)){
+                $image_path = public_path() . '/'. $chat->imgChat;
+                if (@getimagesize($image_path)) {
+                    unlink($image_path);
+                }
+            }
+
+            $file = $request->file('image');
+            $extension = $file->getClientOriginalExtension();
+            $name = $id . "_" . Carbon::now()->timestamp;
+            $file->storeAs('public/group/', $name .'.'. $extension);
+
+            $chat->imgChat = 'storage/group/'. $name .'.'. $extension;
+            $chat->save();
+
+            $participants = Participant::where("idChat", $id)->where("idUser", "!=", $user->id)->where("active", true)->get();
+            foreach ($participants as $participant) {
+                event(new notificationMessage($participant["idUser"], $id));
+            }
+
+            return response()->json(compact('chat'), 201);
+        }
+
+        return response()->json(['error' => 'Archivo no encontrado'], 400);
+
+    }
+
 }

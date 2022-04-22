@@ -29,6 +29,7 @@ class ChatClientController extends Controller
         $chat->idUser = $user->id;
         $chat->messages = 0;
         $chat->scope = count($users) > 1 ? "Grupal" : "Personal";
+        $chat->name = $request['name'];
         $chat->isQuery = false;
 
         if($chat->scope == "Personal"){
@@ -47,6 +48,14 @@ class ChatClientController extends Controller
         }
 
         $chat->save();
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $extension = $file->getClientOriginalExtension();
+            $name = $chat->id . "_" . Carbon::now()->timestamp;
+            $file->storeAs('public/group/', $name .'.'. $extension);
+            $chat->imgChat = 'storage/group/'. $name .'.'. $extension;
+            $chat->save();
+        }
 
         $participantController = new ParticipantController();
         $participants = [];

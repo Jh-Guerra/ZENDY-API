@@ -296,8 +296,10 @@ class EntryQueryController extends Controller
             $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')->where("entry_queries.idHelpdesk", $idCompany)
                 ->where("status", "Pendiente")->where("entry_queries.deleted", false);
         } else {
+            // $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')
+            //      ->where("status", "Pendiente")->where("entry_queries.idHelpdesk", $idHelpdesk)->where("entry_queries.deleted", false);
             $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')
-                ->where("status", "Pendiente")->where("entry_queries.idHelpdesk", $idHelpdesk)->where("entry_queries.deleted", false);
+                 ->where("status", "Pendiente")->where('createdBy',Auth::user()->id)->where("entry_queries.idHelpdesk", $idHelpdesk)->where("entry_queries.deleted", false);
         }
 
         $term = $request->has("term") ? $request->get("term") : "";
@@ -734,6 +736,15 @@ class EntryQueryController extends Controller
         try {
             $user = EntryQuery::where('createdBy',Auth::user()->id)->where('status','Pendiente')->where('deleted',false)->first();
             if (is_null($user)) {
+                $userAceptado = EntryQuery::where('createdBy',Auth::user()->id)->where('status','Aceptado')->where('deleted',false)->get();
+                for ($i=0; $i <count($userAceptado) ; $i++) {
+                    $activoEncontrado = Chat::where('idEntryQuery', $userAceptado[$i]['id'])->first()->status;
+                    if ($activoEncontrado == "Vigente") {
+                        return array(
+                            'status' => false,
+                            'descripcion' => 'Usted cuenta con una consulta pendiente, por favor use las opciones de editar o elimiar de la consulta según lo requiera');
+                    }
+                }
                 return array(
                     'status' => true,
                     'descripcion' => 'Puede proseguir con su consulta');

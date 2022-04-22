@@ -418,13 +418,25 @@ class UserController extends Controller
         $term = $request->has("term") ? $request->get("term") : "";
 
         $users = User::join('roles', 'users.idRole', '=', 'roles.id')
-            ->where('users.deleted', '!=', true);
+            ->where('users.deleted', '!=', true)->take(2500);
         $this->searchUser($users, $term);
 
         $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
 
         return $users;
     }
+
+    public function list2()
+    {
+        try {
+            $users = User::all();
+            return $users;
+        } catch (\Throwable $th) {
+            throw $th;
+        }
+
+    }
+
 
     public function addObjectValues($users, $idCompany)
     {
@@ -553,7 +565,6 @@ class UserController extends Controller
         return User::where('isOnline', '!=', false)->orderBy("LastName")->get();
     }
 
-
     public function updateUserOffLine(Request $request, $id)
     {
 
@@ -586,13 +597,37 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    public function updateImage(Request $request)
+    {
+
+        $user = Auth::User();
+
+        if ($request->hasFile('image')) {
+
+            if(!is_null($user->avatar)){
+                $image_path = public_path() . '/'. $user->avatar;
+                if (@getimagesize($image_path)) {
+                    unlink($image_path);
+                }
+            }
+            $updateUser = User::find($user->id);
+
+            $tasks_controller = new uploadImageController;
+            $updateUser->avatar = $tasks_controller->updateFile($request->file('image'), "users/avatar", $user->id . "_" . Carbon::now()->timestamp);
+            $updateUser->save();
+
+            return response()->json(compact('user'), 201);
+        }
+        return response()->json(['error' => 'Archivo no encontrado'], 400);
+    }
+
     public function deleteImage(Request $request)
     {
         $imageLink = $request->imageLink;
         $userId = $request->id;
 
         $user = User::find($userId);
-        $image_path = storage_path() . '/app/public/' . "" . $imageLink;
+        $image_path = public_path() . '/'. $user->avatar;
         if (@getimagesize($image_path) && $user) {
             unlink($image_path);
             $user->avatar = null;
@@ -766,7 +801,7 @@ class UserController extends Controller
                     'estado'=> 'Contraseña no cambiada',
                      'data' => $user
                     );
-              
+
             } else {
                 return  array(
                     'estado'=> 'Contraseña cambiada',
@@ -801,13 +836,33 @@ class UserController extends Controller
                         'descripcion' => 'Escribar correctamente su contraseña por favor'
                         );
                 }
-                
+
             } else {
                 return array(
                     'estado'=> false,
                     'descripcion' => 'Contraseña incorrecta'
                     );
             }
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw $th;
+        }
+    }
+
+    public function updateDeviceToken($id)
+    {
+        try {
+            $user = User::find($id);
+            if (!$user) {
+                return response()->json(['error' => 'Usuario no encontrado'], 400);
+            }
+
+            $user->device_token = null;
+            $user->save();
+
+            DB::commit();
+            return response()->json($user);
+
         } catch (\Throwable $th) {
             DB::rollBack();
             throw $th;

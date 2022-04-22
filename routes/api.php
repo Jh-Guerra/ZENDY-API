@@ -35,6 +35,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update/{id}', 'App\Http\Controllers\UserController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
         Route::get('/list', 'App\Http\Controllers\UserController@list');
+        Route::get('/list2', 'App\Http\Controllers\UserController@list2');
         Route::post('/list-available', 'App\Http\Controllers\UserController@listAvailable');
         Route::get('/list-by-company/{idCompany}', 'App\Http\Controllers\UserController@listByCompany');
         Route::get('/list-admins', 'App\Http\Controllers\UserController@listAdmins');
@@ -49,7 +50,8 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/update-password/{id}', 'App\Http\Controllers\UserController@updatePassword');
         Route::post('/changeHelpDesk/{id}', 'App\Http\Controllers\UserController@changeHelpDesk');
         Route::post('/searchUsers', 'App\Http\Controllers\UserController@searchOnlyUser');
-
+        Route::post('/updateImage', 'App\Http\Controllers\UserController@updateImage');
+        Route::post('/updateDeviceToken/{id}', 'App\Http\Controllers\UserController@updateDeviceToken');
     });
 
     Route::prefix('roles')->group(function () {
@@ -85,6 +87,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/finalize-list', 'App\Http\Controllers\ChatController@listFinalize');
         Route::get('/usersHD', 'App\Http\Controllers\ChatController@UsersHD');
         Route::post('/searchlistFinalize', 'App\Http\Controllers\ChatController@searchlistFinalize');
+        Route::post('/image/{id}', 'App\Http\Controllers\ChatController@imageChat');
     });
 
     Route::prefix('chats-client')->group(function () {
