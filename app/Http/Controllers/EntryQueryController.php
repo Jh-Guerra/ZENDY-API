@@ -299,7 +299,7 @@ class EntryQueryController extends Controller
             // $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')
             //      ->where("status", "Pendiente")->where("entry_queries.idHelpdesk", $idHelpdesk)->where("entry_queries.deleted", false);
             $entryQueries = EntryQuery::join('users', 'entry_queries.createdBy', '=', 'users.id')
-                 ->where("status", "Pendiente")->where('createdBy',Auth::user()->id)->where("entry_queries.idHelpdesk", $idHelpdesk)->where("entry_queries.deleted", false);
+                 ->where("status", "Pendiente")->where('createdBy',Auth::user()->id)->where('idCompany', $idCompany)->where("entry_queries.idHelpdesk", $idHelpdesk)->where("entry_queries.deleted", false);
         }
 
         $term = $request->has("term") ? $request->get("term") : "";

@@ -350,26 +350,6 @@ class CompanyController extends Controller
             return $user;
     }
 
-    public function rut_companies(){
-
-        try {
-
-        $companies = Company::where('helpDesks','<>', null)->whereNotIn('ruc', ['76017114-k', '22222222-2','20608358243'])->get();
-
-        for ($i=0; $i <count($companies) ; $i++) {
-                $newRut = new rutCompanies;
-                $newRut->id_companies = $companies[$i]['id'];
-                $newRut->ruc = $companies[$i]['ruc'];
-                $newRut->estado = 0;
-                $newRut->save();
-            }
-
-        return 'Tabla completada';
-        } catch (\Throwable $th) {
-            throw $th;
-        }
-    }
-
     public function searchRuc(Request $request){
 
         try {

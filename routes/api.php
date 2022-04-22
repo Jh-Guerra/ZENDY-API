@@ -204,14 +204,10 @@ Route::group(['middleware' => ['jwt.verify']], function() {
 
     Route::prefix('prueba')->group(function () {
         Route::post('/', 'App\Http\Controllers\CompanyController@prueba');
-        Route::post('/syncEntity', 'App\Http\Controllers\CompanyController@rut_companies');//1. Crear datos con companies -3 ruts y -helpDesks nulos
     });
 
     Route::prefix('syncUsers')->group(function () {
-        Route::post('/', 'App\Http\Controllers\UserSoftnetController@insertUsers');//3. Pasa registros de tabla usuarios_zendy hacia users y general relaciones en users_companies
         Route::post('/updateToken', 'App\Http\Controllers\UserSoftnetController@getTokenSofnet');
-        Route::post('/usersERP', 'App\Http\Controllers\UserSoftnetController@usersERP');//2. Pasa registros de datos_usuarios hacie usuarios_zendy solo cuando su ruc es igual a companies
-        Route::post('/limpiarDatos', 'App\Http\Controllers\UserSoftnetController@limpiarDatos');//Usado para limpieza de datos
         Route::post('/sincronizarUsuarios', 'App\Http\Controllers\solicitudesAcceso@sincronizarUsuarios');
         Route::post('/seleccionUsuariosSincronizar', 'App\Http\Controllers\solicitudesAcceso@seleccionUsuariosSincronizar');
     });

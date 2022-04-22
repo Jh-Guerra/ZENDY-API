@@ -102,6 +102,7 @@ class ChatController extends Controller
         $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
 
         $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status", $request->status)->orderByDesc("updated_at")->get();
+        // $chats = Chat::whereIn("id", $chatIds)->where("idCompany",$idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status", $request->status)->orderByDesc("updated_at")->get();
 
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
@@ -418,7 +419,7 @@ class ChatController extends Controller
             //Luego cambiar el id estatico por -> Auth::user()->id o para una prueba pasar a 98 -> adminzendy
             $companies = User::where('id', Auth::user()->id)->first()->companies;
 
-            $ids       = User::where('companies', $companies)->get();
+            $ids = User::where('companies', $companies)->get();
 
             for ($i = 0; $i < count($ids); $i++) {
                 $data[] = array(
@@ -447,7 +448,7 @@ class ChatController extends Controller
 
         for ($i = 0; $i < count($user); $i++) {
 
-            $from = $request->has("fromDate") ? $request->get("fromDate") : "ç";
+            $from = $request->has("fromDate") ? $request->get("fromDate") : "";
             $fromDate1 = (int)$from;
             $to = $request->has("toDate") ? $request->get("toDate") : "";
             $fromTo1 = (int)$to;
