@@ -52,6 +52,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/searchUsers', 'App\Http\Controllers\UserController@searchOnlyUser');
         Route::post('/updateImage', 'App\Http\Controllers\UserController@updateImage');
         Route::post('/updateDeviceToken/{id}', 'App\Http\Controllers\UserController@updateDeviceToken');
+        Route::post('/logoutLaravel','App\Http\Controllers\UserController@cerrarSesionLaravel');
     });
 
     Route::prefix('roles')->group(function () {
@@ -73,13 +74,13 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/searchCompany', 'App\Http\Controllers\CompanyController@searchCompany');
         Route::post('/usernameRuc', 'App\Http\Controllers\CompanyController@usernameRuc');
         Route::post('/sendRequestEntity', 'App\Http\Controllers\SendRequestNewEntity@SendRequest');
-
     });
 
     Route::prefix('chats')->group(function () {
         Route::get('/find/{id}', 'App\Http\Controllers\ChatController@find');
         Route::get('/findImages/{id}', 'App\Http\Controllers\ChatController@findImages');
         Route::get('/active-list', 'App\Http\Controllers\ChatController@listActive');
+        Route::get('/chatEmpresa','App\Http\Controllers\ChatController@chatEmpresa');
         Route::delete('/delete/{id}', 'App\Http\Controllers\ChatController@delete');
         Route::post('/finalize/{id}', 'App\Http\Controllers\ChatController@finalize');
         Route::post('/name/{id}', 'App\Http\Controllers\ChatController@nameChat');
@@ -113,6 +114,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/accept/{id}', 'App\Http\Controllers\EntryQueryController@accept');
         Route::post('/{id}/recommend', 'App\Http\Controllers\EntryQueryController@recommendUser');
         Route::get('/listFrequent', 'App\Http\Controllers\EntryQueryController@listFrequent');
+        Route::get('/likeFrequent', 'App\Http\Controllers\EntryQueryController@likeFrequent');
         Route::post('/updateFrequent/{id}', 'App\Http\Controllers\EntryQueryController@updateFrequent');
         Route::post('/deleteImage', 'App\Http\Controllers\EntryQueryController@deleteImage');
         Route::post('/register-frequent', 'App\Http\Controllers\EntryQueryController@registerFrequent');
@@ -120,6 +122,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::get('/estadoConsulta/{id}', 'App\Http\Controllers\EntryQueryController@getEstadoConsulta');
         Route::get('/consultaPendiente', 'App\Http\Controllers\EntryQueryController@consultaPendiente');
         Route::get('/cantidadPendientes', 'App\Http\Controllers\EntryQueryController@CountPendientesUser5');//Prueba luego borrar
+        Route::post('/statusModalOff','App\Http\Controllers\EntryQueryController@updateModal');
     });
 
     Route::prefix('errors')->group(function () {

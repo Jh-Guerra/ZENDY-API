@@ -24,6 +24,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Recommendation;
 use App\Models\UserCompany;
 use DateTime;
+use Illuminate\Support\Facades\DB;
 use Mail;
 
 class EntryQueryController extends Controller
@@ -633,6 +634,7 @@ class EntryQueryController extends Controller
         return $entryQueries->orderBy("name")->get();
     }
 
+
     public function updateFrequent(Request $request, $id)
     {
         $entryQuery = EntryQuery::find($id);
@@ -738,8 +740,10 @@ class EntryQueryController extends Controller
             if (is_null($user)) {
                 $userAceptado = EntryQuery::where('createdBy',Auth::user()->id)->where('status','Aceptado')->where('deleted',false)->get();
                 for ($i=0; $i <count($userAceptado) ; $i++) {
-                    $activoEncontrado = Chat::where('idEntryQuery', $userAceptado[$i]['id'])->first()->status;
-                    if ($activoEncontrado == "Vigente") {
+                    $activoEncontrado = Chat::where('idEntryQuery', $userAceptado[$i]['id'])->first();
+                    if (is_null($activoEncontrado)) {
+                    }
+                    elseif ($activoEncontrado['status'] == "Vigente") {
                         return array(
                             'status' => false,
                             'descripcion' => 'Usted cuenta con una consulta pendiente, por favor use las opciones de editar o elimiar de la consulta según lo requiera');
@@ -784,5 +788,36 @@ class EntryQueryController extends Controller
             throw $th;
         }
 
+    }
+
+    public function updateModal(Request $request)
+    {
+        try {
+                $status = $request['status'];
+                if ($status == 0) {
+                    $user = User::find(Auth::user()->id);
+                    $user->statusModal = '0';
+                    $user->save();
+
+                    DB::commit();
+                    return ['message' => 'El modal no se volverá a mostrar'];
+
+                }elseif ($status == 1) {
+                    $user = User::find(Auth::user()->id);
+                    $user->statusModal = '1';
+                    $user->save();
+
+                    DB::commit();
+                    return ['message' => 'El modal se seguirá mostrando'];
+                }
+
+                DB::commit();
+                return ['message' => 'Data no válida'];
+
+
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            throw $th;
+        }
     }
 }

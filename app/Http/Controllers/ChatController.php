@@ -161,10 +161,29 @@ class ChatController extends Controller
                 if ($chat->name) {
                     $filter = strtolower($chat->name);
                 }
+                //$this->chatEmpresa(str_contains(strtolower($filter), strtolower($term)) !== false);
                 return str_contains(strtolower($filter), strtolower($term)) !== false;
             });
         }
+        //$this->chatEmpresa($chats->values()->all());
         return $chats->values()->all();
+    }
+
+    public function chatEmpresa($chats)
+    {
+        try {
+
+            for ($i=0; $i <count($chats) ; $i++) {
+                if ( $chats[$i]['scope'] == 'Personal') {
+                    $userChats[] = $chats[$i]['idUser'];
+                }
+            }
+            dd($userChats);
+
+
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
     public function listAvailableUsersByCompany(Request $request)

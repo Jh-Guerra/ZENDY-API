@@ -139,21 +139,23 @@ class solicitudesAcceso extends Controller
                         'token' => 'eb43a27d64dc2dfecf676fe57120d37311e39eb947c179442ffd394a2869157d56dff31b50036656bc71c6a1ff0d41f5156e75cec96778216a754a790c2d2109',
                     ])->get('http://api.softnet.cl/cliente/' . $rucs[$i]['ruc']);
                     $value = $data->json();
+                    if (isset($value['rut'])) {
+                        $newCompanie = new Company;
+                        $newCompanie->ruc                        =   $value['rut'];
+                        $newCompanie->name                       =   $value['nombre_rz'];
+                        $newCompanie->description                =   $value['nombre_fantasia'];
+                        $newCompanie->phone                      =   $value['telefono'];
+                        $newCompanie->email                      =   $value['mail'];
+                        $newCompanie->description                =   $value['observacion'];
+                        $newCompanie->helpDesks                  =   '["11"]';
+                        $newCompanie->address                    =   !empty($value['direccion']) ? $value['direccion'][0]['direccion'] : '';
+                        $newCompanie->save();
 
-                    $newCompanie = new Company;
-                    $newCompanie->ruc                        =   $value['rut'];
-                    $newCompanie->name                       =   $value['nombre_rz'];
-                    $newCompanie->description                =   $value['nombre_fantasia'];
-                    $newCompanie->phone                      =   $value['telefono'];
-                    $newCompanie->email                      =   $value['mail'];
-                    $newCompanie->description                =   $value['observacion'];
-                    $newCompanie->helpDesks                  =   '["11"]';
-                    $newCompanie->address                    =   !empty($value['direccion']) ? $value['direccion'][0]['direccion'] : '';
-                    $newCompanie->save();
+                        $solicitud = ModelsSolicitudesAcceso::where('ruc', $rucs[$i]['ruc'])->where('username', null)->first()->id;
+                        $this->changeState($solicitud);
+                        $count++;
+                    }
 
-                    $solicitud = ModelsSolicitudesAcceso::where('ruc', $rucs[$i]['ruc'])->where('username', null)->first()->id;
-                    $this->changeState($solicitud);
-                    $count++;
                 }
                 DB::commit();
                 return array(
