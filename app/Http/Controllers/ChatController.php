@@ -10,6 +10,7 @@ use App\Models\Company;
 use App\Models\EntryQuery;
 use App\Models\Message;
 use App\Models\Participant;
+use App\Models\Role;
 use App\Models\UserCompany;
 use App\Models\User;
 use Carbon\Carbon;
@@ -161,24 +162,58 @@ class ChatController extends Controller
                 if ($chat->name) {
                     $filter = strtolower($chat->name);
                 }
-                //$this->chatEmpresa(str_contains(strtolower($filter), strtolower($term)) !== false);
                 return str_contains(strtolower($filter), strtolower($term)) !== false;
             });
         }
-        //$this->chatEmpresa($chats->values()->all());
         return $chats->values()->all();
     }
 
-    public function chatEmpresa($chats)
+    public function chatEmpresa(Request $request)
     {
         try {
+            $term = $request->has("term") ? $request->get("term") : "";
+            if ($term) {
+                $chats = Participant::where('idUser',Auth::user()->id)->where('active',1)->pluck('idChat');
+                $chatsPersonales = Chat::whereIn('id',$chats)->where('scope','Personal')->where('status', 'Vigente')->pluck('id');
+                $chatsRemitentes = Participant::whereIn('idChat',$chatsPersonales)->where('idUser','!=',Auth::user()->id)->pluck('idUser');
+                $chatEmpresa = User::whereNotIn('id', $chatsRemitentes)
+                                ->where(function($chat) use($term) {
+                                    $chat->where('firstName','LIKE','%'.$term.'%')
+                                    ->orWhere('lastName','LIKE','%'.$term.'%');
+                                })
+                                ->where('companies',Auth::user()->companies)->get();
+                $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+                $company = Company::find($idCompany);
 
-            for ($i=0; $i <count($chats) ; $i++) {
-                if ( $chats[$i]['scope'] == 'Personal') {
-                    $userChats[] = $chats[$i]['idUser'];
-                }
+               foreach ($chatEmpresa as $value) {
+                    $createChat[] = ['id'                   => $value['id'],
+                                    'username'              => $value['username'],
+                                    'firstName'             => $value['firstName'],
+                                    'lastName'              => $value['lastName'],
+                                    'email'                 => $value['email'],
+                                    'password'              => $value['password'],
+                                    'encrypted_password'    => $value['encrypted_password'],
+                                    'dob'                   => $value['dob'],
+                                    'phone'                 => $value['phone'],
+                                    'sex'                   => $value['sex'],
+                                    'idRole'                => $value['idRole'],
+                                    'companies'             => $value['companies'],
+                                    'avatar'                => $value['avatar'],
+                                    'isOnline'              => $value['isOnline'],
+                                    'deleted'               => $value['deleted'],
+                                    'email_verified_at'     => $value['email_verified_at'],
+                                    'device_token'          => $value['device_token'],
+                                    'statusModal'           => $value['statusModal'],
+                                    'created_at'            => $value['created_at'],
+                                    'updated_at'            => $value['updated_at'],
+                                    'activo'                => $value['activo'],
+                                    'roleName'              => Role::where('id',$value['idRole'])->first()->name,
+                                    'companyName'           => isset($company) ? $company->name : 'SuperAdmin',
+                ];
+               }
+
+               return $createChat;
             }
-            dd($userChats);
 
 
         } catch (\Throwable $th) {
