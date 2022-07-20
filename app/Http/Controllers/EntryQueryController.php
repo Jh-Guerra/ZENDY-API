@@ -553,11 +553,19 @@ class EntryQueryController extends Controller
             $messageFile->createdDate = Carbon::now()->timestamp;
             $messageFile->save();
         }
-
+        $Accept = User::where('id', $entryQuery->acceptedBy)->first();
         $message = new Message();
         $message->createdBy = $user->id;
         $message->idChat = $chat->id;
-        $message->message = "Hola, buen día. En un momento lo atenderemos";
+        $message->message = "
+        Estimado Usuario, te has comunicado con SOFTNET SPA.
+        Antes de proceder con la atención, tenemos a bien informar que, como es de su conocimiento, nuestros servicios son facturados a mes vencido y debido a los estragos de la pandemia, tuvimos la deferencia de posponer la suspensión de los servicios al acumular 3 facturas sin pagar.
+        A partir de julio 2022, nuestros protocolos han sido restablecidos y los servicios serán suspendidos el día 5 del mes, al acumular 2 facturas sin pago.
+        Agradeciendo su comprensión se despide cordialmente,
+        Equipo SOFTNET.
+
+        Buenas tardes, hablas con ".$Accept['firstName'].", ¿en qué te puedo ayudar?
+        ";
         $message->resend = false;
         $message->originalUserId = $user->id;
         $message->createdDate = Carbon::now()->timestamp;
@@ -733,12 +741,15 @@ class EntryQueryController extends Controller
         }
     }
 
-    public function consultaPendiente()
+    public function consultaPendiente(Request $request)
     {
+        //  dd($request['idCompany']);
         try {
-            $user = EntryQuery::where('createdBy',Auth::user()->id)->where('status','Pendiente')->where('deleted',false)->first();
+            $user = EntryQuery::where('createdBy',Auth::user()->id)->where('idCompany',$request['idCompany'])->where('status','Pendiente')->where('deleted',false)->first();
+        //    dd($user);
             if (is_null($user)) {
                 $userAceptado = EntryQuery::where('createdBy',Auth::user()->id)->where('status','Aceptado')->where('deleted',false)->get();
+            //    dd($userAceptado);
                 for ($i=0; $i <count($userAceptado) ; $i++) {
                     $activoEncontrado = Chat::where('idEntryQuery', $userAceptado[$i]['id'])->first();
                     if (is_null($activoEncontrado)) {

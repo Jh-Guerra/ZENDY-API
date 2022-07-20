@@ -75,7 +75,7 @@ class UserController extends Controller
                 }
 
                 $user->companies = $user->companies ? json_decode($user->companies, true) : [];
-
+               // dd($user->companies);
                 $company->helpDesks = json_decode($company->helpDesks, true);
                 $helpDesks = $company->helpDesks;
                 if ($helpDesks && count($helpDesks) > 0) {
@@ -83,7 +83,7 @@ class UserController extends Controller
                     $user->helpDesk = $firstHelpDesk;
                     $user->idHelpDesk = $firstHelpDesk->id;
                 }
-
+            //    return $user;
                 $token = JWTAuth::fromUser($user);
                 if (!$token) return response()->json(['error' => 'Credenciales inválidas'], 400);
             } else {
@@ -223,7 +223,7 @@ class UserController extends Controller
         $role->sections = Section::whereIn("id", $role->sectionIds)->where("active", true)->where("deleted", false)->orderBy("order")->get();
 
         $user->companies = $user->companies ? json_decode($user->companies, true) : [];
-
+        //dd(json_decode($user->companies, true));
         $company->helpDesks = json_decode($company->helpDesks, true);
         $helpDesks = $company->helpDesks;
         if ($helpDesks && count($helpDesks) > 0) {
@@ -413,18 +413,48 @@ class UserController extends Controller
         return $user;
     }
 
+    // public function list(Request $request)
+    // {
+    //     $term = $request->has("term") ? $request->get("term") : "";
+
+    //     $users = User::join('roles', 'users.idRole', '=', 'roles.id')
+    //         ->where('users.deleted', '!=', true)->take(2500);
+    //     $this->searchUser($users, $term);
+
+    //     $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
+
+    //     return $users;
+    // }
     public function list(Request $request)
     {
         $term = $request->has("term") ? $request->get("term") : "";
+        $termCompany = $request->has('termCompany') ? $request->get('termCompany') : '';
+        // dd($termCompany);
 
-        $users = User::join('roles', 'users.idRole', '=', 'roles.id')
-            ->where('users.deleted', '!=', true)->take(2500);
+        $index_paginate = $request->has("per_page") ? $request['per_page'] : "";
+        if($termCompany)
+        {
+             $company = Company::where('ruc',$termCompany)->first()->id;
+        //     $Usercompany = UserCompany::where("rutCompany", $termCompany)->where("deleted", false)->pluck('id');
+        // return $Usercompany;
+            $users = User::select('users.*', 'roles.name AS roleName')->join('roles', 'users.idRole', '=', 'roles.id')
+            ->where('users.companies','LIKE', '%["' . $company  . '"]%')
+             ->where('users.deleted', '!=', true);
+        }else{
+            $users = User::select('users.*', 'roles.name AS roleName')->join('roles', 'users.idRole', '=', 'roles.id')
+             ->where('users.deleted', '!=', true);
+        }
+
+        //  return $users->get();
         $this->searchUser($users, $term);
+        // return $users->get();
+        $users = $users->orderBy("firstName")->orderBy("lastName");
 
-        $users = $users->orderBy("firstName")->orderBy("lastName")->get(['users.*', 'roles.name AS roleName']);
-
-        return $users;
+        return  $index_paginate
+         ? $users->paginate((int) ($index_paginate?? 10))
+         : $users->get();
     }
+
 
     public function list2()
     {
@@ -441,7 +471,7 @@ class UserController extends Controller
     public function addObjectValues($users, $idCompany)
     {
         $company = Company::find($idCompany);
-
+        // dd($company );
         if ($company) {
             foreach ($users as $user) {
                 $user->company = $company;
@@ -639,6 +669,7 @@ class UserController extends Controller
         }
     }
 
+
     public function listSameCompany(Request $request)
     {
         $start = 0;
@@ -659,6 +690,43 @@ class UserController extends Controller
 
         return $users;
     }
+    // public function listSameCompany(Request $request)
+    // {
+    //     $start = 0;
+    //     $limit = 50;
+    //     $user = Auth::user();
+    //     $term = $request->has("term") ? $request->get("term") : "";
+    //     $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
+    //     $index_paginate = $request->has("per_page") ? $request['per_page'] : "";
+    //     if($idCompany==11)
+    //     {
+    //         // $users = User::join('roles', 'users.idRole', '=', 'roles.id')
+    //         // ->where('users.companies', 'LIKE', '%' . "\"" . $idCompany . "\"" . '%')
+    //         // ->where('users.deleted', '!=', true);
+
+    //         $termCompany = $request->has('termCompany') ? $request->get('termCompany') : '';
+    //         if($termCompany)
+    //         {
+    //             $company = Company::where('ruc',$termCompany)->first()->id;
+    //             $users = User::select('users.*', 'roles.name AS roleName')->join('roles', 'users.idRole', '=', 'roles.id')
+    //             ->where('users.companies','LIKE', '%["' . $company  . '"]%')
+    //              ->where('users.deleted', '!=', true);
+    //         }else{
+    //             $users = User::select('users.*', 'roles.name AS roleName')->join('roles', 'users.idRole', '=', 'roles.id')
+    //              ->where('users.deleted', '!=', true);
+    //         }
+    //     }else{
+    //         $users = User::select('users.*', 'roles.name AS roleName')->join('roles', 'users.idRole', '=', 'roles.id')
+    //         ->where('users.companies', 'LIKE', '%' . "\"" . $idCompany . "\"" . '%')
+    //         ->where('users.deleted', '!=', true);
+    //     }
+    //     $this->searchUser($users, $term);
+    //      $users = $users->orderBy("firstName")->orderBy("lastName");
+    //     $this->addObjectValues($users, $idCompany);
+    //      return  $index_paginate
+    //      ? $users->paginate((int) ($index_paginate?? 10))
+    //      : $users->get();
+    // }
 
     public function listCompanyNotify(Request $request)
     {
