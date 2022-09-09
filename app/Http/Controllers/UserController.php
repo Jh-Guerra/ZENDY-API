@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Swift;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ResendPassword;
 
 class UserController extends Controller
 {
@@ -194,7 +196,7 @@ class UserController extends Controller
         $credentials = $request->only('username', 'password', 'rut');
 
         if ($credentials["rut"]) {
-            $userCompany = UserCompany::where("username", $credentials["username"])->where("rutCompany", $credentials["rut"])
+            $userCompany = UserCompany::where("username", utf8_decode($credentials['username']))->where("rutCompany", $credentials["rut"])
                 ->where("deleted", false)->first();
             if (!$userCompany) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
@@ -209,7 +211,7 @@ class UserController extends Controller
             $user->idCompany = $company->id;
             $user->company = $company;
         } else {
-            $user = User::where("username", $credentials["username"])->where("idRole", 1)->where("deleted", false)->first();
+            $user = User::where("username",utf8_decode($credentials['username']))->where("idRole", 1)->where("deleted", false)->first();
             if (!$user) return response()->json(['error' => 'Credenciales inválidas'], 400);
 
             $hashedPassword = $credentials["password"];
@@ -827,18 +829,19 @@ class UserController extends Controller
         }
     }
 
-    public function findUserByUserName($userName, Request $request)
+    public function findUserByUserName($userName1, Request $request)
     {
-        $rut = $request->has("rut") ? $request->get("rut") : "";
 
+        $rut = $request->has("rut") ? $request->get("rut") : "";
+        $userName = utf8_decode(utf8_encode($userName1));
         if ($rut) {
-            $userCompany = UserCompany::where("username", $userName)->where("rutCompany", $rut)->where("deleted", false)->first();
+            $userCompany = UserCompany::where("username",$userName)->where("rutCompany", $rut)->where("deleted", false)->first();
             if (!$userCompany) return response()->json(['error' => 'Usuario no encontrado'], 400);
 
             $user = User::where("id", $userCompany->idUser)->where("deleted", false)->first();
             if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
         } else {
-            $user = User::where('username', $userName)->where("idRole", 1)->where('deleted', false)->first();
+            $user = User::where("username",$userName)->where("idRole", 1)->where('deleted', false)->first();
             if (!$user) return response()->json(['error' => 'Usuario no encontrado'], 400);
         }
 
@@ -861,7 +864,7 @@ class UserController extends Controller
 
     public function existsUser(Request $request)
     {
-        $user = UserCompany::where('username', $request['username'])->where('rutCompany', $request['rut'])->where('deleted',0)->first();
+        $user = UserCompany::where('username', utf8_decode($request['username']))->where('rutCompany', $request['rut'])->where('deleted',0)->first();
         if (isset($user)) {
             $user = User::where('id', $user->idUser)->where('deleted',0)->first();
             if ($user->encrypted_password == null) {
@@ -958,6 +961,26 @@ class UserController extends Controller
             return ['descripcion' => 'Error de autentificación'];
         }
 
+    }
+
+      public function ResendPassword($id_user){
+        try {
+             $users = User::select('users.*','users_companies.rutCompany as rut_empresa')
+             ->join('users_companies', 'users_companies.idUser', '=', 'users.id')
+             ->join('companies', 'companies.id','=','users_companies.idCompany')
+             ->where('users.id', '=', $id_user)->first();
+
+              $password = Crypt::decryptString($users->encrypted_password);
+           // $password ='shshshs';
+            Mail::to($users->email)
+            ->send(new ResendPassword($users->username, $users->firstName, $users->email, $password, $users->rut_empresa));
+
+            return array('status' => true,
+            'descripcion' => "Credenciales de $users->firstName enviada");
+
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
 }

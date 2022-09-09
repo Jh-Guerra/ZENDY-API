@@ -34,6 +34,7 @@ Route::group(['middleware' => ['jwt.verify']], function() {
         Route::post('/register', 'App\Http\Controllers\UserController@register');
         Route::post('/update/{id}', 'App\Http\Controllers\UserController@update');
         Route::get('/find/{id}', 'App\Http\Controllers\UserController@find');
+        Route::get('/resend-password/{id}', 'App\Http\Controllers\UserController@ResendPassword');
         Route::get('/list', 'App\Http\Controllers\UserController@list');
         Route::get('/list2', 'App\Http\Controllers\UserController@list2');
         Route::post('/list-available', 'App\Http\Controllers\UserController@listAvailable');
