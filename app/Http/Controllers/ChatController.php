@@ -101,7 +101,14 @@ class ChatController extends Controller
         $isQuery = $request->has("isQuery") ? ($request->get("isQuery") == "true") : false;
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
         $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
-
+        if($isQuery && $idHelpDesk )
+        {
+           $query = EntryQuery::select('chats.*')->join('chats','entry_queries.id','chats.idEntryQuery')->where('entry_queries.idCompany',$idCompany)
+           ->where('entry_queries.status','Aceptado')->where("entry_queries.deleted", false)
+           ->where('chats.status','Vigente')->where("entry_queries.deleted", false)
+           ->where("chats.status", $request->status)->orderBy('entry_queries.id','DESC')->pluck("id");
+           $chatIds = $query;
+        }
         $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status", $request->status)->orderByDesc("updated_at")->get();
         // $chats = Chat::whereIn("id", $chatIds)->where("idCompany",$idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status", $request->status)->orderByDesc("updated_at")->get();
 
