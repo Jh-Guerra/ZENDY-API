@@ -93,7 +93,6 @@ class ChatController extends Controller
     public function listActive(Request $request)
     {
         $user = JWTAuth::toUser($request->bearerToken());
-
         if (!$user) return response()->json(['error' => 'Credenciales no encontradas, vuelva a iniciar sesión.'], 400);
         $chatIds = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->pluck("idChat");
         $participations = Participant::where("idUser", $user->id)->where("status", "Activo")->where("deleted", false)->get()->keyBy("idChat");
@@ -101,17 +100,27 @@ class ChatController extends Controller
         $isQuery = $request->has("isQuery") ? ($request->get("isQuery") == "true") : false;
         $idCompany = $request->has("idCompany") ? $request->get("idCompany") : null;
         $idHelpDesk = $request->has("idHelpDesk") ? $request->get("idHelpDesk") : null;
+
         if($isQuery && $idHelpDesk )
         {
-           $query = EntryQuery::select('chats.*')->join('chats','entry_queries.id','chats.idEntryQuery')->where('entry_queries.idCompany',$idCompany)
+           $query = EntryQuery::select('chats.*')->join('chats','entry_queries.id','chats.idEntryQuery')
+           ->where('entry_queries.idCompany',$idCompany)
            ->where('entry_queries.status','Aceptado')->where("entry_queries.deleted", false)
            ->where('chats.status','Vigente')->where("entry_queries.deleted", false)
+           ->where("entry_queries.createdBy", $user->id)//se agrego como validacion
            ->where("chats.status", $request->status)->orderBy('entry_queries.id','DESC')->pluck("id");
            $chatIds = $query;
         }
-        $chats = Chat::whereIn("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status", $request->status)->orderByDesc("updated_at")->get();
+        if($isQuery && !$idHelpDesk){
+            $chatIds = Participant::select('chats.*')->leftjoin('chats','participants.idChat','chats.id')
+            ->where('participants.idUser',$user->id)
+            ->where("participants.status", "Activo")->where("participants.deleted", false)
+            ->where('chats.isQuery','1')->where('chats.status','Vigente')->pluck("id");
+            // dd($chatIds);
+        }
+        $chats = Chat::wherein("id", $chatIds)->where("idCompany", $idHelpDesk ? $idHelpDesk : $idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status", $request->status)->orderByDesc("updated_at")->get();
         // $chats = Chat::whereIn("id", $chatIds)->where("idCompany",$idCompany)->where("isQuery", $isQuery)->where("deleted", false)->where("status", $request->status)->orderByDesc("updated_at")->get();
-
+        // dd($chatIds);
         $participants = Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->where("deleted", false)->get();
         $userIds =  Participant::wherein("idChat", $chatIds)->where("idUser", "!=", $user->id)->pluck("idUser")->unique();
 
@@ -130,13 +139,18 @@ class ChatController extends Controller
         }
 
         $users = User::whereIn("id", $userIds)->get()->keyBy('id');
+        // dd($users);
         $companies = Company::whereIn("id", $companyIds)->get()->keyBy('id');
         $lastMessages = Message::whereIn("id", $lastMessageIds)->get()->keyBy('id');
         $lastUsers = User::whereIn("id", $lastUserIds)->get()->keyBy('id');
 
         $participantsByChat = new \stdClass();
         $participantsByChatNames = new \stdClass();
+       // return $partici)ants;
         foreach ($participants as $participant) {
+            $validate_user = User::where("id", $participant->idUser)->get();
+            if(count($validate_user)>0)
+            {
             $participant->user = $users[$participant->idUser];
 
             $idChat = $participant->idChat;
@@ -146,9 +160,12 @@ class ChatController extends Controller
 
             $currentParticipantsName = property_exists($participantsByChatNames, $idChat) ? $participantsByChatNames->$idChat : "";
             $participantsByChatNames->$idChat = $currentParticipantsName . $participant->user->firstName . " " . $participant->user->lastName . ", ";
+            }
+
         }
 
         foreach ($chats as $chat) {
+            // dd($users);
             $chat->user = $chat->idUser ? ($chat->idUser == $user->id ? $user : $users[$chat->idUser]) : null;
             $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
             $chat->lastMessage = $chat->lastMessageId ? $lastMessages[$chat->lastMessageId] : null;
@@ -159,8 +176,18 @@ class ChatController extends Controller
             if (!$chat->name)
                 $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName . " " . $user->lastName);
 
+            $chat->participants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];  $chat->user = $chat->idUser ? ($chat->idUser == $user->id ? $user : $users[$chat->idUser]) : null;
+            $chat->company = $chat->idCompany ? $companies[$chat->idCompany] : null;
+            $chat->lastMessage = $chat->lastMessageId ? $lastMessages[$chat->lastMessageId] : null;
+            $chat->lastMessageUser = $chat->lastMessageUserId ? ($chat->lastMessageUserId == $user->id ? $user : $lastUsers[$chat->lastMessageUserId]) : null;
+            $chat->participation = $participations[$chat->id];
+            $idChat = $chat->id;
+
+            if (!$chat->name)
+                $chat->name = property_exists($participantsByChatNames, $idChat) ? substr($participantsByChatNames->$idChat, 0, -2) : ($user->firstName . " " . $user->lastName);
+
             $chat->participants = property_exists($participantsByChat, $idChat) ? $participantsByChat->$idChat : [];
-        }
+            };
 
         $term = $request->has("term") ? $request->get("term") : "";
         if ($term) {
@@ -435,6 +462,9 @@ class ChatController extends Controller
         $participantsByChat = new \stdClass();
         $participantsByChatNames = new \stdClass();
         foreach ($participants as $participant) {
+            $validate_user = User::where("id", $participant->idUser)->get();
+            if(count($validate_user)>0)
+            {
             $participant->user = $users[$participant->idUser];
 
             $idChat = $participant->idChat;
@@ -444,6 +474,7 @@ class ChatController extends Controller
 
             $currentParticipantsName = property_exists($participantsByChatNames, $idChat) ? $participantsByChatNames->$idChat : "";
             $participantsByChatNames->$idChat = $currentParticipantsName . $participant->user->firstName . " " . $participant->user->lastName . ", ";
+            }
         }
 
         foreach ($chats as $chat) {
@@ -549,6 +580,9 @@ class ChatController extends Controller
             $participantsByChat = new \stdClass();
             $participantsByChatNames = new \stdClass();
             foreach ($participants as $participant) {
+            $validate_user = User::where("id", $participant->idUser)->get();
+            if(count($validate_user)>0)
+            {
                 $participant->user = $users[$participant->idUser];
 
                 $idChat = $participant->idChat;
@@ -558,6 +592,7 @@ class ChatController extends Controller
 
                 $currentParticipantsName = property_exists($participantsByChatNames, $idChat) ? $participantsByChatNames->$idChat : "";
                 $participantsByChatNames->$idChat = $currentParticipantsName . $participant->user->firstName . " " . $participant->user->lastName . ", ";
+            }
             }
 
             foreach ($chats as $chat) {
